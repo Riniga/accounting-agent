@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-001-walking-skeleton.md`](../mvp/MVP-001-walking-skeleton.md)
 
-**Status:** In progress — phase 1 (investigation) done, phase 2 next.
+**Status:** In progress — phases 1–2 done, phase 3 next.
 
 ## 0. Investigation
 
@@ -260,14 +260,34 @@ Commit: `docs(mvp-001): record investigation findings for toolchain and baseline
 
 ### Phase 2 — Package skeleton (test first)
 
-- [ ] 2.1 Write the tests first and have them reviewed: valid profile → features logged,
+- [x] 2.1 Write the tests first and have them reviewed: valid profile → features logged,
       exit 0; missing file, invalid YAML, missing `organisation`, non-boolean feature →
       clear error, non-zero exit. Synthetic fixture `tests/fixtures/example/organisation.yaml`.
-- [ ] 2.2 Implement `src/accounting_agent/` (profile loading + `run` CLI) until the tests
+      Result: the tests were written first and failed for the right reason
+      (`ModuleNotFoundError`) before implementation. **Deviation from D1 SKA 5 (AI-TDD):** on
+      2026-09-25 the owner explicitly waived reviewing the tests *before* implementation. The
+      tests are reviewed together with the code in the pull request instead. Record this in
+      the D1 assessment (5.2). The tests also cover a few things beyond the list above:
+      - unsafe YAML tags are rejected (`yaml.safe_load`);
+      - the organisation id must be a lowercase slug;
+      - `1` / `"true"` / `null` are rejected as feature values;
+      - unknown top-level keys are ignored with a warning, so that later sections such as
+        `approval` don't break an older core;
+      - `run <org>` fails if `<org>` doesn't match the profile, which guards against running
+        against another organisation's configuration;
+      - `python -m accounting_agent` works end to end.
+- [x] 2.2 Implement `src/accounting_agent/` (profile loading + `run` CLI) until the tests
       pass. Add `[project]` and `[build-system]` to `pyproject.toml` with the console script
-      entry.
-- [ ] 2.3 Adapt `pytest.ini` (`testpaths = tests`) and the Ruff/coverage sections of
+      entry. Result: `profile.py` (`OrganisationProfile`, `load_profile`, `ProfileError`),
+      `cli.py` (argparse, logging to stderr, exit 0/1, usage errors exit 2) and
+      `__main__.py`. Build backend: setuptools. The version comes from
+      `accounting_agent.__version__` (0.1.0). The licence is declared as the SPDX id
+      `PolyForm-Noncommercial-1.0.0`; `license-files` is added with `LICENSE` in 5.1. The
+      only runtime dependency is PyYAML. All 27 tests pass on Python 3.14.7, coverage is
+      96 %, and Ruff format and check are clean.
+- [x] 2.3 Adapt `pytest.ini` (`testpaths = tests`) and the Ruff/coverage sections of
       `pyproject.toml` (`src`, `known-first-party`, coverage source) — no placeholders left.
+      Result: done. `fail_under` stays at 50 until 4.4 measures the baseline in CI.
 
 Commit: `feat(core): add accounting-agent package skeleton with run command and profile validation`
 
