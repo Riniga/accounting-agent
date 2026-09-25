@@ -40,7 +40,7 @@ Omfattar **inte**:
 
 **Databasens integritetsvillkor (krav 4) är snabbare och mer centralt garanterade** än motsvarande kontroller i applikationskod, och skyddar även mot skrivvägar som inte går via applikationen: andra tjänster, batch-jobb, eller framtida migrationer som skriver direkt till databasen.
 
-**Okänt läge att utreda:** om det redan finns etablerad praxis för databasmigrationer hos Skanska-projekt är i skrivande stund inte klarlagt (till skillnad från de flesta andra kapitel, där svaret var ett bekräftat "inget finns"). Värt att stämma av innan kraven ovan tillämpas brett, så de kompletterar snarare än duplicerar eller motsäger något som redan fungerar.
+**Okänt läge att utreda:** om det redan finns etablerad praxis för databasmigrationer i organisationens projekt är i skrivande stund inte klarlagt (till skillnad från de flesta andra kapitel, där svaret var ett bekräftat "inget finns"). Värt att stämma av innan kraven ovan tillämpas brett, så de kompletterar snarare än duplicerar eller motsäger något som redan fungerar.
 
 ## Undantag
 
@@ -66,4 +66,4 @@ Fullständig källgenomgång finns i det interna forskningsunderlaget (se Underl
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

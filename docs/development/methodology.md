@@ -3,7 +3,7 @@
 > **Scope of this document.** This is the lightweight **project process** — how work flows
 > from Vision through Roadmap, MVP, Plan, Implementation and Pull Request. It is **not** the
 > complete engineering standard. The organisation-wide engineering requirements are defined
-> in **[Skanskas utvecklingsmetodik](../methodology/index.md)** (areas A–F: developer
+> in **[the development methodology](../methodology/index.md)** (areas A–F: developer
 > environment, writing code, security, quality assurance, delivery, AI collaboration), and
 > this platform's standing against them — plus the project-level choices — is tracked in
 > **[`docs/methodology-compliance/`](../methodology-compliance/)**. This document does not

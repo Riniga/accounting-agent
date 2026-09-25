@@ -1,7 +1,7 @@
 # Roadmap
 
 This roadmap describes the major development stages and capabilities planned for
-<project name>.
+Accounting Agent.
 
 Each roadmap area is implemented through one or more MVPs. Once an MVP has been created, it
 becomes the source of truth for that work — this file should stay a lightweight index, not
@@ -11,22 +11,52 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-<!-- One paragraph, kept current: what's live, what the current focus is, and a pointer to
-     the active MVP. Update this in the same PR as whatever changed it. -->
+The repository has been initialised from the project template: vision, roadmap,
+architecture decisions and the first MVP are written, but there is **no code yet**. The
+current focus is R1, through
+[MVP-001 – Walking skeleton & baseline analysis](mvp/MVP-001-walking-skeleton.md)
+(planned, not started).
 
 ---
 
-## R1 – <Area name> (Done / Ongoing / Planned)
+## R1 – Foundation (Planned)
 
-<!-- One area per roadmap phase. A short sentence on what it establishes, then a list of
-     the MVPs that implement it, each linked. -->
+Establishes the core repository with its stack, CI quality gates and methodology baseline,
+plus an analysis of the existing organisation projects that tells us what to extract first.
 
-* [MVP-001 – <short name>](mvp/001-short-name.md) — <one-line summary>.
+* [MVP-001 – Walking skeleton & baseline analysis](mvp/MVP-001-walking-skeleton.md) —
+  installable package with a minimal `run` CLI, CI gates, first methodology assessment,
+  and an analysis of the Helsingborgs Judoklubb project.
+
+## R2 – Helsingborgs Judoklubb pilot via core (Planned)
+
+Establishes the common data model and the import → matching → posting → validation →
+report chain in the core, with Helsingborgs Judoklubb as the first organisation running on it.
+
+* MVP-002 – Bank statement import and matching via core — Helsingborgs Judoklubb's bank
+  statement is read through the core into a common transaction model and matched against
+  supporting documents, with a result equivalent to today's solution.
+
+## R3 – Agent tools & human-in-the-loop (Planned)
+
+Establishes the defined agent tools, confidence levels, approval policies and the audit
+trail — and decides how the core is exposed to the agent in each organisation project.
+
+## R4 – JudoSyd migration (Planned)
+
+Moves JudoSyd onto the core, adding PDF import, Gmail, Discord and scheduled runs as general
+capabilities.
+
+## R5 – Aktivitet Förebygger migration (Planned)
+
+Moves Aktivitet Förebygger onto the core as a stress test, adding payroll, salary
+documentation, payments and stricter approval rules as general capabilities.
 
 ## Backlog of ideas to be implemented / fixed
 
-<!-- Loose ideas not yet worth a roadmap area or an MVP — grouped by app/area if useful.
-     A place to capture something without committing to it yet. -->
+* Relate the books' storage and audit trail to the Swedish Bookkeeping Act
+  (bokföringslagen) — archiving and verification requirements. Not critical now.
+* Event-based runs in addition to scheduled ones (from the initial idea).
 
 ---
 

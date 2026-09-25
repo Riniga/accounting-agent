@@ -22,7 +22,7 @@ Omfattar **inte**:
 
 ## Krav (SKA)
 
-1. AI-hantering av data styrs av Skanskas befintliga dataklassificeringsmodell (Konfidentialitet, Riktighet, Tillgänglighet). Konfidentialitetsdimensionen ska ha en uttrycklig, skriven regel för vad som gäller vid AI-användning per klassningsnivå.
+1. AI-hantering av data styrs av organisationens befintliga dataklassificeringsmodell (Konfidentialitet, Riktighet, Tillgänglighet). Konfidentialitetsdimensionen ska ha en uttrycklig, skriven regel för vad som gäller vid AI-användning per klassningsnivå.
 2. Data med hög konfidentialitetsklassning får aldrig matas in i ett AI-verktyg, oavsett om verktyget i övrigt är godkänt. Endast data med tillräckligt låg konfidentialitetsklassning, enligt regeln i krav 1, är tillåten indata.
 3. Om material som matas in i ett AI-verktyg kan innehålla personuppgifter, ska ett giltigt personuppgiftsbiträdesavtal (DPA) finnas med leverantören. Ansvaret för detta kan aldrig läggas över på leverantören.
 4. Om ett AI-verktyg är agentiskt och kan vidarebefordra data till ytterligare tredjepartstjänster, ska det klarläggas vilka dessa är och att de omfattas av motsvarande avtalsmässiga skydd som huvudverktyget.
@@ -39,7 +39,7 @@ Omfattar **inte**:
 
 **Obekräftat och under uppföljning:** om det befintliga Microsoft-avtalet innehåller ett personuppgiftsbiträdesavtal som uttryckligen täcker Copilots AI-specifika databehandling (krav 3) är i skrivande stund inte verifierat. Kravet gäller oavsett. Det är själva verifieringen som är en öppen uppgift för den som förvaltar avtalet.
 
-Dev-/testmiljöns krav på anonymiserad/syntetisk data (krav 8) är redan etablerad praxis hos Skanska. Det här dokumentet bekräftar den snarare än inför något nytt. UAT kräver mer eftertanke: fråga alltid "vilken klassificering har den här datan faktiskt, i det här systemet?" innan något UAT-material matas in i ett AI-verktyg. Anta aldrig att UAT per definition är säkert bara för att det inte heter "produktion".
+Dev-/testmiljöns krav på anonymiserad/syntetisk data (krav 8) är redan etablerad praxis på många håll. Det här dokumentet bekräftar den snarare än inför något nytt. UAT kräver mer eftertanke: fråga alltid "vilken klassificering har den här datan faktiskt, i det här systemet?" innan något UAT-material matas in i ett AI-verktyg. Anta aldrig att UAT per definition är säkert bara för att det inte heter "produktion".
 
 ## Undantag
 
@@ -70,4 +70,4 @@ Fullständig källgenomgång finns i det interna forskningsunderlaget (se Underl
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

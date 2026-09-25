@@ -23,15 +23,15 @@ conda config --add channels conda-forge
 conda install \<paket\>
 
 conda search python
-conda create --name \<your-env-name\> python=3.13
-conda activate \<your-env-name\>
+conda create --name accounting-agent python=3.13
+conda activate accounting-agent
 
 ### Git
 
 winget install Git.Git
 Create SSH Key: ssh-keygen -t ed25519 -C "Key description"
 Add SSH Key to Github: User->Settings->SSH and GPG keys (https://github.com/settings/keys)
-git clone \<your-repo-ssh-url\>
+git clone git@github.com:riniga/accounting-agent.git
 
 ## Nästa steg — miljö och verktyg
 
@@ -39,11 +39,11 @@ After cloning, follow [`environment.md`](environment.md):
 
 ```bash
 conda env create -f environment.yml
-conda activate <your-env-name>
+conda activate accounting-agent
 pre-commit install
 ```
 
 This installs the runtime + dev dependencies (including `ruff` and `pre-commit`) and wires
-the local Git hooks. Then install each app/package in editable mode (`pip install -e
-<path>` — see `AGENTS.md`'s "Local commands"), and review the standards in
+the local Git hooks. Then install the package in editable mode (`pip install -e .` — see
+`AGENTS.md`'s "Local commands"), and review the standards in
 `docs/standards/`.

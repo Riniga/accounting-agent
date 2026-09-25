@@ -1,24 +1,27 @@
-# <Project Name>
+# Accounting Agent
 
-<!-- One or two sentences: what this workspace is for. -->
+The shared core for AI-assisted bookkeeping in small non-profit organisations. Each
+organisation keeps its own private project with data, chart of accounts, rules and
+configuration; this repository holds the general functionality they share — never their
+data.
 
-The workspace is designed to grow over time by adding independent applications that share
-a common architecture, development process, coding standards, and reusable components.
+**Status:** initialising — no code yet; see [MVP-001](docs/mvp/MVP-001-walking-skeleton.md).
+**Owner:** Rickard Nisses-Gagnér (product and technical owner, sole maintainer).
+**Licence:** PolyForm Noncommercial 1.0.0 — free for noncommercial use
+([ADR-005](docs/architecture/decisions/ADR-005-noncommercial-licence.md); `LICENSE` is added
+in MVP-001).
 
 ## Vision
 
-<!-- One sentence: the outcome this project exists to create. See docs/vision.md for the
-     full version. -->
+A shared AI-based financial administrator that can work for several organisations through
+the same codebase, with strictly separated data, rules and permissions. See
+[`docs/vision.md`](docs/vision.md).
 
 ## Workspace Structure
 
 ```text
-apps/
-    <app-1>/           <what it does>
-    <app-2>/           <what it does>
-
-packages/
-    <shared-package>/  Shared libraries and reusable components
+src/accounting_agent/  The core package (planned — MVP-001)
+tests/                 Tests and synthetic fixtures (planned — MVP-001)
 
 docs/
     Architecture, development process, standards, roadmap, MVPs and implementation plans
@@ -26,8 +29,9 @@ docs/
 
 > **Note**
 >
-> The workspace is currently being established. Additional applications, shared packages
-> and documentation will be introduced incrementally as the project evolves.
+> The repository is currently being established. The organisation projects (JudoSyd,
+> Helsingborgs Judoklubb, Aktivitet Förebygger) are separate private repositories and are
+> never part of this one ([ADR-003](docs/architecture/decisions/ADR-003-no-real-data-in-core-repo.md)).
 
 ## Development Process
 
@@ -58,17 +62,14 @@ process, and [`AGENTS.md`](AGENTS.md) for how AI tools work within it.
    [`environment.md`](docs/development/environment.md) to set up your local environment.
 3. Read [`docs/standards/`](docs/standards/) — coding, testing, git, documentation,
    dependencies.
-4. If starting a brand-new project from this template, put the project idea in
-   `docs/initial-idea.md` and run
-   [`docs/claude-prompts/initialize-project.md`](docs/claude-prompts/initialize-project.md).
+4. Read the project idea in [`docs/initial-idea.md`](docs/initial-idea.md) and the active
+   MVP in [`docs/mvp/`](docs/mvp/).
+
+Install, run and test commands are added here in MVP-001, once the package exists.
 
 ## Required GitHub Actions secrets
 
-<!-- List whatever your CI/CD workflows actually need, e.g.: -->
-
-| Secret | Purpose |
-|--------|---------|
-| `<SECRET_NAME>` | <what it's for> |
+None currently. CI runs on pull requests only and needs no secrets; there is no CD.
 
 ## Documentation
 

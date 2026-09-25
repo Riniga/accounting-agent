@@ -7,7 +7,7 @@
 
 ## Syfte
 
-Dev, test, UAT och prod är namn de flesta Skanska-projekt redan använder, men hur miljöerna faktiskt konfigureras och skiljs åt varierar helt. Det här dokumentet fastställer var konfiguration hör hemma, hur miljöer definieras utan att glida isär över tid (miljödrift), och hur mycket miljöer behöver likna varandra.
+Dev, test, UAT och prod är namn de flesta projekt redan använder, men hur miljöerna faktiskt konfigureras och skiljs åt varierar helt. Det här dokumentet fastställer var konfiguration hör hemma, hur miljöer definieras utan att glida isär över tid (miljödrift), och hur mycket miljöer behöver likna varandra.
 
 **Terminologinot:** det etablerade engelska begreppet är "environment parity". Den direkta svenska översättningen "miljöparitet" undviks medvetet eftersom den lätt läses som en felskrivning av "Miljöpartiet". **"Miljökonsistens"** används genomgående istället.
 
@@ -36,17 +36,17 @@ Omfattar **inte**:
 
 ## Vägledning och exempel
 
-**Namngivningen dev/test/uat/prod är redan gemensam** hos Skanska, även om konfigurationsmekanismen inte är det. Det här dokumentet bygger vidare på den namngivningen istället för att uppfinna ny terminologi.
+**Namngivningen dev/test/uat/prod är redan etablerad** i de flesta organisationer, även om konfigurationsmekanismen inte är det. Det här dokumentet bygger vidare på den namngivningen istället för att uppfinna ny terminologi.
 
 **Grundprincipen (krav 1) kommer från "The Twelve-Factor App":** allt som varierar mellan miljöer ska vara utbytbart utan att koden ändras. Konfigurationsvärden är granulära och oberoende av varandra, inte en enda monolitisk "miljöfil" att växla mellan.
 
 **Miljödrift, inte avsaknad av separata miljöer, är den vanligaste bakomliggande orsaken** när "det fungerar på min maskin" inträffar. Lösningen (krav 3) är disciplin kring *hur* en miljö ändras, inte bara att miljöerna finns som begrepp.
 
-**Skanska har redan organisatorisk kapacitet för krav 3:** ett team hanterar infrastruktur som kod. Det här dokumentet kravställer principen (kodifierade, återskapbara miljöer). Det befintliga teamet är den naturliga funktionen att kravställa mot, utan att metodiken pekar ut ett specifikt IaC-verktyg.
+**Organisatorisk kapacitet för krav 3 finns ofta redan:** ett team som hanterar infrastruktur som kod. Det här dokumentet kravställer principen (kodifierade, återskapbara miljöer). Ett sådant team är den naturliga funktionen att kravställa mot, utan att metodiken pekar ut ett specifikt IaC-verktyg.
 
 ## Undantag
 
-För ett äldre system som ännu inte är fullt kodifierat (krav 3) kan handkonfiguration fortsätta tillfälligt, under förutsättning att ändringar dokumenteras och att en plan finns för att föra över miljön till den infrastruktur-som-kod-process Skanska redan har på plats.
+För ett äldre system som ännu inte är fullt kodifierat (krav 3) kan handkonfiguration fortsätta tillfälligt, under förutsättning att ändringar dokumenteras och att en plan finns för att föra över miljön till den infrastruktur-som-kod-process organisationen har på plats.
 
 ## Källor och ramverk
 
@@ -68,4 +68,4 @@ Fullständig källgenomgång finns i det interna forskningsunderlaget (se Underl
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

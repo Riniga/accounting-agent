@@ -7,7 +7,7 @@
 
 ## Syfte
 
-De allra flesta utvecklare använder redan AI-assisterade verktyg i sitt arbete, oavsett om organisationen har tagit ställning till det eller inte. Utan ett tydligt, känt sätt att godkänna verktyg uppstår antingen okontrollerad användning ("shadow AI") eller att arbete i onödan bromsas av att ingen vet vad som är tillåtet. Det här dokumentet fastställer *hur* ett AI-assisterat utvecklingsverktyg blir godkänt att använda hos Skanska, inte vilket enskilt verktyg som är bäst.
+De allra flesta utvecklare använder redan AI-assisterade verktyg i sitt arbete, oavsett om organisationen har tagit ställning till det eller inte. Utan ett tydligt, känt sätt att godkänna verktyg uppstår antingen okontrollerad användning ("shadow AI") eller att arbete i onödan bromsas av att ingen vet vad som är tillåtet. Det här dokumentet fastställer *hur* ett AI-assisterat utvecklingsverktyg blir godkänt att använda i organisationen, inte vilket enskilt verktyg som är bäst.
 
 ## Omfattning och avgränsning
 
@@ -31,13 +31,13 @@ Omfattar **inte**:
 
 ## Rekommendationer (BÖR)
 
-1. Om ett godkänt verktyg stödjer MCP (Model Context Protocol) eller motsvarande externa integrationer, bör dessa granskas separat utifrån minsta-privilegium, med en förd inventering och autentiserade, loggade anslutningar. *(Nedgraderat medvetet från krav till rekommendation eftersom området ännu inte bedöms moget nog för Skanska att kravställa hårt.)*
+1. Om ett godkänt verktyg stödjer MCP (Model Context Protocol) eller motsvarande externa integrationer, bör dessa granskas separat utifrån minsta-privilegium, med en förd inventering och autentiserade, loggade anslutningar. *(Nedgraderat medvetet från krav till rekommendation eftersom området ännu inte bedöms moget nog att kravställa hårt.)*
 2. Godkännandekriterierna bör struktureras efter ett etablerat ramverk (t.ex. NIST AI RMF: Govern, Map, Measure, Manage) snarare än en egen, improviserad checklista.
 3. Ett verktygs stöd för organisationsgemensamma instruktionsfiler bör vägas in vid godkännande, även om innehållet i sådana filer hör till ett annat ämnesspår.
 
 ## Vägledning och exempel
 
-Idag (2026) är **GitHub Copilot** det godkända verktyget för AI-assisterad kodning hos Skanska, möjliggjort av det befintliga Microsoft-avtalet. Det är ett konkret exempel på hur krav 1–2 uppfylls i praktiken, inte en begränsning till just det verktyget. Microsoft Copilot är godkänt som officiellt AI-verktyg för andra ändamål, men används i praktiken inte för kodning.
+Exempel: i en organisation med ett befintligt Microsoft-avtal kan **GitHub Copilot** vara det godkända verktyget för AI-assisterad kodning. Det är ett konkret exempel på hur krav 1–2 uppfylls i praktiken, inte en begränsning till just det verktyget.
 
 Ett nytt AI-verktyg som saknar organisationsavtal kan inte godkännas för användning på riktiga projekt, oavsett hur välfungerande det är. Avtalsläget kommer alltid före funktionalitet i bedömningen.
 
@@ -74,4 +74,4 @@ Fullständig källgenomgång och resonemang finns i det interna forskningsunderl
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

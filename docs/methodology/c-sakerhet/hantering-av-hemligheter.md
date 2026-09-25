@@ -7,7 +7,7 @@
 
 ## Syfte
 
-Hemligheter (nycklar, lösenord, tokens, credentials) som hamnar i kod eller kodhistorik är en av de vanligaste och mest lättåtgärdade säkerhetsriskerna, men ändå ett återkommande problem. Det här dokumentet fastställer hur Skanska hanterar hemligheter istället, och rundar av kategori Säkerhet tillsammans med de tre redan skrivna spåren.
+Hemligheter (nycklar, lösenord, tokens, credentials) som hamnar i kod eller kodhistorik är en av de vanligaste och mest lättåtgärdade säkerhetsriskerna, men ändå ett återkommande problem. Det här dokumentet fastställer hur organisationen hanterar hemligheter istället, och rundar av kategori Säkerhet tillsammans med de tre redan skrivna spåren.
 
 ## Omfattning och avgränsning
 
@@ -34,7 +34,7 @@ Omfattar **inte**:
 
 ## Vägledning och exempel
 
-En central hemlighetshanterare (t.ex. Azure Key Vault) finns inte hos Skanska idag, men bedöms som lågtröskel att införa givet att Azure redan är den etablerade molnplattformen. Detsamma gäller OIDC/workload identity federation för CI/CD: inte i bruk idag, men en riktning värd att prioritera snarare än en avlägsen ambition.
+En central hemlighetshanterare (t.ex. Azure Key Vault) saknas i många organisationer, men är ofta lågtröskel att införa om en molnplattform redan är etablerad. Detsamma gäller OIDC/workload identity federation för CI/CD: en riktning värd att prioritera snarare än en avlägsen ambition.
 
 **Viktigt att inte förväxla:** Microsoft Defender finns redan i drift och skannar, men bara infrastruktur och moln, inte kod. Kodnivå-hemlighetsskanning (att upptäcka en hårdkodad nyckel i en commit) är därför ett fortsatt obesatt behov, inte något befintlig verktygskedja redan löser. Se Sekretess & dataskydd vid AI-användning för det AI-kontext-specifika skanningskravet som bygger på samma grund.
 
@@ -65,4 +65,4 @@ Fullständig källgenomgång finns i det interna forskningsunderlaget (se Underl
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

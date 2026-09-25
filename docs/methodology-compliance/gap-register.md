@@ -1,6 +1,6 @@
 # Gap register
 
-Every open gap between this project and [Skanskas utvecklingsmetodik](../methodology/index.md)
+Every open gap between this project and [the development methodology](../methodology/index.md)
 (or your own organisation's equivalent).
 
 If you keep a "known gaps" table anywhere else (e.g. `docs/architecture/current-state.md`),

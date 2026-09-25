@@ -23,7 +23,7 @@ Methodology chapter: [`<file>`](../methodology/<area>/<file>.md)
 **Project interpretation:** `<what we chose where the chapter leaves a choice>` —
 see [`interpretations.md#<anchor>`](interpretations.md#<anchor>). *(or "none — chapter leaves no open choice")*
 
-**External dependency:** `<Skanska-central item>` — owner to confirm: `<role/function>`.
+**External dependency:** `<organisation-central item>` — owner to confirm: `<role/function>`.
 *(or "none")*
 
 **Follow-up plan:** [`023-P<n>`](../plans/023-P<n>-<slug>.plan.md) — `<one line>`.

@@ -1,7 +1,7 @@
 # Methodology compliance
 
 Internal record of how this project meets
-[Skanskas utvecklingsmetodik](../methodology/index.md) (or your own organisation's
+[the development methodology](../methodology/index.md) (or your own organisation's
 equivalent), which project-level interpretations were made where the methodology leaves a
 choice, and what is still open.
 

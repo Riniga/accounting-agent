@@ -12,18 +12,22 @@ actually recurs, and **link** shared rules rather than copying them.
 
 ## What this repository is
 
-<!-- One or two sentences: what kind of workspace this is (monorepo? single app?), what
-     domain it serves, and the shape of its growth (one MVP at a time? something else?). -->
+A single Python package — `accounting_agent`, the shared, organisation-agnostic core for
+AI-assisted bookkeeping in small non-profit organisations. Organisation projects (data,
+chart of accounts, rules, configuration) are separate private repositories that consume
+this core. It grows one MVP at a time, extracting functionality from those projects only
+once a working concrete function exists to generalise
+([ADR-002](docs/architecture/decisions/ADR-002-python-core-repository.md)).
 
 | Area | Location |
 |------|----------|
-| Applications | `apps/` — `<app-1>`, `<app-2>`, … |
-| Shared code | `packages/<shared-package>/` (only code reused by ≥ 2 apps — record the boundary decision as an ADR) |
+| Core package | `src/accounting_agent/` (planned — MVP-001). This repository *is* the shared code; there is no `apps/`/`packages/` split (ADR-002) |
+| Reference material | `docs/reference/` — local, git-ignored copies of the private organisation projects. Contains real data: read only code, instructions, configuration and rules; never commit or copy data from it ([ADR-003](docs/architecture/decisions/ADR-003-no-real-data-in-core-repo.md)) |
 | Roadmap / MVPs / plans | `docs/roadmap.md`, `docs/mvp/`, `docs/plans/` |
 | Architecture + ADRs | `docs/architecture/`, `docs/architecture/decisions/` |
 | Standards | `docs/standards/` |
 | Methodology | `docs/methodology/` (org) + `docs/methodology-compliance/` (this repo's standing) |
-| Tests | app/package `tests/` folders, plus repo-level `tests/` |
+| Tests | `tests/`, with synthetic fixtures in `tests/fixtures/` (planned — MVP-001) |
 
 ## Read before planning or implementing
 
@@ -39,12 +43,8 @@ If a referenced document does not exist, propose creating it — do not guess a 
 
 ## Organisation-wide engineering requirements
 
-<!-- Replace with your own organisation's methodology, or delete this whole section if
-     none applies. This project followed Skanskas utvecklingsmetodik (21 chapters, areas
-     A–F) — copied wholesale into docs/methodology/ in this reference example since it's
-     org-wide, not project-specific. -->
-
-This repository follows **[the organisation's development methodology](docs/methodology/index.md)**.
+This repository follows **[the development methodology](docs/methodology/index.md)**
+(adopted voluntarily — [ADR-001](docs/architecture/decisions/ADR-001-adopt-development-methodology.md)).
 Where this repo does not yet meet a requirement, the standing and the plan to close it are
 recorded in **[`docs/methodology-compliance/`](docs/methodology-compliance/)** — start at
 its [`README.md`](docs/methodology-compliance/README.md) and
@@ -156,14 +156,17 @@ Follow the standards docs — do not restate them here:
 
 ## Local commands
 
+Planned — verified and finalised in MVP-001 (Python version and tooling may change in its
+investigation step).
+
 ```bash
 # environment (see docs/development/environment.md)
-conda env create -f environment.yml && conda activate <your-env-name>
-pip install -e packages/<shared-package> && pip install -e apps/<app-1>  # + one per app
+conda env create -f environment.yml && conda activate accounting-agent
+pip install -e .
 
 # tests — from the repo root
 pytest -q
 
-# run the whole workspace locally
-<your local-run command, e.g. ./scripts/start-platform.ps1>
+# run the agent core for one organisation
+accounting-agent run <org> --config-dir <path-to-organisation-config>
 ```

@@ -5,7 +5,7 @@ This is the primary development guideline for coding conventions used across the
 Correctness is mandatory. Clarity, structure, and maintainability take priority over speed and cleverness.
 Unnecessary complexity is never acceptable.
 
-> **Relation to Skanskas utvecklingsmetodik.** This standard is this project's concrete,
+> **Relation to the development methodology.** This standard is this project's concrete,
 > day-to-day elaboration of methodology area **B (Skriva kod)** — chiefly
 > [B1 – Kodkvalitet & clean code](../methodology/b-skriva-kod/kodkvalitet-och-clean-code.md),
 > [B2 – Kodstandard & stil](../methodology/b-skriva-kod/kodstandard-och-stil.md) and

@@ -9,7 +9,7 @@
 
 Det här dokumentet är den direkta operationaliseringen av NIS2 artikel 21.2(e) för mjukvaruutveckling: grundregler mot vanliga sårbarhetsklasser, hotmodellering, och automatiserad säkerhetstestning (SAST/DAST) i utvecklingsflödet, så att sårbarheter förebyggs istället för att bara åtgärdas efter fynd.
 
-**Viktig läsanvisning:** SAST/DAST-området krävde avvägningar utanför vad som gick att förankra i Skanskas faktiska verktygsläge under den här sessionen (ingen tillgänglig säkerhetsexpertis vid tidpunkten). Principerna nedan är en välgrundad utgångspunkt, inte ett färdigt, Skanska-verifierat beslut. Se Källor för vad som specifikt behöver stämmas av med säkerhetsarkitekten innan status kan bli "fastställd".
+**Viktig läsanvisning:** SAST/DAST-området krävde avvägningar utanför vad som gick att förankra i organisationens faktiska verktygsläge under den här sessionen (ingen tillgänglig säkerhetsexpertis vid tidpunkten). Principerna nedan är en välgrundad utgångspunkt, inte ett färdigt, organisationsverifierat beslut. Se Källor för vad som specifikt behöver stämmas av med säkerhetsarkitekten innan status kan bli "fastställd".
 
 ## Omfattning och avgränsning
 
@@ -39,7 +39,7 @@ Omfattar **inte**:
 
 **Hotmodellering** kräver inget särskilt verktyg för att komma igång: ett dataflödesdiagram på en whiteboard och STRIDE:s sex kategorier (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege) räcker för att identifiera konkreta tekniska brister.
 
-**SAST/DAST-verktyg (exempel, inte verifierade mot Skanskas upphandling):** verktyg med en gratis/öppen kärna sänker tröskeln att komma igång innan ett eventuellt upphandlat verktyg finns på plats: Semgrep eller CodeQL för SAST, OWASP ZAP för DAST. Detta är en riktning, inte ett beslut: verifiera med säkerhetsarkitekten vad som redan är godkänt eller upphandlat hos Skanska innan ett projekt låser sig vid ett specifikt verktyg.
+**SAST/DAST-verktyg (exempel, inte verifierade mot organisationens upphandling):** verktyg med en gratis/öppen kärna sänker tröskeln att komma igång innan ett eventuellt upphandlat verktyg finns på plats: Semgrep eller CodeQL för SAST, OWASP ZAP för DAST. Detta är en riktning, inte ett beslut: verifiera med säkerhetsarkitekten vad som redan är godkänt eller upphandlat i organisationen innan ett projekt låser sig vid ett specifikt verktyg.
 
 **OWASP Top 10:2025** flyttade tyngdpunkten mot konfiguration och leverantörskedja: Security Misconfiguration är nu #2, och en ny kategori för brister i mjukvaruleverantörskedjan kom in på #3, direkt kopplat till Beroendehantering, paketkällor & signering.
 
@@ -54,7 +54,7 @@ Om ett äldre system inte tekniskt går att köra SAST/DAST mot (t.ex. inkompati
 - STRIDE-hotmodellering, refererad av bl.a. Microsofts Security Development Lifecycle.
 - Dokumenterad effekt av shift-left-säkerhetstestning (SAST tidigt, DAST mot driftsatt miljö): upp till 60 % färre produktionssårbarheter, upp till 90 % lägre åtgärdskostnad vid tidig upptäckt.
 
-**Krävs innan detta dokument kan fastställas:** avstämning med Skanskas säkerhetsarkitekt om (1) befintligt SAST/DAST-läge och redan godkända/upphandlade verktyg, och (2) om de föreslagna kraven (särskilt blockeringströsklarna) matchar Skanskas faktiska risktolerans. Se avsnittet "Kvarstående uppföljning" i det interna forskningsunderlaget.
+**Krävs innan detta dokument kan fastställas:** avstämning med organisationens säkerhetsarkitekt om (1) befintligt SAST/DAST-läge och redan godkända/upphandlade verktyg, och (2) om de föreslagna kraven (särskilt blockeringströsklarna) matchar organisationens faktiska risktolerans. Se avsnittet "Kvarstående uppföljning" i det interna forskningsunderlaget.
 
 ## Relaterat
 
@@ -69,4 +69,4 @@ Om ett äldre system inte tekniskt går att köra SAST/DAST mot (t.ex. inkompati
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

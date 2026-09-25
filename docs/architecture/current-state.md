@@ -8,29 +8,31 @@ in the same PR as any change to an app's status, test count, or key capabilities
 
 | App | Status | Tests | Key capabilities |
 |-----|--------|-------|-------------------|
-| `<app-1>` | *(Planned / In progress / Implemented)* | *(count)* | *(a terse, comma-separated list — not prose)* |
+| `accounting-agent` (core package, `src/accounting_agent/`) | Planned (MVP-001) | 0 | *(none yet — planned: `run <org>` CLI, organisation profile loading/validation)* |
 
-## Shared package — \<shared-package-name\>
+Organisation projects (JudoSyd, Helsingborgs Judoklubb, Aktivitet Förebygger) are separate
+private repositories and are not tracked here (ADR-002, ADR-003).
 
-<!-- What's actually in it, and why it earned the "reused by ≥2 apps" bar — link the ADR
-     that recorded that boundary decision. -->
+## Shared package
+
+Not applicable — this repository is a single package, and it is itself the shared core
+([ADR-002](decisions/ADR-002-python-core-repository.md)).
 
 ## Conventions
 
-<!-- Point at docs/standards/*.md rather than restating them; note anything genuinely
-     unusual or project-specific here. -->
+See [`docs/standards/`](../standards/). Project-specific: no real organisation data in this
+repository, synthetic fixtures only ([ADR-003](decisions/ADR-003-no-real-data-in-core-repo.md));
+books as CSV/Markdown, configuration as YAML ([ADR-004](decisions/ADR-004-csv-and-markdown-storage.md)).
 
 ## Dependencies
 
-<!-- A short table or list of the notable runtime dependencies and why each is there — not
-     a dump of requirements.in. -->
+None yet — no runtime dependencies exist.
 
 ## Test counts
 
-<!-- Aggregate test counts per app/package, kept current — a quick "is this still tested"
-     signal for anyone (human or AI) about to touch a given area. -->
+0 — no code or tests yet.
 
 ## Methodology compliance
 
-See [`docs/methodology-compliance/`](../methodology-compliance/) — this section is a
-one-line pointer, not a duplicate of the gap register.
+See [`docs/methodology-compliance/`](../methodology-compliance/) — first assessment is part of
+MVP-001.

@@ -7,7 +7,7 @@
 
 ## Syfte
 
-Sårbarheter i tredjepartsberoenden är en lika stor risk som sårbarheter i egen kod. OWASP lyfte 2025 in en helt ny toppkategori för brister i mjukvaruleverantörskedjan. Det här dokumentet fastställer hur Skanska väljer, spårar, skannar och uppdaterar tredjepartsberoenden, så att kända sårbarheter, licensproblem och obemärkta versionsförändringar upptäcks innan de blir ett produktionsproblem.
+Sårbarheter i tredjepartsberoenden är en lika stor risk som sårbarheter i egen kod. OWASP lyfte 2025 in en helt ny toppkategori för brister i mjukvaruleverantörskedjan. Det här dokumentet fastställer hur organisationen väljer, spårar, skannar och uppdaterar tredjepartsberoenden, så att kända sårbarheter, licensproblem och obemärkta versionsförändringar upptäcks innan de blir ett produktionsproblem.
 
 ## Omfattning och avgränsning
 
@@ -34,9 +34,9 @@ Omfattar **inte**:
 
 ## Vägledning och exempel
 
-**Konkret startexempel:** Dependabot (inbyggt i GitHub, gratis) används redan i begränsad omfattning inom Skanska och är ett rimligt förstahandsexempel för automatiserad uppdatering (krav 5) och grundläggande SCA (krav 2). Det är inte det enda alternativet, men ett med redan existerande, om än begränsad, erfarenhet att bygga vidare på. För mer avancerad reachability-analys (krav 2) finns både kommersiella verktyg och gratis/öppna alternativ som OWASP Dependency-Check.
+**Konkret startexempel:** Dependabot (inbyggt i GitHub, gratis) är ett rimligt förstahandsexempel för automatiserad uppdatering (krav 5) och grundläggande SCA (krav 2). Det är inte det enda alternativet. För mer avancerad reachability-analys (krav 2) finns både kommersiella verktyg och gratis/öppna alternativ som OWASP Dependency-Check.
 
-**EU Cyber Resilience Act** bedöms inte vara direkt utlöst för Skanska idag, eftersom Skanska inte säljer eller levererar programvara som en egen produkt till extern marknad. SBOM-kravet ovan (krav 1) motiveras därför av god praxis och linjen från NIS2/CISA, inte av en tvingande CRA-skyldighet. Den bedömningen bör omprövas om Skanska någon gång börjar leverera programvara externt som produkt.
+**EU Cyber Resilience Act** bedöms inte vara direkt utlöst för en organisation som inte säljer eller levererar programvara som en egen produkt till extern marknad. SBOM-kravet ovan (krav 1) motiveras därför av god praxis och linjen från NIS2/CISA, inte av en tvingande CRA-skyldighet. Den bedömningen bör omprövas om organisationen någon gång börjar leverera programvara externt som produkt.
 
 Kraven ovan är den direkta uppföljningen av OWASP Top 10:2025:s nya kategori för brister i mjukvaruleverantörskedjan (se Secure coding-principer).
 
@@ -65,4 +65,4 @@ Fullständig källgenomgång finns i det interna forskningsunderlaget (se Underl
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

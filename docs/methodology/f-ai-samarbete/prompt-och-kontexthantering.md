@@ -7,7 +7,7 @@
 
 ## Syfte
 
-AI-assisterade verktyg konfigureras och instrueras via instruktions-/kontextfiler (t.ex. CLAUDE.md-motsvarigheter). Utan gemensamma spelregler för hur sådana filer skrivs, delas och skyddas uppstår antingen ett fragmenterat lapptäcke av verktygsspecifika filer, eller en ny, obevakad säkerhetsrisk: en instruktionsfil är konfiguration som direkt styr ett AI-verktygs beteende, inte oskyldig dokumentation. Det här dokumentet fastställer hur Skanska arbetar med instruktionsfiler och återanvändbara instruktioner, oavsett vilket specifikt AI-verktyg som används.
+AI-assisterade verktyg konfigureras och instrueras via instruktions-/kontextfiler (t.ex. CLAUDE.md-motsvarigheter). Utan gemensamma spelregler för hur sådana filer skrivs, delas och skyddas uppstår antingen ett fragmenterat lapptäcke av verktygsspecifika filer, eller en ny, obevakad säkerhetsrisk: en instruktionsfil är konfiguration som direkt styr ett AI-verktygs beteende, inte oskyldig dokumentation. Det här dokumentet fastställer hur organisationen arbetar med instruktionsfiler och återanvändbara instruktioner, oavsett vilket specifikt AI-verktyg som används.
 
 ## Omfattning och avgränsning
 
@@ -37,9 +37,9 @@ Omfattar **inte**:
 
 ## Vägledning och exempel
 
-**Var principerna konkret ska bo (krav 7)** är ett projektval, inte något metodiken pekar ut. Ett giltigt, beprövat exempel: en dedikerad katalog för principer, t.ex. `docs/architecture/principle_xx.md`, dit AGENTS.md hänvisar istället för att innehålla reglerna själv. Det här projektets eget arbetssätt är ett annat exempel på samma mönster: `CLAUDE.md` i det här repot pekar mot `PROJECT.md` och `docs/STATUS.md` istället för att duplicera deras innehåll, och Skanskas samlade `docs/output/` (den här metodiken) är i sig en organisationsnivå-instans av samma princip.
+**Var principerna konkret ska bo (krav 7)** är ett projektval, inte något metodiken pekar ut. Ett giltigt, beprövat exempel: en dedikerad katalog för principer, t.ex. `docs/architecture/principle_xx.md`, dit AGENTS.md hänvisar istället för att innehålla reglerna själv. Det här projektets eget arbetssätt är ett annat exempel på samma mönster: `CLAUDE.md` i det här repot pekar mot `PROJECT.md` och `docs/STATUS.md` istället för att duplicera deras innehåll, och den samlade metodiken är i sig en organisationsnivå-instans av samma princip.
 
-AGENTS.md-kravet (krav 1) är inte hypotetiskt hos Skanska: GitHub Copilots coding agent, redan det godkända verktyget (se Verktyg för AI-assisterad utveckling), finns på AGENTS.md:s officiella kompatibilitetslista.
+AGENTS.md-kravet (krav 1) är inte hypotetiskt: GitHub Copilots coding agent finns på AGENTS.md:s officiella kompatibilitetslista.
 
 ## Undantag
 
@@ -65,4 +65,4 @@ Fullständig källgenomgång finns i det interna forskningsunderlaget (se Underl
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

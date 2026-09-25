@@ -1,14 +1,14 @@
-# Skanskas utvecklingsmetodik
+# Utvecklingsmetodik
 
 ## Vad är det här?
 
-Det här är Skanskas samlade metodik för hur vi utvecklar mjukvara: en uppsättning principer och krav för hur kod ska skrivas, granskas, säkras och levereras, samt hur vi arbetar tillsammans med AI-verktyg som en del av utvecklingsarbetet.
+Det här är en samlad metodik för hur vi utvecklar mjukvara: en uppsättning principer och krav för hur kod ska skrivas, granskas, säkras och levereras, samt hur vi arbetar tillsammans med AI-verktyg som en del av utvecklingsarbetet.
 
 Metodiken är inte ett regelverk för sin egen skull. Den finns för att svara på en enkel fråga: **hur bygger vi programvara som håller, som går att lita på, förstå, ändra och skydda, oavsett vem som byggde den eller vilket projekt den hör till?**
 
 ## Varför finns det här?
 
-Initiativet till metodiken kommer från **NIS2**, EU:s cybersäkerhetslagstiftning, som bland annat ställer krav på hur organisationer som Skanska ska arbeta säkert när de utvecklar och underhåller mjukvara. NIS2 var det som satte igång arbetet, men metodiken stannar inte vid lagens minimikrav. Den täcker allt som krävs för att utveckla mjukvara med hög kvalitet, inte bara det som är juridiskt obligatoriskt.
+Initiativet till metodiken kommer från **NIS2**, EU:s cybersäkerhetslagstiftning, som bland annat ställer krav på hur organisationer ska arbeta säkert när de utvecklar och underhåller mjukvara. NIS2 var det som satte igång arbetet, men metodiken stannar inte vid lagens minimikrav. Den täcker allt som krävs för att utveckla mjukvara med hög kvalitet, inte bara det som är juridiskt obligatoriskt.
 
 ## Vem är det här för?
 
@@ -102,4 +102,4 @@ Metodiken är avsiktligt generell: den ska fungera för många olika projekt och
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Vad:** Startsida för Skanskas utvecklingsmetodik, version 1.0
+**Vad:** Startsida för utvecklingsmetodiken, version 1.0
