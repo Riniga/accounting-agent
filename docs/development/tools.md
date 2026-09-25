@@ -60,7 +60,7 @@ Add the public key to GitHub under **Settings → SSH and GPG keys**.
 Clone the repository:
 
 ```bash
-git clone <your-repo-ssh-url>
+git clone git@github.com:riniga/accounting-agent.git
 ```
 
 ## Optional tools

@@ -35,7 +35,7 @@ Omfattar **inte**:
 
 **Varför README spelar större roll än förr:** utöver att vara den första kontaktpunkten för en människa är README nu också det AI-verktyg (se Verktyg för AI-assisterad utveckling) läser för att förstå ett repo. Ett dåligt README ger sämre resultat från AI-assisterad utveckling också.
 
-**Om ägarskapspåståendet i krav 1:** i praktiken betyder det oftast en enkel rad om att koden är proprietär och intern Skanska-egendom. En fullständig licensgenomgång (MIT, Apache 2.0 m.fl.) är sällan relevant, eftersom merparten av koden aldrig blir open source. Om ett projekt undantagsvis öppen källkod-licensieras anges den licensen istället.
+**Om ägarskapspåståendet i krav 1:** i praktiken betyder det oftast en enkel rad om att koden är proprietär och tillhör organisationen. En fullständig licensgenomgång (MIT, Apache 2.0 m.fl.) är sällan relevant, eftersom merparten av koden aldrig blir open source. Om ett projekt undantagsvis öppen källkod-licensieras anges den licensen istället.
 
 **Var ADR:er lagras (exempel):** `docs/architecture/decisions/` är ett konkret, beprövat exempel med samma struktur som bland annat används i GOV.UK:s publicerade arkitekturdokumentation. Numrerade filer (t.ex. `0001-...md`, `0002-...md`) i kronologisk ordning ger samma "historik i sig är dokumentationen"-effekt som beskrivs i krav 4.
 
@@ -72,4 +72,4 @@ Fullständig källgenomgång finns i det interna forskningsunderlaget (se Underl
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

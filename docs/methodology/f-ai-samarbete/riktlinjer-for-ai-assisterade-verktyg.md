@@ -34,7 +34,7 @@ Omfattar **inte**:
 
 ## Vägledning och exempel
 
-Skanskas kod ligger i Azure DevOps eller GitHub, vilket gör kraven ovan praktiskt genomförbara centralt: grenskydd, obligatoriska granskare, obligatoriska CI-kontroller (inklusive code coverage) och sammanslagningsspärrar finns som inbyggda funktioner i båda plattformarna. Det handlar om att aktivera och kravställa dem, inte bygga nytt.
+Kod som ligger i Azure DevOps eller GitHub gör kraven ovan praktiskt genomförbara centralt: grenskydd, obligatoriska granskare, obligatoriska CI-kontroller (inklusive code coverage) och sammanslagningsspärrar finns som inbyggda funktioner i båda plattformarna. Det handlar om att aktivera och kravställa dem, inte bygga nytt.
 
 En viktig nyans för krav 2: ett mänskligt godkännande räcker inte om personen som godkänner inte förstår vad den godkänner. Ett "ja" på en driftsättning eller ett destruktivt databaskommando ska föregås av tillräcklig information för att beslutet är informerat, inte en reflexmässig bekräftelse.
 
@@ -68,4 +68,4 @@ Fullständig källgenomgång finns i det interna forskningsunderlaget (se Underl
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

@@ -4,7 +4,7 @@ This document defines the Git workflow for this workspace.
 
 The goal is to keep changes small, traceable, reviewable, and safe to merge.
 
-> **Relation to Skanskas utvecklingsmetodik.** This standard is this project's elaboration
+> **Relation to the development methodology.** This standard is this project's elaboration
 > of methodology [E1 – Versionshantering & branchstrategi](../methodology/e-leverans/versionshantering-och-branchstrategi.md)
 > and [D2 – Kodgranskning](../methodology/d-kvalitetssakring/kodgranskning.md). Adopted:
 >

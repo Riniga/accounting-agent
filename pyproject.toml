@@ -2,8 +2,8 @@
 # table — nothing installs the repo root itself (pip install -e targets each app/package
 # directory individually). It is the single home for shared tool config.
 #
-# Ruff is the designated formatter and linter for the workspace — Skanskas
-# utvecklingsmetodik B2. Record this (and any deviation) as a project decision in
+# Ruff is the designated formatter and linter for the workspace — development
+# methodology B2. Record this (and any deviation) as a project decision in
 # docs/methodology-compliance/interpretations.md, and as an ADR if it's a significant
 # choice — see docs/architecture/decisions/README.md.
 

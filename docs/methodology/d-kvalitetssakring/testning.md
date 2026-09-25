@@ -39,7 +39,7 @@ Omfattar **inte**:
 
 **Varför TDD är obligatoriskt för AI men inte för människor (krav 5):** skälet är specifikt kopplat till hur AI-verktyg arbetar. Boris Cherny, skaparen av Claude Code, har själv lyft fram att ge verktyget ett sätt att verifiera sitt eget arbete som den viktigaste enskilda insikten för effektivt arbete med agentisk kodning. Ett människodefinierat test innan AI:n implementerar ger exakt det: ett konkret, verifierbart facit istället för att en människa i efterhand ska lita på ett påstående om att koden fungerar (se även Riktlinjer för AI-assisterade verktyg, som redan kräver bevis snarare än löften för AI-genererad kod).
 
-**Skanska har redan underlag att bygga vidare på:** det finns sedan tidigare framtagna teststrategier och flera välfungerande exempel på testning i enskilda projekt, hittills utan central prioritet eller spridning. Det här dokumentet ersätter inte det underlaget, utan bör kompletteras med det när metodiken fördjupas.
+**Befintligt underlag bör tas tillvara:** om organisationen sedan tidigare har framtagna teststrategier eller välfungerande exempel på testning i enskilda projekt, ersätter det här dokumentet inte det underlaget, utan bör kompletteras med det när metodiken fördjupas.
 
 ## Undantag
 
@@ -67,4 +67,4 @@ Fullständig källgenomgång finns i det interna forskningsunderlaget (se Underl
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

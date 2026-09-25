@@ -1,6 +1,6 @@
 <!--
   Pull request template.
-  The Definition of Done below mirrors Skanskas utvecklingsmetodik, chapter D3.
+  The Definition of Done below mirrors the development methodology, chapter D3.
   Items marked (once wired up) describe a gate this checklist expects to exist once the
   corresponding CI check is added — until then they're a manual habit, not yet enforced.
   Track what's automated vs. manual in docs/methodology-compliance/gap-register.md.

@@ -4,7 +4,7 @@
 
 This document defines the testing standards for all projects in the workspace.
 
-> **Relation to Skanskas utvecklingsmetodik.** This standard is this project's elaboration
+> **Relation to the development methodology.** This standard is this project's elaboration
 > of methodology [D1 – Testning](../methodology/d-kvalitetssakring/testning.md). Adopted
 > from D1:
 >

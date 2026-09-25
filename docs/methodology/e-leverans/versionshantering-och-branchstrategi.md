@@ -7,7 +7,7 @@
 
 ## Syfte
 
-Idag har varje Skanska-projekt sin egen branchstrategi, ibland ingen alls. Det här dokumentet sätter ett gemensamt, konkret golv: hur grenar hanteras, hur commit-meddelanden skrivs, hur versioner numreras, och hur en ändring spåras tillbaka till varför den gjordes. Grundat i forskning om vad som faktiskt korrelerar med leveransprestanda, inte tradition.
+Utan en gemensam metodik har varje projekt ofta sin egen branchstrategi, ibland ingen alls. Det här dokumentet sätter ett gemensamt, konkret golv: hur grenar hanteras, hur commit-meddelanden skrivs, hur versioner numreras, och hur en ändring spåras tillbaka till varför den gjordes. Grundat i forskning om vad som faktiskt korrelerar med leveransprestanda, inte tradition.
 
 ## Omfattning och avgränsning
 
@@ -49,7 +49,7 @@ Omfattar **inte**:
 - Otillräckligt: `fix`, `wip`, `ändringar`.
 - Tillräckligt tydligt: `Rätta null-referens vid tom varukorg` eller, med Conventional Commits (BÖR 1): `fix(checkout): hantera tom varukorg utan att krascha`.
 
-**Koppling till arbetsobjekt (krav 6):** Azure DevOps har en inbyggd branchpolicy, "Check for linked work items", som gör precis det här utan att något nytt verktyg behöver införskaffas. Idag är den bara aktiverad hos ett fåtal Skanska-projekt. Motsvarande finns i GitHub via länkade issues i PR-beskrivningen.
+**Koppling till arbetsobjekt (krav 6):** Azure DevOps har en inbyggd branchpolicy, "Check for linked work items", som gör precis det här utan att något nytt verktyg behöver införskaffas. Motsvarande finns i GitHub via länkade issues i PR-beskrivningen.
 
 ## Undantag
 
@@ -76,4 +76,4 @@ Fullständig källgenomgång finns i det interna forskningsunderlaget (se Underl
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

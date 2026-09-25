@@ -5,7 +5,7 @@
 This document defines how this workspace selects, locks, scans, and updates third-party
 dependencies.
 
-> **Relation to Skanskas utvecklingsmetodik.** This standard is this project's elaboration
+> **Relation to the development methodology.** This standard is this project's elaboration
 > of methodology [C2 – Beroendehantering, paketkällor & signering](../methodology/c-sakerhet/beroendehantering-paketkallor-och-signering.md).
 >
 > - Dependencies are **locked** to specific, hash-verified versions (`requirements-lock.txt`,

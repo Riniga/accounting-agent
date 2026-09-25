@@ -9,7 +9,7 @@
 
 Kodkvalitet (spår: Kodkvalitet & clean code) handlar om en enskild klass. Det här dokumentet handlar om nivån däröver: hur klasser och moduler organiseras i förhållande till varandra, så att en kodbas går att förstå och förändra som helhet, inte bara fil för fil.
 
-**Viktig läsanvisning:** de befintliga Skanska-principerna för det här området är idag ofullständiga (mest inriktade på integration) och användaren som tagit fram det här dokumentet saknar egen arkitektexpertis. Principerna nedan är en välgrundad utgångspunkt baserad på extern research, inte ett Skanska-verifierat beslut. Se Källor för vad som specifikt behöver stämmas av med en arkitekt innan status kan bli "fastställd".
+**Viktig läsanvisning:** de befintliga arkitekturprinciperna i organisationen där metodiken togs fram var ofullständiga (mest inriktade på integration) och användaren som tagit fram det här dokumentet saknar egen arkitektexpertis. Principerna nedan är en välgrundad utgångspunkt baserad på extern research, inte ett organisationsverifierat beslut. Se Källor för vad som specifikt behöver stämmas av med en arkitekt innan status kan bli "fastställd".
 
 ## Omfattning och avgränsning
 
@@ -37,7 +37,7 @@ Omfattar **inte**:
 
 ## Vägledning och exempel
 
-**Rekommenderat förstahandsexempel: Hexagonal Architecture (Ports & Adapters).** Clean, Hexagonal och Onion Architecture löser i grunden samma problem (beroenden pekar inåt) med olika vokabulär. Inget av dem är ett krav i sig; kravet är principen i krav 1. Hexagonal Architecture lyfts fram som exempel eftersom dess kärnmetafor (en kärna omgiven av portar och adaptrar) är konkret och lätt att förklara, och eftersom den är specifikt inriktad på hur ett system integrerar med sin omvärld, vilket matchar att Skanskas befintliga arkitekturprinciper redan är mest inriktade på integration.
+**Rekommenderat förstahandsexempel: Hexagonal Architecture (Ports & Adapters).** Clean, Hexagonal och Onion Architecture löser i grunden samma problem (beroenden pekar inåt) med olika vokabulär. Inget av dem är ett krav i sig; kravet är principen i krav 1. Hexagonal Architecture lyfts fram som exempel eftersom dess kärnmetafor (en kärna omgiven av portar och adaptrar) är konkret och lätt att förklara, och eftersom den är specifikt inriktad på hur ett system integrerar med sin omvärld, vilket passar väl när befintliga arkitekturprinciper främst handlar om integration.
 
 **Arbetsdefinition för "system"** (föreslagen tumregel, inte ett fastslaget beslut): ett system är en tjänst som drivs och utvecklas av ett team. En lösning kan spänna över flera system. Det ger en praktisk avgränsning mellan det här dokumentets modulgränser (inom ett system) och lösningsarkitekturens systemgränser (mellan system).
 
@@ -51,7 +51,7 @@ För ett befintligt system där modulgränser inte redan är tekniskt genomdrivn
 - Dokumenterad, aktuell kritik mot överarkitektur i små/enkla system.
 - Domain-Driven Design (Eric Evans), särskilt det strategiska konceptet bounded contexts.
 
-**Krävs innan detta dokument kan fastställas:** granskning av en arkitekt hos Skanska som kan (1) stämma av principerna ovan (särskilt rekommendationen om Hexagonal Architecture) mot Skanskas befintliga, men ofullständiga, integrationsinriktade arkitekturprinciper, och (2) ta ställning till hur bounded contexts (BÖR 1) ska kopplas till Datamodellering & databasdesign när det spåret skrivs. Se avsnittet "Kvarstående uppföljning" i det interna forskningsunderlaget.
+**Krävs innan detta dokument kan fastställas:** granskning av en arkitekt i organisationen som kan (1) stämma av principerna ovan (särskilt rekommendationen om Hexagonal Architecture) mot organisationens befintliga arkitekturprinciper, och (2) ta ställning till hur bounded contexts (BÖR 1) ska kopplas till Datamodellering & databasdesign när det spåret skrivs. Se avsnittet "Kvarstående uppföljning" i det interna forskningsunderlaget.
 
 ## Relaterat
 
@@ -63,4 +63,4 @@ För ett befintligt system där modulgränser inte redan är tekniskt genomdrivn
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

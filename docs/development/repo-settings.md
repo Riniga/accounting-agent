@@ -59,11 +59,11 @@ in parallel — see this repo's own `.github/workflows/ci.yml` for the pattern.
 
 ```bash
 # inspect the current ruleset
-gh api repos/<owner>/<repo>/rulesets
-gh api repos/<owner>/<repo>/rulesets/<ruleset-id>
+gh api repos/riniga/accounting-agent/rulesets
+gh api repos/riniga/accounting-agent/rulesets/<ruleset-id>
 
 # a classic branch-protection alternative
-gh api -X PUT repos/<owner>/<repo>/branches/main/protection \
+gh api -X PUT repos/riniga/accounting-agent/branches/main/protection \
   -H "Accept: application/vnd.github+json" \
   -f 'required_pull_request_reviews[required_approving_review_count]=1' \
   -F 'required_pull_request_reviews[dismiss_stale_reviews]=true' \
@@ -129,3 +129,5 @@ If any AI tool (e.g. a Copilot coding-agent identity) is granted write access to
 - [ ] *(optional)* Enable "Require approval of the most recent reviewable push".
 - [ ] Dependency graph, Dependabot alerts, and automated security fixes enabled per
       section 4.
+- [ ] **Private vulnerability reporting** enabled (*Settings → Security*) — `SECURITY.md`
+      points reporters to it.

@@ -6,7 +6,7 @@ Lightweight threat modelling for changes with real security impact — a data-fl
 STRIDE's six categories, done in the design phase before code is written (cheapest time to
 act on a finding), not a heavyweight annual exercise.
 
-> **Relation to Skanskas utvecklingsmetodik.** This standard is this project's elaboration
+> **Relation to the development methodology.** This standard is this project's elaboration
 > of methodology [C1 – Secure coding-principer](../methodology/c-sakerhet/secure-coding-principer.md)
 > SKA 4 and BÖR 1. Enforced as a plan-writing habit, not a CI gate —
 > threat modelling is a design activity, not something a tool can verify happened correctly.

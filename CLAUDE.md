@@ -45,5 +45,8 @@ behaviour and must be followed exactly.
   decisions as ADRs in `docs/architecture/decisions/` and update
   `docs/architecture/current-state.md` afterwards.
 - Code moves to a shared package **only** when it is actually reused by ≥ 2 apps — record
-  that boundary decision as an ADR. App-specific behaviour stays in `apps/<app-name>/`.
+  that boundary decision as an ADR. Organisation-specific behaviour stays in the
+  organisation's own project, never in this core. (This repository *is* the shared core —
+  see [ADR-002](docs/architecture/decisions/ADR-002-python-core-repository.md) for how this
+  rule applies here.)
 - Avoid premature abstraction and premature framework design.

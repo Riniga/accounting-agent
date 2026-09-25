@@ -34,7 +34,7 @@ Omfattar **inte**:
 
 ## Rekommendationer (BÖR)
 
-1. Installation av verktyg och programvara bör begränsas till godkända/verifierade källor (källkontroll). Detta är nedgraderat till rekommendation, inte krav, eftersom det idag inte finns en gemensam, godkänd källa/spegling hos Skanska att peka mot (se Källor och ramverk). Skärps till SKA när en sådan finns på plats.
+1. Installation av verktyg och programvara bör begränsas till godkända/verifierade källor (källkontroll). Detta är nedgraderat till rekommendation, inte krav, eftersom det inte alltid finns en gemensam, godkänd källa/spegling i organisationen att peka mot (se Källor och ramverk). Skärps till SKA när en sådan finns på plats.
 
 ## Vägledning och exempel
 
@@ -47,13 +47,13 @@ Omfattar **inte**:
 | Säker webbläsare/enklav | Roller som mest arbetar i webbaserade verktyg |
 | Dedikerad fysisk utvecklingsdator | Extrema prestandakrav (undantag, inte standardval) |
 
-**För Skanska specifikt:** VDI/DaaS och molnbaserad utvecklingsmiljö (troligen Azure-baserat) är de realistiska förstahandsmönstren. Dedikerad fysisk dator är ett undantag för enstaka fall med extrema prestandakrav, inte något att planera för generellt.
+**För organisationer med en central IT-miljö:** VDI/DaaS och molnbaserad utvecklingsmiljö är ofta de realistiska förstahandsmönstren. Dedikerad fysisk dator är ett undantag för enstaka fall med extrema prestandakrav, inte något att planera för generellt.
 
-**Byggstenarna för identitetsbaserad nätverksåtkomst (krav 2) finns redan delvis hos Skanska:** finmaskig LAN-segmentering utöver ren VLAN, och Entra ID i Azure. Det handlar sannolikt om att tillämpa befintlig kapacitet på utvecklarmiljön specifikt, inte bygga från grunden.
+**Byggstenarna för identitetsbaserad nätverksåtkomst (krav 2) finns ofta redan delvis i organisationen:** till exempel finmaskig LAN-segmentering utöver ren VLAN och en central identitetstjänst (t.ex. Entra ID). Det handlar då sannolikt om att tillämpa befintlig kapacitet på utvecklarmiljön specifikt, inte bygga från grunden.
 
-**Just-in-time-åtkomst (krav 4) har redan en grund hos Skanska:** utvalda användare har adminkonton för elevering. Metodiken formaliserar det mönstret snarare än inför ett nytt.
+**Just-in-time-åtkomst (krav 4) har ofta redan en grund i organisationen:** till exempel att utvalda användare har separata adminkonton för elevering. Metodiken formaliserar i så fall det mönstret snarare än inför ett nytt.
 
-**Ägarskap av grundavbildningen (krav 6) ligger utanför den här metodikens avgränsning:** den underhålls av IT-drift och Skanskas samarbetspartner. Metodiken refererar till att den finns och underhålls, äger den inte (samma resonemang som redan etablerat för infrastruktur som kod i Miljöhantering & konfiguration och Hantering av hemligheter).
+**Ägarskap av grundavbildningen (krav 6) ligger utanför den här metodikens avgränsning:** den underhålls av IT-drift och eventuella samarbetspartner. Metodiken refererar till att den finns och underhålls, äger den inte (samma resonemang som redan etablerat för infrastruktur som kod i Miljöhantering & konfiguration och Hantering av hemligheter).
 
 **Applikationskontroll (krav 7), exempel:** på Windows är Windows Defender Application Control (WDAC) det nu rekommenderade verktyget. Vanligt arbetssätt: skanna en golden image för att generera en baslinjepolicy, och peka ut ett godkänt distributionsverktyg som betrodd installationskälla.
 
@@ -71,7 +71,7 @@ Ett projekt eller system som ännu inte kan uppfylla applikationskontroll (krav 
 
 **Krävs innan detta dokument kan fastställas fullt ut:**
 
-1. **Verifiera med IT-säkerhet/IAM-ansvariga** om Skanskas befintliga IAM-lösning redan följer Enterprise Access-/Privileged Access-modellen, eller bygger på den avrådda Red Forest/ESAE-arkitekturen (krav 3).
+1. **Verifiera med IT-säkerhet/IAM-ansvariga** om organisationens befintliga IAM-lösning redan följer Enterprise Access-/Privileged Access-modellen, eller bygger på den avrådda Red Forest/ESAE-arkitekturen (krav 3).
 2. **Ta ställning till en global paketkälla/spegling** för utvecklarverktyg: antingen etablera en sådan, eller acceptera att källkontroll (BÖR 1) förblir en rekommendation tills en finns.
 
 Fullständig källgenomgång finns i det interna forskningsunderlaget (se Underlag ovan).
@@ -89,4 +89,4 @@ Fullständig källgenomgång finns i det interna forskningsunderlaget (se Underl
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

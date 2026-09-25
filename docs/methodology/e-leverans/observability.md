@@ -15,7 +15,7 @@ Omfattar vad koden ska exponera: loggning, metrics, tracing och hälsokontroller
 
 Omfattar **inte**:
 
-- Driftens övervakning av servrar och infrastruktur: en separat funktion Skanska redan har, skild från kodnivå-observability.
+- Driftens övervakning av servrar och infrastruktur: en separat funktion som organisationen normalt redan har, skild från kodnivå-observability.
 - Var observability-data lagras/visualiseras, eller hur en driftplattform i övrigt övervakar en miljö. Se CI/CD & automatisering och Miljöhantering & konfiguration.
 - Klassificeringsregler för känslig data i allmänhet, se Sekretess & dataskydd vid AI-användning och Hantering av hemligheter. Det här dokumentet tillämpar samma grundregler specifikt på loggutdata.
 
@@ -68,4 +68,4 @@ Fullständig källgenomgång finns i det interna forskningsunderlaget (se Underl
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

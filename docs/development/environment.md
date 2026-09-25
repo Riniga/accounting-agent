@@ -14,7 +14,7 @@ Run once after cloning the repository:
 conda env create -f environment.yml
 ```
 
-This creates a Conda environment named `<your-env-name>` with Python 3.13 and all required development dependencies (including `ruff` and `pre-commit`).
+This creates a Conda environment named `accounting-agent` with Python 3.13 and all required development dependencies (including `ruff` and `pre-commit`).
 
 ## Install the pre-commit hooks
 
@@ -33,7 +33,7 @@ choice (see `docs/architecture/decisions/`).
 Run at the start of every development session:
 
 ```bash
-conda activate <your-env-name>
+conda activate accounting-agent
 ```
 
 All commands (`pytest`, `pip`, `python`) must be run with the environment active.
@@ -57,7 +57,7 @@ The `--prune` flag removes packages that are no longer listed in `environment.ym
 ## Remove the environment
 
 ```bash
-conda env remove -n <your-env-name>
+conda env remove -n accounting-agent
 ```
 
 ## Add a new dependency
@@ -77,7 +77,7 @@ packages (not installable via pip) belong directly in `environment.yml`.
 ## Verify the environment
 
 ```bash
-conda activate <your-env-name>
+conda activate accounting-agent
 python --version   # should print Python 3.13.x
 pytest --version   # should print pytest 8.x or later
 ```

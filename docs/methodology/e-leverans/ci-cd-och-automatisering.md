@@ -35,7 +35,7 @@ Omfattar **inte**:
 
 ## Vägledning och exempel
 
-**Varför CI och CD hålls isär:** CI (kontinuerlig integration) betyder att varje ändring byggs, testas och analyseras automatiskt innan den slås samman. Det säger inget om hur koden når produktion. CD (kontinuerlig driftsättning) betyder att den byggda, godkända koden sedan tar sig till produktion utan manuella steg. Ett projekt kan ha utmärkt CI och ändå driftsätta manuellt. Det är helt i sin ordning och exakt det läge flera Skanska-projekt befinner sig i idag. Vad som inte är i sin ordning är att sakna CI.
+**Varför CI och CD hålls isär:** CI (kontinuerlig integration) betyder att varje ändring byggs, testas och analyseras automatiskt innan den slås samman. Det säger inget om hur koden når produktion. CD (kontinuerlig driftsättning) betyder att den byggda, godkända koden sedan tar sig till produktion utan manuella steg. Ett projekt kan ha utmärkt CI och ändå driftsätta manuellt. Det är helt i sin ordning och ett vanligt läge. Vad som inte är i sin ordning är att sakna CI.
 
 **Feature flags på grundnivå (Martin Fowlers klassificering):**
 
@@ -74,4 +74,4 @@ Fullständig källgenomgång finns i det interna forskningsunderlaget (se Underl
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

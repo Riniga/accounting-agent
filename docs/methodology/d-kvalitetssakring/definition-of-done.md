@@ -33,7 +33,7 @@ En ändring är inte klar förrän:
 8. Ny funktionalitet exponerar det som krävs för att vara driftbar (loggning, metrics), se Observability.
 9. CI-pipelinen är grön, se CI/CD & automatisering.
 10. Om ett AI-verktyg medverkat i att skriva koden: kraven i Riktlinjer för AI-assisterade verktyg och Sekretess & dataskydd vid AI-användning är uppfyllda.
-11. Produktionssättningen är kopplad till en existerande, godkänd change request enligt Skanskas produktionssättningsprocess. Detta kompletterar de tekniska kriterierna ovan, det ersätter dem inte.
+11. Produktionssättningen är kopplad till en existerande, godkänd change request enligt organisationens produktionssättningsprocess. Detta kompletterar de tekniska kriterierna ovan, det ersätter dem inte.
 
 ## Rekommendationer (BÖR)
 
@@ -46,7 +46,7 @@ En ändring är inte klar förrän:
 
 **Varför ingen variant för "små" ändringar:** en genväg för det som känns enkelt är precis vad som över tid gör att stora, sällan genomförda ändringar blir riskfyllda. Samma princip som redan styrt flera andra beslut i metodiken (korta grenar, små pull requests, schemaändringar i små steg): gör det som är svårt oftare, istället för att göra ett undantag för det som känns tungt.
 
-**Change request-kopplingen (krav 11)** är medvetet en organisatorisk kontroll, inte en teknisk. Den finns för att koppla ihop den här metodikens tekniska kvalitetskrav med Skanskas redan existerande produktionssättningsprocess, så de två inte råkar bli två parallella, orelaterade godkännandevägar.
+**Change request-kopplingen (krav 11)** är medvetet en organisatorisk kontroll, inte en teknisk. Den finns för att koppla ihop den här metodikens tekniska kvalitetskrav med organisationens redan existerande produktionssättningsprocess, så de två inte råkar bli två parallella, orelaterade godkännandevägar.
 
 ## Undantag
 
@@ -68,4 +68,4 @@ Refererar samtliga tidigare ämnesspår i kategorierna B, C, D, E och F. Se län
 **Version:** 1.0
 **Datum:** 2026-09-07
 **Ansvarig:** Rickard Nisses-Gagnér, Processledare Utvecklingsmetodik
-**Del av:** Skanskas utvecklingsmetodik, version 1.0
+**Del av:** Utvecklingsmetodiken, version 1.0

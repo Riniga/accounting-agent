@@ -1,6 +1,6 @@
 # Documentation Standard
 
-> **Relation to Skanskas utvecklingsmetodik.** This standard is this project's elaboration
+> **Relation to the development methodology.** This standard is this project's elaboration
 > of methodology [B5 – Dokumentation av kod](../methodology/b-skriva-kod/dokumentation-av-kod.md).
 > Adopted from B5: every repo README states its purpose, runnable install/run/test commands,
 > and an ownership/status line (B5 SKA 1); documentation is updated in the **same** pull

@@ -1,4 +1,4 @@
-# EditorConfig — root formatting baseline (Skanskas utvecklingsmetodik B2 SKA 1).
+# EditorConfig — root formatting baseline (development methodology B2 SKA 1).
 # Line endings mirror .gitattributes: LF everywhere except PowerShell (CRLF on Windows).
 # https://editorconfig.org
 
