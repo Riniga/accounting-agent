@@ -91,6 +91,43 @@ structure.
 - No file under `docs/reference/` is tracked by git, and no real organisation data appears
   in any committed file.
 
-## Outcome at close (YYYY-MM-DD)
+## Outcome at close (2026-09-25)
 
-<!-- Fill in when the MVP is actually closed. -->
+Closed as **delivered**, pending the merge of PR #5. Against the criteria above:
+
+- **Fresh clone → working environment → `run` exits 0: met.** Verified from a fresh clone
+  of the pushed branch: environment in 30 s, 27 tests passing, the example run exiting 0.
+- **`pytest` passes locally and in CI, with the coverage floor below the measured baseline:
+  met, with a deliberate margin.** The baseline is 96.47 %, measured in CI. The floor is 90 %
+  rather than 95 %, because a codebase of 85 statements swings several points with one new
+  module. It is to be raised in MVP-002 once real domain code exists (interpretations §1).
+- **Every gate runs on the PR and was shown to fail at least once: met, with two
+  adjustments.**
+  - Six required checks run on every PR. Each was shown to fail on a throwaway PR (#6).
+    `pip-audit` and the licence scan were shown to fail locally rather than in CI, because
+    they run after the lock-drift step in the same job.
+  - The gate check also changed a tool decision: **CodeQL let `shell=True`, `eval` and
+    `yaml.load` through while Semgrep blocked all three, so CodeQL was removed**. This is
+    the "investigate, don't assume" lesson from the plan template, applied to a tool
+    choice instead of a number.
+- **`main` protected, merge requires CI, approval exception documented: met.** Ruleset
+  "Protect main" has no bypass, the owner included. There are 0 required approvals, under
+  EX-001.
+- **Methodology assessment A–F plus gap register: met.** 21 chapters assessed, 22 gap rows
+  (3 H, 6 M, 12 L, 1 external), 9 interpretations, 3 exceptions. The honest headline is that
+  **area F is not met**: personal data reached the AI tool's context during the analysis,
+  and the tool runs on an individual plan with model training enabled (EX-003, fix by
+  2026-10-02).
+- **Analysis answers the seven questions; MVP-002 defined from it: met.** The analysis
+  changed MVP-002's focus from bank import to the shared book model, which Helsingborgs
+  Judoklubb and Aktivitet Förebygger already have in common.
+- **Nothing from `docs/reference/` tracked, no real data committed: met.** Verified with
+  `git ls-files`, the branch history and pattern searches.
+
+**Deviations from the plan, all recorded where they happened:**
+- `uv` was not trialled (§0). CI timings later confirmed Conda is fast enough.
+- The owner waived reviewing the tests before implementation in phase 2 (EX-002). The
+  tests are reviewed in PR #5 instead.
+- The AI tool added `Co-Authored-By` trailers to commits against `AGENTS.md` until phase 5
+  (`GAP-E1-AITRAILER`, interpretations §7).
+- MVP-002 was written right after phase 1 instead of at close, at the owner's request.

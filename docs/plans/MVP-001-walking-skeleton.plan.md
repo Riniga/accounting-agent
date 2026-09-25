@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-001-walking-skeleton.md`](../mvp/MVP-001-walking-skeleton.md)
 
-**Status:** In progress — phases 1–5 done, phase 6 (close) next.
+**Status:** Implemented — all phases done; PR #5 ready for review.
 
 ## 0. Investigation
 
@@ -426,13 +426,32 @@ Commit: `docs(methodology): add PolyForm Noncommercial licence and first methodo
 
 ### Phase 6 — Close
 
-- [ ] 6.1 Update `docs/architecture/overview.md`, `current-state.md` and `README.md` to
+- [x] 6.1 Update `docs/architecture/overview.md`, `current-state.md` and `README.md` to
       describe what now exists.
+      Result:
+      - README: current status, a quick start (install, test, run) and an
+        `organisation.yaml` example.
+      - `overview.md` and `current-state.md` rewritten from the actual structure; the test
+        counts were checked, not estimated.
+      - Roadmap: R1 marked done pending the merge of PR #5.
+      - MVP-002 now includes masking personal identity numbers (`GAP-E4-MASKING`).
+      - Also recorded at close: exception EX-003 (individual AI plan with the training
+        setting on — fix by 2026-10-02) and local-admin daily use (`GAP-A1-PRIVILEGE`).
 - [x] 6.2 Write `docs/mvp/MVP-002-*.md` from the §0 analysis, and link it from the roadmap.
       Result: done early (2026-09-25), right after phase 1, at the owner's request. At close,
       only check that MVP-002 still matches what MVP-001 actually delivered.
-- [ ] 6.3 Verify each acceptance criterion for real, including a `git ls-files` check that
+- [x] 6.3 Verify each acceptance criterion for real, including a `git ls-files` check that
       nothing from `docs/reference/` is tracked. Fill in "Outcome at close".
+      Result:
+      - **Fresh clone** of `feature/mvp-001-walking-skeleton` from GitHub at `972481e`: the
+        environment was built from `environment.yml` in 30 s, `pip install -e .` worked, all
+        27 tests passed, and `accounting-agent run example …` exited 0. `docs/reference/`
+        does not exist in the clone.
+      - `git ls-files docs/reference` and the whole branch history contain 0 files from it.
+        Tracked files contain no personal-identity-number pattern and none of the
+        organisation or account numbers seen in the reference projects.
+      - `rules/branches/main` returns the four ruleset rules.
+      - "Outcome at close" is filled in, in the MVP.
 
 Commit: `docs(mvp-001): close MVP-001 and define MVP-002`
 
