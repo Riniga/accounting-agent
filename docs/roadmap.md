@@ -11,15 +11,17 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-The repository has been initialised from the project template: vision, roadmap,
-architecture decisions and the first MVP are written, but there is **no code yet**. The
-current focus is R1, through
-[MVP-001 – Walking skeleton & baseline analysis](mvp/MVP-001-walking-skeleton.md)
-(planned, not started).
+R1 is complete once PR #5 is merged:
+[MVP-001 – Walking skeleton & baseline analysis](mvp/MVP-001-walking-skeleton.md) delivered
+the `accounting-agent` package (v0.1.0), CI quality gates proven to block, branch
+protection, the licence and the first methodology assessment. The next focus is R2,
+through [MVP-002 – Common book model and validation via core](mvp/MVP-002-common-book-model.md)
+(defined, plan not yet written). Before MVP-002 reads any more organisation material with
+an AI tool, exception EX-003 (the AI tool's training setting) should be closed.
 
 ---
 
-## R1 – Foundation (Planned)
+## R1 – Foundation (Done — pending merge of PR #5)
 
 Establishes the core repository with its stack, CI quality gates and methodology baseline,
 plus an analysis of the existing organisation projects that tells us what to extract first.

@@ -21,7 +21,7 @@ Methodology chapter: [`utvecklingsmiljo-och-verktyg`](../methodology/a-grundforu
 | 1 | Isolated, managed, traceable workstation | not met | Personal Windows computer, not centrally managed. The same machine holds the organisation projects' real data (`docs/reference/`, git-ignored). |
 | 2 | Identity-based network access (ZTNA) | n/a | No organisation network or resources to protect. |
 | 3 | Admin identity per the Enterprise Access model | n/a | No separate admin identity environment. |
-| 4 | Least privilege, just-in-time elevation | not assessed | Owner to confirm whether day-to-day work runs as a local administrator. |
+| 4 | Least privilege, just-in-time elevation | not met | Owner confirmed 2026-09-25: day-to-day work runs as a local administrator. |
 | 5 | Project environment declarative and versioned | met | `environment.yml` + hash-locked `requirements-lock.txt`, verified from scratch in MVP-001. |
 | 6 | Base image from a shared, maintained image | n/a | No organisation base image. |
 | 7 | Application control on the workstation | not met | Personal computer; no allow-listing. |
@@ -44,14 +44,14 @@ gaps are owner decisions.
 Methodology chapter: [`verktyg-for-ai-assisterad-utveckling`](../methodology/a-grundforutsattningar/verktyg-for-ai-assisterad-utveckling.md)
 
 - **Methodology status:** `fastställd`
-- **Platform standing:** `partially met`
+- **Platform standing:** `not met` (EX-003)
 
 **SKA points**
 
 | # | Requirement (short) | Standing | Note |
 |---|---------------------|----------|------|
-| 1 | Only via an organisation (business/enterprise) agreement | not assessed | Owner to confirm which Claude plan is used. |
-| 2 | Agreement guarantees no training on inputs + short retention | not assessed | Depends on the plan and its settings. |
+| 1 | Only via an organisation (business/enterprise) agreement | not met | Individual Pro plan (confirmed 2026-09-25); there is no organisation. Exception EX-003. |
+| 2 | Agreement guarantees no training on inputs + short retention | **not met** | *"Help improve our AI models"* is on. EX-003: turn it off by 2026-10-02. |
 | 3 | Approved through the organisation's tool-approval process | n/a | No such process; the owner approves tools, recorded in `docs/development/tools.md`. |
 | 4 | Up-to-date list of approved AI tools | met | `docs/development/tools.md`: Claude Code (primary), GitHub Copilot (optional). |
 | 5 | Access through organisation SSO | n/a | Single person, no identity provider. |

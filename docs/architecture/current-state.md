@@ -8,7 +8,7 @@ in the same PR as any change to an app's status, test count, or key capabilities
 
 | App | Status | Tests | Key capabilities |
 |-----|--------|-------|-------------------|
-| `accounting-agent` (core package, `src/accounting_agent/`) | Planned (MVP-001) | 0 | *(none yet — planned: `run <org>` CLI, organisation profile loading/validation)* |
+| `accounting-agent` (`src/accounting_agent/`, v0.1.0) | Implemented — walking skeleton (MVP-001) | 27 | organisation profile loading/validation, `run <org> --config-dir` command |
 
 Organisation projects (JudoSyd, Helsingborgs Judoklubb, Aktivitet Förebygger) are separate
 private repositories and are not tracked here (ADR-002, ADR-003).
@@ -20,19 +20,29 @@ Not applicable — this repository is a single package, and it is itself the sha
 
 ## Conventions
 
-See [`docs/standards/`](../standards/). Project-specific: no real organisation data in this
-repository, synthetic fixtures only ([ADR-003](decisions/ADR-003-no-real-data-in-core-repo.md));
-books as CSV/Markdown, configuration as YAML ([ADR-004](decisions/ADR-004-csv-and-markdown-storage.md)).
+See [`docs/standards/`](../standards/). Project-specific:
+- no real organisation data in this repository, synthetic fixtures only
+  ([ADR-003](decisions/ADR-003-no-real-data-in-core-repo.md));
+- books as CSV/Markdown and configuration as YAML
+  ([ADR-004](decisions/ADR-004-csv-and-markdown-storage.md));
+- no AI trailer in commit messages — AI assistance is marked in the pull request
+  (interpretations §7).
 
 ## Dependencies
 
-None yet — no runtime dependencies exist.
+| Dependency | Kind | Why |
+|---|---|---|
+| Python 3.14 | runtime (Conda) | Target version, chosen in MVP-001 |
+| PyYAML | runtime | Reads `organisation.yaml` |
+| Ruff, pre-commit, pytest, pytest-cov | development | Formatting/lint, local hooks, tests and the coverage gate |
 
 ## Test counts
 
-0 — no code or tests yet.
+| Package | Tests | Coverage |
+|---|---|---|
+| `accounting_agent` | 27 (`test_profile.py` 20, `test_cli.py` 7) | 96.47 % (floor 90 %) |
 
 ## Methodology compliance
 
-See [`docs/methodology-compliance/`](../methodology-compliance/) — first assessment is part of
-MVP-001.
+See [`docs/methodology-compliance/`](../methodology-compliance/) — first assessment
+2026-09-25, with the standing at a glance in its README.

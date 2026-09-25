@@ -61,3 +61,32 @@ the profile validation and the `run` command (27 tests).
 
 This is **not a standing waiver**. Future MVPs follow D1 SKA 5, unless the owner records a new
 exception.
+
+---
+
+## EX-003 — AI tool on a personal plan, with model-training opt-in on
+
+| | |
+|---|---|
+| **Methodology basis** | Kind 2, forced by circumstance. [A2](../methodology/a-grundforutsattningar/verktyg-for-ai-assisterad-utveckling.md) SKA 1–2, [F2](../methodology/f-ai-samarbete/sekretess-och-dataskydd-vid-ai-anvandning.md) SKA 3. A2 has no Undantag that allows it. |
+| **Status** | Active |
+| **Granted** | 2026-09-25 |
+| **Responsible** | Rickard Nisses-Gagnér |
+| **Review** | **2026-10-02** — the setting must be off by then; re-checked at MVP-001 close review and at every MVP start until done. |
+| **Gap-register link** | `GAP-A2-AGREEMENT`, `GAP-F2-DPA` |
+
+Claude Code runs on the owner's **individual Pro plan**, confirmed on 2026-09-25. On that plan
+the privacy setting *"Help improve our AI models"* is **on**, which lets the provider use
+conversations and code for model training. There is no organisation agreement and no data
+processing agreement. The project has no organisation to hold one.
+
+**Why this is the most urgent item:** on 2026-09-25 personal data from an organisation
+project reached the AI tool's context (`GAP-F2-CONFIDENTIAL`). With training on, such data
+may also be used for training.
+
+**Fix (owner, about one minute):** claude.ai → *Settings* → *Privacy* → turn off the
+model-improvement setting. Then update this entry to *Closed*, and `GAP-A2-AGREEMENT` to
+"partially met": individual plan, training off, still no DPA.
+
+**Until fixed:** no material classed Confidential (interpretations §9) may be given to the
+AI tool — including from `docs/reference/`.

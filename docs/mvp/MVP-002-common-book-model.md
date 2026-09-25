@@ -59,6 +59,8 @@ the existing projects. It is therefore the first functionality to extract.
   - Debit and credit are different accounts.
   - The sign of the amount is consistent with the bank account's side.
   - Personal identity numbers in voucher text are flagged.
+- Personal identity numbers are masked in everything the core logs or reports, because
+  voucher texts can contain them (methodology E4 SKA 3; gap `GAP-E4-MASKING`).
 - Account balances computed from the opening balance plus the vouchers.
 - A command, `accounting-agent validate` (or an extension of `run` — decided in the plan),
   that reports findings as error / warning / info and exits non-zero on error.
