@@ -44,14 +44,14 @@ gaps are owner decisions.
 Methodology chapter: [`verktyg-for-ai-assisterad-utveckling`](../methodology/a-grundforutsattningar/verktyg-for-ai-assisterad-utveckling.md)
 
 - **Methodology status:** `fastställd`
-- **Platform standing:** `not met` (EX-003)
+- **Platform standing:** `partially met`
 
 **SKA points**
 
 | # | Requirement (short) | Standing | Note |
 |---|---------------------|----------|------|
-| 1 | Only via an organisation (business/enterprise) agreement | not met | Individual Pro plan (confirmed 2026-09-25); there is no organisation. Exception EX-003. |
-| 2 | Agreement guarantees no training on inputs + short retention | **not met** | *"Help improve our AI models"* is on. EX-003: turn it off by 2026-10-02. |
+| 1 | Only via an organisation (business/enterprise) agreement | not met | Individual Pro plan (confirmed 2026-09-25); there is no organisation. |
+| 2 | Agreement guarantees no training on inputs + short retention | partial | The model-training setting was on until 2026-09-25, when the owner turned it off (EX-003, closed). It is a setting, not a contractual guarantee, and retention is not verified. |
 | 3 | Approved through the organisation's tool-approval process | n/a | No such process; the owner approves tools, recorded in `docs/development/tools.md`. |
 | 4 | Up-to-date list of approved AI tools | met | `docs/development/tools.md`: Claude Code (primary), GitHub Copilot (optional). |
 | 5 | Access through organisation SSO | n/a | Single person, no identity provider. |

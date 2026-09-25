@@ -16,7 +16,7 @@ Baseline established by [MVP-001](../mvp/MVP-001-walking-skeleton.md) on 2026-09
 
 | Area | Standing | Highest open gap |
 |---|---|---|
-| [A](a-grundforutsattningar.md) | partially met (A2 not met) | M — personal plan with training on (EX-003, fix by 2026-10-02) |
+| [A](a-grundforutsattningar.md) | partially met | M — individual AI plan, no organisation agreement (training off since 2026-09-25) |
 | [B](b-skriva-kod.md) | mostly met (B4 n/a) | L |
 | [C](c-sakerhet.md) | partially met | M — no vulnerability prioritisation |
 | [D](d-kvalitetssakring.md) | partially met | **H — no non-author review (EX-001)** |

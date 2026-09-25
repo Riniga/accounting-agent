@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-001-walking-skeleton.md`](../mvp/MVP-001-walking-skeleton.md)
 
-**Status:** Implemented — all phases done; PR #5 ready for review.
+**Status:** Implemented – pending PR
 
 ## 0. Investigation
 
@@ -226,6 +226,13 @@ When this plan is done:
   and `docs/mvp/MVP-002-*.md`.
 - **Out:** any accounting logic, a data model beyond the profile, LLM calls, changes to the
   organisation projects, CD, a scheduler, publishing to PyPI.
+- **Result (close review 2026-09-25):** one change fell outside the "In" list:
+  - `.claude/settings.json` — `gh pr merge` was made an ask-first action. It mitigates
+    `GAP-F1-SELFMERGE`, found in 5.2, and changes no product behaviour.
+
+  The close review also corrected template leftovers in `docs/standards/` (`git.md`,
+  `dependencies.md`, `testing.md`) and in `.github/pull_request_template.md`. These are
+  accuracy fixes, not convention changes.
 
 ## 3. Chapters addressed
 

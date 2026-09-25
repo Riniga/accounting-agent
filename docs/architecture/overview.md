@@ -173,4 +173,4 @@ projects will run it on a local schedule.
 - Relation to the Swedish Bookkeeping Act (archiving, verification) — backlog.
 - Methodology gaps and exceptions — see
   [`docs/methodology-compliance/`](../methodology-compliance/README.md), notably EX-001
-  (no second reviewer) and EX-003 (AI-tool training setting, fix by 2026-10-02).
+  (no second reviewer).

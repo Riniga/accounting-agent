@@ -17,7 +17,8 @@ follow-up plans progress, and struck through (`~~GAP-ID~~`) when closed.
   opened. MVP-001 already closed its own work: CI gates, branch protection, Dependabot,
   private vulnerability reporting, coverage floor and licence.
   Same day: owner confirmed an individual Pro plan with the training setting on
-  (exception EX-003, fix by 2026-10-02) and local-admin daily use (GAP-A1-PRIVILEGE).
+  (exception EX-003) and local-admin daily use (GAP-A1-PRIVILEGE). EX-003 closed the same
+  day: the owner turned the training setting off.
 
 <!-- A running changelog of what each delivered plan closed, newest first. Keep entries
      terse — what shipped, and which gap IDs it closed/reopened/re-scoped. This is the
@@ -51,8 +52,8 @@ follow-up plans progress, and struck through (`~~GAP-ID~~`) when closed.
 
 | ID | Chapter | Gap | Owner | Follow-up | Status |
 |----|---------|-----|-------|-----------|--------|
-| GAP-A2-AGREEMENT | A2 SKA 1–2 | Individual Pro plan with *"Help improve our AI models"* **on** (confirmed 2026-09-25): inputs may be used for training; no organisation agreement | owner | Turn the setting off by 2026-10-02 (EX-003) | open — exception EX-003 |
-| GAP-F2-DPA | F2 SKA 3 | No data processing agreement with the AI provider (individual plan), although personal data can reach it (GAP-F2-CONFIDENTIAL) | owner | Tied to GAP-A2-AGREEMENT (EX-003). A DPA needs a commercial plan; until then, keep Confidential data out of AI context | open — exception EX-003 |
+| GAP-A2-AGREEMENT | A2 SKA 1–2 | Individual Pro plan, not an organisation agreement. The model-training setting was turned off 2026-09-25 (EX-003, closed); retention follows the individual-plan terms, not verified | owner | Accept for a one-person project, or move to a commercial plan if the project grows | open |
+| GAP-F2-DPA | F2 SKA 3 | No data processing agreement with the AI provider (individual plan), although personal data can reach it (GAP-F2-CONFIDENTIAL) | owner | A DPA needs a commercial plan; until then, keep Confidential data out of AI context (interpretations §9) | open |
 | GAP-F2-CLASSIFICATION | F2 SKA 1 | The classification covers this repository only (interpretations §9), not the organisations' own AI use | owner | Decide per organisation project | open |
 | GAP-E4-MASKING | E4 SKA 3 | No automated masking of personal identity numbers in logs; needed once the core reads voucher texts | platform | MVP-002 | open |
 | GAP-E1-AITRAILER | E1 SKA 5 | Commits from 2026-09-25 carry an AI `Co-Authored-By` trailer | platform | No trailers from MVP-001 phase 5; published history not rewritten (interpretations §7) | in progress (MVP-001) |

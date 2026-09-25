@@ -21,13 +21,13 @@ once a working concrete function exists to generalise
 
 | Area | Location |
 |------|----------|
-| Core package | `src/accounting_agent/` (planned — MVP-001). This repository *is* the shared code; there is no `apps/`/`packages/` split (ADR-002) |
+| Core package | `src/accounting_agent/`. This repository *is* the shared code; there is no `apps/`/`packages/` split (ADR-002) |
 | Reference material | `docs/reference/` — local, git-ignored copies of the private organisation projects. Contains real data: read only code, instructions, configuration and rules; never commit or copy data from it ([ADR-003](docs/architecture/decisions/ADR-003-no-real-data-in-core-repo.md)) |
 | Roadmap / MVPs / plans | `docs/roadmap.md`, `docs/mvp/`, `docs/plans/` |
 | Architecture + ADRs | `docs/architecture/`, `docs/architecture/decisions/` |
 | Standards | `docs/standards/` |
 | Methodology | `docs/methodology/` (org) + `docs/methodology-compliance/` (this repo's standing) |
-| Tests | `tests/`, with synthetic fixtures in `tests/fixtures/` (planned — MVP-001) |
+| Tests | `tests/`, with synthetic fixtures in `tests/fixtures/` |
 
 ## Read before planning or implementing
 

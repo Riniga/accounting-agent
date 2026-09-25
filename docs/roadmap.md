@@ -11,13 +11,19 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-R1 is complete once PR #5 is merged:
-[MVP-001 – Walking skeleton & baseline analysis](mvp/MVP-001-walking-skeleton.md) delivered
-the `accounting-agent` package (v0.1.0), CI quality gates proven to block, branch
-protection, the licence and the first methodology assessment. The next focus is R2,
-through [MVP-002 – Common book model and validation via core](mvp/MVP-002-common-book-model.md)
-(defined, plan not yet written). Before MVP-002 reads any more organisation material with
-an AI tool, exception EX-003 (the AI tool's training setting) should be closed.
+**R1 – Foundation is implemented; MVP-001 is pending the merge of PR #5.**
+[MVP-001 – Walking skeleton & baseline analysis](mvp/MVP-001-walking-skeleton.md) delivered:
+- the `accounting-agent` package (v0.1.0, 29 tests);
+- six CI quality gates, each proven to block;
+- branch protection;
+- the licence;
+- the first methodology assessment.
+
+The next focus is R2, through
+[MVP-002 – Common book model and validation via core](mvp/MVP-002-common-book-model.md),
+which is defined but has no plan yet. The largest open methodology items are no second
+reviewer (EX-001), and the AI-data gaps `GAP-F2-CONFIDENTIAL` and `GAP-F2-DPA`. Apply the
+reading rule for `docs/reference/` (interpretations §9) when the MVP-002 analysis starts.
 
 ---
 
@@ -60,6 +66,15 @@ Moves Aktivitet Förebygger onto the core as a stress test, adding payroll, sala
 documentation, payments and stricter approval rules as general capabilities.
 
 ## Backlog of ideas to be implemented / fixed
+
+* Remove the remaining template leftovers — `.github/workflows/dast.yml` and the example
+  section in `docs/methodology-compliance/interpretations.md`. The owner does this together
+  with MVP-002. `_LÄS-MIG-FÖRST.md` and the EXAMPLE MVP and plan were removed in `947b599`.
+* Raise the coverage floor once MVP-002's domain code has a stable baseline
+  (interpretations §1).
+* Helsingborgs Judoklubb project: move the decision log ("Rättelser och beslut") out of the
+  bookkeeping rules file, so that the rules can be read without personal data
+  (`GAP-F2-CONFIDENTIAL`).
 
 * Relate the books' storage and audit trail to the Swedish Bookkeeping Act
   (bokföringslagen) — archiving and verification requirements. Not critical now.

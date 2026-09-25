@@ -89,7 +89,7 @@ All tests should pass before creating a Pull Request.
   (CLIs' `__main__` wiring, defensive branches) is reasonably left uncovered.
 - The floor may only be **raised**, and only in a deliberate PR that also updates the floor
   value and this document — never lowered to make a failing build pass.
-- The floor is repo-wide, not per package (see `interpretations.md` §3 for the trade-off);
+- The floor is repo-wide, not per package (see `interpretations.md` §1 for the trade-off);
   if one package's coverage trends down while others compensate, that's a case for
   revisiting per-package floors, not for this document to solve unilaterally.
 

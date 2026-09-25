@@ -69,7 +69,7 @@ exception.
 | | |
 |---|---|
 | **Methodology basis** | Kind 2, forced by circumstance. [A2](../methodology/a-grundforutsattningar/verktyg-for-ai-assisterad-utveckling.md) SKA 1–2, [F2](../methodology/f-ai-samarbete/sekretess-och-dataskydd-vid-ai-anvandning.md) SKA 3. A2 has no Undantag that allows it. |
-| **Status** | Active |
+| **Status** | **Closed 2026-09-25** — the owner turned the model-training setting off the same day (owner's statement) |
 | **Granted** | 2026-09-25 |
 | **Responsible** | Rickard Nisses-Gagnér |
 | **Review** | **2026-10-02** — the setting must be off by then; re-checked at MVP-001 close review and at every MVP start until done. |
@@ -90,3 +90,8 @@ model-improvement setting. Then update this entry to *Closed*, and `GAP-A2-AGREE
 
 **Until fixed:** no material classed Confidential (interpretations §9) may be given to the
 AI tool — including from `docs/reference/`.
+
+**Closed 2026-09-25:** the owner reports the setting is now off. What remains is not an
+exception but open gaps: an individual plan instead of an organisation agreement
+(`GAP-A2-AGREEMENT`), and no DPA (`GAP-F2-DPA`). The rule in interpretations §9 —
+no Confidential material in AI context — still applies regardless.

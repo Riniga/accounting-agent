@@ -37,14 +37,14 @@ Methodology chapter: [`sekretess-och-dataskydd-vid-ai-anvandning`](../methodolog
 |---|---------------------|----------|------|
 | 1 | Data classification with a written AI rule per level | partial | Decided for this repository in interpretations §9 and ADR-003. There is no classification across the organisations. |
 | 2 | Highly confidential data never enters an AI tool | **not met** | On 2026-09-25, during the MVP-001 baseline analysis, a rules file in the Helsingborgs Judoklubb project turned out to contain names of members, parents and children next to amounts. These entered Claude Code's context. Nothing was copied into the repository. Beyond this repository, the organisation projects run Claude Code over their real books by design. That is outside this repository's control, but the same rule applies to them. |
-| 3 | Data processing agreement (DPA) with the provider if personal data may be input | not met | Individual Pro plan, no DPA, training setting on — EX-003. Until it's fixed, no Confidential data may enter the AI tool. |
+| 3 | Data processing agreement (DPA) with the provider if personal data may be input | not met | Individual Pro plan, no DPA. The training setting has been off since 2026-09-25 (EX-003, closed). No Confidential data may enter the AI tool. |
 | 4 | Agentic forwarding to third parties clarified | n/a (yet) | This repository has no MCP integrations. JudoSyd's Gmail and Discord MCP servers come into scope in R4. |
 | 5 | Secrets masked before reaching AI context | partial | No secrets exist, and `.env` is never read. There is no automated masking. |
 | 6 | Secret scanning at several independent points | partial | Pre-commit, PR (CI) and GitHub push protection are in place. There is nothing at write time or before context is sent to the model. |
 | 7 | Review of AI code explicitly searches for hard-coded secrets | met | detect-secrets plus the DoD checklist item. |
 | 8 | Dev/test data anonymised or synthetic | met | Synthetic fixtures only (ADR-003). |
 
-**External dependency:** none — the plan and its privacy setting are the owner's own (EX-003).
+**External dependency:** none — the plan and its privacy setting are the owner's own.
 **Follow-up plan:** before MVP-002 analysis reads anything else from `docs/reference/`, apply
 the reading rule in interpretations §9.
 **Gap-register rows:** `GAP-F2-CONFIDENTIAL`, `GAP-F2-DPA`, `GAP-F2-CLASSIFICATION`

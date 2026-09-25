@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from accounting_agent import __version__
 from accounting_agent.cli import main
 
 
@@ -52,6 +53,26 @@ def test_run_fails_cleanly_on_missing_config_dir(
 
     assert exit_code == 1
     assert "does not exist" in caplog.text
+
+
+def test_run_reports_none_when_no_feature_is_enabled(
+    write_profile: Callable[[str], Path], caplog: pytest.LogCaptureFixture
+) -> None:
+    config_dir = write_profile("organisation: example\nfeatures:\n  payroll: false\n")
+
+    with caplog.at_level(logging.INFO):
+        exit_code = main(["run", "example", "--config-dir", str(config_dir)])
+
+    assert exit_code == 0
+    assert "enabled features: (none)" in caplog.text
+
+
+def test_version_prints_package_version(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        main(["--version"])
+
+    assert excinfo.value.code == 0
+    assert capsys.readouterr().out.strip() == f"accounting-agent {__version__}"
 
 
 def test_missing_command_is_a_usage_error() -> None:

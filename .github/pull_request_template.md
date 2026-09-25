@@ -39,8 +39,7 @@
 - [ ] **Security checks** — the `SAST` and `Dependencies` CI checks are green, no
   unaddressed findings ([C1](../docs/methodology/c-sakerhet/secure-coding-principer.md),
   [C2](../docs/methodology/c-sakerhet/beroendehantering-paketkallor-och-signering.md))
-  *(SAST's tool choice is an interim, unconfirmed direction until the security architect
-  signs off — record the decision in `docs/methodology-compliance/interpretations.md`)*
+  *(SAST is Semgrep — see `docs/methodology-compliance/interpretations.md` §2)*
 - [ ] **Threat model (STRIDE)** — if this change has significant security impact (new
   auth/authz, a new external-facing surface, a new sensitive-data flow, a changed trust
   boundary), the plan's "Risks / open questions" includes a STRIDE pass
