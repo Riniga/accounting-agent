@@ -31,5 +31,5 @@
 
 # Ruff is pinned exactly — its formatter/lint output changes between minor versions. Keep
 # it on the same version as `rev` in .pre-commit-config.yaml.
-ruff==0.16.6
+ruff==0.16.8
 pre-commit>=3,<5
