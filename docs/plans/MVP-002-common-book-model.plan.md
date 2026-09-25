@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-002-common-book-model.md`](../mvp/MVP-002-common-book-model.md)
 
-**Status:** In progress — phase 1 done, phase 2 next.
+**Status:** In progress — phases 1–2 done, phase 3 next.
 
 ## 0. Investigation
 
@@ -236,7 +236,7 @@ Commit: `docs(mvp-002): correct the book-model premise and record ADR-006`
 
 ### Phase 2 — Profile: the `books` section
 
-- [ ] 2.1 **Tests first.**
+- [x] 2.1 **Tests first.**
   - A valid `books` section loads: `path` resolved relative to the config directory;
     `format: front-matter`; `fiscal_year` an integer; `bank_account` accepted as `1930`
     or `"1930"` and normalised to the string `"1930"`.
@@ -247,9 +247,23 @@ Commit: `docs(mvp-002): correct the book-model premise and record ADR-006`
   - Synthetic fixture `tests/fixtures/example/organisation.yaml` gets a `books` section.
 
   *Verify:* the new tests fail with `AttributeError`/`ProfileError` for the right reason.
-- [ ] 2.2 **STOP — the owner reviews the tests from 2.1.**
-- [ ] 2.3 Implement `BooksConfig` in `profile.py` and add `books` to `KNOWN_KEYS`.
+  Result: `tests/test_profile_books.py`, 21 tests. All fail for the right reason:
+  - 5 × `AttributeError: 'OrganisationProfile' object has no attribute 'books'`;
+  - 16 × `DID NOT RAISE ProfileError`.
+
+  Also covered, beyond the list above:
+  - an unknown `books` sub-key gives a warning, not an error (forward compatibility, as
+    for top-level keys);
+  - `books` must be a mapping;
+  - `bank_account: true` and an empty string are rejected.
+
+  **Deviation:** the example fixture's `books` section moves to 4.1, because it must point
+  at the synthetic books that 4.1 creates. These tests use temporary directories instead.
+- [x] 2.2 **STOP — the owner reviews the tests from 2.1.** Result: approved 2026-09-25.
+- [x] 2.3 Implement `BooksConfig` in `profile.py` and add `books` to `KNOWN_KEYS`.
   *Verify:* all tests pass; Ruff is clean.
+  Result: all 50 tests pass; coverage 96.67 %; Ruff is clean. `current-state.md` updated
+  (test count, capability).
 
 Commit: `feat(profile): add books section to organisation profiles`
 

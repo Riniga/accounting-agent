@@ -8,7 +8,7 @@ in the same PR as any change to an app's status, test count, or key capabilities
 
 | App | Status | Tests | Key capabilities |
 |-----|--------|-------|-------------------|
-| `accounting-agent` (`src/accounting_agent/`, v0.1.0) | Implemented — walking skeleton (MVP-001) | 29 | organisation profile loading/validation, `run <org> --config-dir` command |
+| `accounting-agent` (`src/accounting_agent/`, v0.1.0) | Implemented — walking skeleton (MVP-001); MVP-002 in progress | 50 | organisation profile loading/validation (incl. `books` section), `run <org> --config-dir` command |
 
 Organisation projects (JudoSyd, Helsingborgs Judoklubb, Aktivitet Förebygger) are separate
 private repositories and are not tracked here (ADR-002, ADR-003).
@@ -40,7 +40,7 @@ See [`docs/standards/`](../standards/). Project-specific:
 
 | Package | Tests | Coverage |
 |---|---|---|
-| `accounting_agent` | 29 (`test_profile.py` 20, `test_cli.py` 9) | 96.47 % (floor 90 %) |
+| `accounting_agent` | 50 (`test_profile.py` 20, `test_profile_books.py` 21, `test_cli.py` 9) | 96.67 % (floor 90 %) |
 
 ## Methodology compliance
 
