@@ -1,4 +1,4 @@
-# AGENTS.md​
+# AGENTS.md
 
 Canonical, tool-neutral instructions for AI-assisted work in this repository
 (Claude Code, GitHub Copilot, and any other approved tool). Tool-specific files

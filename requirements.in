@@ -29,4 +29,3 @@ pytest-cov>=7.1.0,<8
 # Windows compile includes it and a Linux compile does not, which the CI drift check
 # would report as drift. Pinned unconditionally so both platforms resolve the same lock.
 colorama>=0.4.6
-six>=1.16  # deliberate lock drift: lock not recompiled
