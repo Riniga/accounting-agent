@@ -45,6 +45,9 @@ report chain in the core, with Helsingborgs Judoklubb as the first organisation 
   accounts, opening balances and vouchers modelled once in the core, with the general book
   checks; Helsingborgs Judoklubb validated through it, Aktivitet Förebygger's format
   compared.
+* Aktivitet Förebygger reader — a reader for the table-format books (multi-line vouchers,
+  voucher series) into the same core model; needed before R5. Found in the MVP-002 plan's
+  investigation (§0.1).
 * MVP-003 – Bank statement import and reconciliation via core — the bank statement is
   imported and reconciled against the vouchers through the core.
 * MVP-004 – Reports via core — the reports Helsingborgs Judoklubb and Aktivitet Förebygger

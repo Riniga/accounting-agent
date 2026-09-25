@@ -13,6 +13,8 @@ organisations (JudoSyd, Helsingborgs Judoklubb, Aktivitet Förebygger). Each org
 keeps its own private project with data, chart of accounts, rules and configuration. This
 public repository holds the general functionality they share. See
 [`docs/vision.md`](../vision.md) and the [initial idea](../initial-idea.md).
+Swedish bookkeeping terms and their English names in the code are in the
+[glossary](glossary.md).
 
 **Current state (after MVP-001):** a walking skeleton. It is one installable package with
 an organisation-profile loader and a minimal `accounting-agent run` command, behind a full

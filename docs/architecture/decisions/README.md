@@ -20,3 +20,4 @@ mellan dem. Se [`docs/standards/documentation.md`](../../standards/documentation
 | [ADR-003](ADR-003-no-real-data-in-core-repo.md) | The core repository holds no real organisation data |
 | [ADR-004](ADR-004-csv-and-markdown-storage.md) | Books are stored as CSV and Markdown files — no database |
 | [ADR-005](ADR-005-noncommercial-licence.md) | License the code under the PolyForm Noncommercial License 1.0.0 |
+| [ADR-006](ADR-006-core-book-model.md) | The core models books as double-entry vouchers with posting lines; each file format has its own reader |

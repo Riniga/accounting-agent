@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-002-common-book-model.md`](../mvp/MVP-002-common-book-model.md)
 
-**Status:** Not started – awaiting plan review
+**Status:** In progress — phase 1 done, phase 2 next.
 
 ## 0. Investigation
 
@@ -206,7 +206,7 @@ reason before the implementation is written.
 
 ### Phase 1 — Correct the MVP, decide the model
 
-- [ ] 1.1 Update `docs/mvp/MVP-002-common-book-model.md` per §0.1 and §0.5:
+- [x] 1.1 Update `docs/mvp/MVP-002-common-book-model.md` per §0.1 and §0.5:
   - the general model (series, N lines);
   - one reader, for the `front-matter` format;
   - the check list from §0.5;
@@ -216,16 +216,21 @@ reason before the implementation is written.
   Add "Aktivitet Förebygger reader (table format, voucher series)" to the roadmap. *Verify:*
   every change traces to §0; the acceptance criteria still say the same about
   Helsingborgs Judoklubb.
-- [ ] 1.2 Write **ADR-006 — core book model**: double-entry vouchers with optional series
+  Result: the MVP has a dated correction note at the top; scope, out-of-scope and the
+  Aktivitet Förebygger criterion were adjusted. The roadmap gets "Aktivitet Förebygger
+  reader" under R2.
+- [x] 1.2 Write **ADR-006 — core book model**: double-entry vouchers with optional series
   and N lines; organisation file formats read by format-specific readers; amounts are
   `Decimal`, never floats. It references ADR-004 (files, no database); ADR-004 itself is
   accepted and is not edited. Add the index row. *Verify:* Nygard sections present; index
   row added.
-- [ ] 1.3 Write `docs/architecture/glossary.md`: verifikation → voucher, kontoplan → chart
+- [x] 1.3 Write `docs/architecture/glossary.md`: verifikation → voucher, kontoplan → chart
   of accounts, ingående balans → opening balance, konto → account, debet/kredit →
   debit/credit, verifikationsserie → voucher series, underlag → supporting document,
   räkenskapsår → fiscal year, saldo → balance. Link it from `overview.md`. *Verify:* every
   English model name used in §1 is in the glossary.
+  Result: all model names (`Books`, `Account`, `OpeningBalance`, `PostingLine`, `Voucher`,
+  `Finding`) and the severities are in the glossary; checked with a script.
 
 Commit: `docs(mvp-002): correct the book-model premise and record ADR-006`
 
