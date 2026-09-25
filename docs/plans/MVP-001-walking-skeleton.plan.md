@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-001-walking-skeleton.md`](../mvp/MVP-001-walking-skeleton.md)
 
-**Status:** Not started — plan written, awaiting review.
+**Status:** In progress — phase 1 (investigation) done, phase 2 next.
 
 ## 0. Investigation
 
@@ -59,6 +59,151 @@ payroll).
 Record the findings as a table or short bullets under this section, not as a copy of code
 or data.
 
+### Findings (2026-09-25)
+
+#### Toolchain and versions
+
+| Item | Found | Decision |
+|---|---|---|
+| Python | 3.14.7 is the latest stable version (3.15 is at rc2). It is on conda-forge for both `win-64` and `linux-64`. Ruff, pip-tools, Semgrep, pytest, pytest-cov, PyYAML, pip-licenses and pip-audit all declare 3.14 support. pre-commit and detect-secrets do not declare it, but are pure Python. | **Python 3.14.** Phase 3 verifies that pre-commit and detect-secrets actually run on it; fall back to 3.13 if they don't. |
+| Ruff | 0.16.9 (the template pinned 0.16.6) | Pin `ruff==0.16.9` and pre-commit `rev: v0.16.9` |
+| pre-commit / hooks | pre-commit 4.6.2; `pre-commit-hooks` v6.0.0; `detect-secrets` v1.5.0 | Update the ranges and revisions |
+| pip-tools | 7.6.1 | Unpinned in CI, as in the template |
+| pytest / pytest-cov / PyYAML | 9.1.1 / 7.1.0 / 6.0.3 | `pytest-cov` is added (coverage gate). PyYAML is the only runtime dependency — the YAML parser for `organisation.yaml`. The standard library has none |
+| GitHub Actions | `actions/checkout` v7.0.1, `actions/setup-python` v7.0.0, `actions/cache` v6.1.0, `conda-incubator/setup-miniconda` v4.1.0, `github/codeql-action` v4.38.2 | Update the tags that are behind (`setup-miniconda`) |
+| Conda | Conda 26.5.3 is installed locally (`~/anaconda3`), but not on the Git Bash PATH | Keep Conda (ADR-002). |
+| `uv` | Not installed | **Not trialled** — deviation from this section's plan. For one small, pure-Python package the expected benefit (faster environment setup) doesn't justify introducing and comparing a second toolchain now. Revisit if the CI environment step becomes a real bottleneck — measure its duration in phase 4. |
+
+#### GitHub security features (public repository)
+
+| Setting | State 2026-09-25 | Action |
+|---|---|---|
+| Secret scanning | enabled | Keep. Complements detect-secrets, which also runs as a pre-commit hook |
+| Push protection | enabled | Keep |
+| Dependabot alerts | **disabled** | Enable (4.3) |
+| Dependabot security updates | **disabled** | Enable (4.3) |
+| Private vulnerability reporting | **disabled** | Enable (4.3). `SECURITY.md` depends on it |
+| Branch protection / rulesets on `main` | **none** | Apply (4.3) |
+
+- **Vulnerability check in CI:** Dependabot alerts only watch the default branch after
+  merge. `pip-audit` against `requirements-lock.txt` checks the pull request *before*
+  merge. **Add `pip-audit` to the Dependencies job.**
+- **SAST:** CodeQL is free for public repositories. Semgrep does not run natively on
+  Windows, which doesn't matter because it only runs in CI. **Run both on the first pull
+  request in phase 4**, then keep the one with the better signal-to-noise ratio and run
+  time, and record the choice in `interpretations.md`.
+
+#### Baseline analysis — Helsingborgs Judoklubb (`HJK - Ekonomi`)
+
+Read: `2026/agent/*.py` (structure, plus the importer in full), `2026/agent/README.md`,
+`2026/Bokföring/README.md`. Not read: books, bank files, receipts, personnel and member
+data.
+
+> **Finding — personal data in the rules file.** `2026/Bokföring/README.md` combines the
+> rules with a running log, "Rättelser och beslut" (corrections and decisions), that names
+> members, parents and children next to amounts. Reading the rules therefore exposed real
+> personal data to the AI tool. Nothing from it has been copied here. **Recommendation for
+> the HJK project:** move the decision log out of `README.md` into its own file. The
+> extraction work can then read the rules without reading personal data.
+
+1. **Which scripts exist today?** Four standard-library-only Python scripts (about 2,200
+   lines) in `2026/agent/`:
+   - `importera_kontoutdrag.py` — bank CSV import with personal-identity-number masking.
+   - `kontroll.py` — read-only validation, with FEL (error), VARNING (warning) and INFO
+     levels and an exit code.
+   - `generera_redovisning.py` — ten Markdown reports. It refuses to run when the checks fail.
+   - `medlemskontroll.py` — member registers compared against attendance and payments.
+
+   A step-by-step routine for people and agents is in `Bokföring/SOP.md`.
+2. **Which data models are used?** Semicolon-separated UTF-8 CSV files with a decimal
+   point and ISO dates: chart of accounts (a BAS subset), opening balance, budget, members,
+   member payments, to-do list, comments and bank statement. **One Markdown file per
+   voucher**, with YAML-like front matter (`verifikation`, `datum`, `text`, `belopp`,
+   `debet`, `kredit`, `underlag`) and free text below. The whole BAS chart of accounts is
+   kept as reference in `kontobas/`.
+3. **Which parts are specific to Helsingborgs Judoklubb?**
+   - The organisation name and number, which are hard-coded.
+   - The Nordea export format.
+   - The member categories and fees.
+   - The Swedish sports-club registers (Svenska Lag, IdrottOnline) and attendance.
+   - The posting rules table (which counterparty maps to which account).
+   - The park accounts 3008/6990 as numbers.
+   - The hard-coded paths relative to the script.
+4. **Which parts are general?**
+   - The voucher model (one file per voucher, sequence without gaps, never deleted,
+     corrected by a reversing voucher).
+   - Chart of accounts and opening-balance validation.
+   - Double-entry checks.
+   - Bank-statement ↔ voucher reconciliation.
+   - Sign conventions.
+   - The FEL/VARNING/INFO check framework.
+   - Personal-identity-number masking.
+   - Balances.
+   - Reports: income statement, balance sheet, general ledger, voucher list, monthly
+     overview, budget follow-up.
+   - The "don't guess — park and flag" principle.
+5. **Which rules live implicitly in prompts or Python?**
+   - The posting rules are documented in the README, but applied by the agent following
+     prose rather than by code.
+   - Age and fee rules are constants in `medlemskontroll.py`.
+   - Report sign conventions (income statement: credit − debit; balance sheet: debit −
+     credit) are in code comments and the README.
+   - The "confidence" of a member link (`säker`/`trolig`/`gissad`) is an early form of the
+     idea's confidence value.
+6. **Which functions should become agent tools?**
+   - `kontroll` → `validate_books()`.
+   - The obokförda (unbooked transactions) list → `get_unprocessed_transactions()`.
+   - Voucher creation with the next number → `post_transaction()`.
+   - Report generation → `generate_report()`.
+   - Bank import → an importer.
+   - The planned "agent proposes new vouchers from new statements and receipts" →
+     `suggest_posting()`.
+7. **Which operations require human approval?** Per the README:
+   - Changing an existing voucher requires an explicit decision by the treasurer (kassör).
+   - Scripts and agents may only create new vouchers.
+   - Uncertain postings are parked and flagged to the treasurer.
+   - Decisions are logged.
+
+#### Lighter pass — JudoSyd and Aktivitet Förebygger
+
+- **JudoSyd (`Kassörsassitenten`):**
+  - Already runs **Claude Code headless (`claude -p`) from a scheduled PowerShell script**
+    (`scripts/kassor-run.ps1`), with an allowed-tools list and a log directory.
+  - Two home-built **MCP servers**:
+    - Gmail/Calendar: search, fetch, download attachment, archive, plus calendar events.
+    - Discord: DM and channel message.
+  - Design docs in `docs/` (assignment, technology, plans).
+  - No bookkeeping scripts; the books are mostly PDF/Excel.
+  - This is a working example of the pattern R3 has to decide on: Claude Code as the agent
+    in the organisation project, with tools as MCP servers.
+- **Aktivitet Förebygger:**
+  - One script, `Bokföring/bygg-redovisning.py` (about 620 lines), that builds reports from
+    **Markdown voucher files** (with voucher series: customer invoices, bank, …) plus CSV
+    chart of accounts, opening balance and budget.
+  - Also covers accounts receivable and taxes/fees (payroll-related).
+  - Hard-codes the organisation name and number.
+
+#### Conclusions for MVP-002 and the core
+
+- **The strongest overlap is not bank import but the book model.** Both Helsingborgs
+  Judoklubb and Aktivitet Förebygger have the same model: chart of accounts CSV, opening
+  balance CSV, and one Markdown file per voucher. Both also generate largely the same
+  reports (income statement, balance sheet, general ledger, voucher list, monthly
+  overview, budget) with separate, duplicated code. The bank import is Nordea-specific and
+  used only by Helsingborgs Judoklubb.
+- **Decided 2026-09-25 (owner):** MVP-002 is changed from "bank statement import and
+  matching" to **"common book model and validation via core"**. It reads the chart of
+  accounts, opening balance and voucher files into core models, and runs the general
+  checks from `kontroll.py`. It is proven on Helsingborgs Judoklubb and checked against
+  Aktivitet Förebygger's format. Written early, straight after the investigation:
+  [`MVP-002-common-book-model.md`](../mvp/MVP-002-common-book-model.md). Bank import and
+  reconciliation follow as MVP-003, and reports as MVP-004 (roadmap headings only).
+- Existing code is in Swedish (identifiers and messages). The core follows
+  `docs/standards/coding.md` (English code). Domain terms (verifikation, kontoplan) need a
+  small glossary when extracting.
+- The organisation projects hard-code paths relative to the script. The core's
+  `--config-dir` approach replaces this.
+
 ## 1. Goal
 
 When this plan is done:
@@ -100,11 +245,16 @@ When this plan is done:
 
 ### Phase 1 — Investigation
 
-- [ ] 1.1 Toolchain: Python version, tool and action versions, Conda vs. `uv`. Record in §0.
-- [ ] 1.2 GitHub-native security features for the repository, and Semgrep vs. CodeQL.
-      Record in §0.
-- [ ] 1.3 Baseline analysis of `HJK - Ekonomi` (the seven questions) plus the lighter pass
-      over JudoSyd and Aktivitet Förebygger. Record in §0.
+- [x] 1.1 Toolchain: Python version, tool and action versions, Conda vs. `uv`. Record in §0.
+      Result: Python 3.14, versions updated. `uv` was not trialled (see §0).
+- [x] 1.2 GitHub-native security features for the repository, and Semgrep vs. CodeQL.
+      Record in §0. Result: secret scanning and push protection are already on; the other
+      settings go to 4.3. `pip-audit` is added. The SAST choice is deferred to phase 4, after
+      running both tools.
+- [x] 1.3 Baseline analysis of `HJK - Ekonomi` (the seven questions) plus the lighter pass
+      over JudoSyd and Aktivitet Förebygger. Record in §0. Result: done. Personal data was
+      found in the HJK rules file (not copied). Proposal: MVP-002 becomes "common book
+      model and validation".
 
 Commit: `docs(mvp-001): record investigation findings for toolchain and baseline analysis`
 
@@ -164,7 +314,9 @@ Commit: `docs(methodology): add PolyForm Noncommercial licence and first methodo
 
 - [ ] 6.1 Update `docs/architecture/overview.md`, `current-state.md` and `README.md` to
       describe what now exists.
-- [ ] 6.2 Write `docs/mvp/MVP-002-*.md` from the §0 analysis, and link it from the roadmap.
+- [x] 6.2 Write `docs/mvp/MVP-002-*.md` from the §0 analysis, and link it from the roadmap.
+      Result: done early (2026-09-25), right after phase 1, at the owner's request. At close,
+      only check that MVP-002 still matches what MVP-001 actually delivered.
 - [ ] 6.3 Verify each acceptance criterion for real, including a `git ls-files` check that
       nothing from `docs/reference/` is tracked. Fill in "Outcome at close".
 
