@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-001-walking-skeleton.md`](../mvp/MVP-001-walking-skeleton.md)
 
-**Status:** In progress — phases 1–4 done, phase 5 next.
+**Status:** In progress — phases 1–5 done, phase 6 (close) next.
 
 ## 0. Investigation
 
@@ -391,12 +391,36 @@ Commit: `ci: adapt quality gates to the core package and enforce them on main`
 
 ### Phase 5 — Licence and methodology baseline
 
-- [ ] 5.1 Add `LICENSE` with the PolyForm Noncommercial 1.0.0 text, copied verbatim from
+- [x] 5.1 Add `LICENSE` with the PolyForm Noncommercial 1.0.0 text, copied verbatim from
       the official source. Add a licence line to `README.md`.
-- [ ] 5.2 Assess areas A–F using `_template.md`. Fill in the gap register,
+      Result:
+      - The text comes from `polyformproject/polyform-licenses` at tag 1.0.0. The body is
+        byte-identical to the source (SHA-256 `c0ea4a89…`), preceded by the
+        `Required Notice:` copyright line that the licence's *Notices* section provides for.
+      - `license-files = ["LICENSE"]` was added to `pyproject.toml`. The package metadata
+        now shows `License-Expression: PolyForm-Noncommercial-1.0.0`.
+      - The licence text confirms ADR-005's premise: use by charitable organisations is
+        explicitly a permitted purpose.
+- [x] 5.2 Assess areas A–F using `_template.md`. Fill in the gap register,
       `interpretations.md` (formatter, complexity threshold, SAST/secret/SCA tools, coverage
       floor, branch model, AI trailer policy) and `exceptions.md` (EX-001: no non-author
       review, single maintainer).
+      Result:
+      - Six area files (`a-…` to `f-…`) assess all 21 chapters.
+      - `interpretations.md` §1–§9: coverage, SAST, Ruff and complexity, test strategy,
+        dependency tooling, secret-scanning layers, AI marking, branch model and versioning,
+        data classification for AI use.
+      - `exceptions.md`: EX-001 (no non-author review, active) and EX-002 (AI-TDD waived in
+        phase 2, closed, one-off).
+      - The gap register has 22 rows: 3 H, 6 M, 12 L, and 1 external.
+      - **Findings this step surfaced:**
+        - (a) E1 SKA 5 — the AI tool had been adding `Co-Authored-By` trailers against
+          `AGENTS.md`. Stopped from this phase; the history is not rewritten
+          (interpretations §7).
+        - (b) F1 — with 0 approvals the AI tool could merge a green PR. Mitigated by making
+          `gh pr merge` an ask-first action in `.claude/settings.json`.
+        - (c) F2 SKA 2 — the personal-data exposure from phase 1 is recorded as an H gap,
+          with a reading rule for `docs/reference/` (interpretations §9).
 
 Commit: `docs(methodology): add PolyForm Noncommercial licence and first methodology baseline`
 

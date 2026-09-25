@@ -16,17 +16,48 @@ exception is never a permanent waiver. Related: [`gap-register.md`](gap-register
 
 ---
 
-## EX-NNN — *(short title)*
-
-<!-- One entry per exception. Copy this block; increment the id. -->
+## EX-001 — No non-author review (single maintainer)
 
 | | |
 |---|---|
-| **Methodology basis** | *(chapter + its "Undantag" section, if this is kind 1)* |
-| **Status** | Active / Closed |
-| **Granted** | *(date)* |
-| **Responsible** | *(named person)* |
-| **Review** | *(a concrete trigger or date — never "indefinitely")* |
-| **Gap-register link** | *(the GAP-ID this is also tracked as, if kind 2)* |
+| **Methodology basis** | Kind 2, forced by circumstance. [D2](../methodology/d-kvalitetssakring/kodgranskning.md) SKA 2–3, [F1](../methodology/f-ai-samarbete/riktlinjer-for-ai-assisterade-verktyg.md) SKA 1, [D3](../methodology/d-kvalitetssakring/definition-of-done.md) SKA 3. D2's own Undantag only allows postponing review during an incident, so this is not an Undantag. |
+| **Status** | Active |
+| **Granted** | 2026-09-25 |
+| **Responsible** | Rickard Nisses-Gagnér (owner, sole maintainer) |
+| **Review** | When a second person can review — then raise required approvals to 1 and add `CODEOWNERS` ([`repo-settings.md`](../development/repo-settings.md) §3). Otherwise re-confirmed at every MVP close. |
+| **Gap-register link** | `GAP-D2-REVIEW`, `GAP-F1-SELFMERGE` |
 
-*(Reasoning: why this exception, why now, what closes it.)*
+The project has one person in every role. A required non-author approval would make merging
+impossible, so the "Protect main" ruleset requires a pull request and all six CI checks, but
+**0 approvals**.
+
+**Compensating controls:**
+- No one can push to `main` directly, the owner included (empty bypass list).
+- Every change passes Ruff, dependency, SAST, secret, instruction-file and test gates.
+- The owner reviews every AI-assisted diff before commit and before merge.
+- The AI tool asks before `git commit` and `git push` (`.claude/settings.json`), and does
+  not merge pull requests itself.
+
+**What it does not cover:** a second pair of eyes on design and correctness, which no
+automated gate replaces.
+
+---
+
+## EX-002 — AI-written tests not reviewed before implementation (MVP-001 phase 2)
+
+| | |
+|---|---|
+| **Methodology basis** | Kind 2, forced by the owner's decision. [D1](../methodology/d-kvalitetssakring/testning.md) SKA 5 (AI-TDD). D1's Undantag does not cover it. |
+| **Status** | Closed (one-off) |
+| **Granted** | 2026-09-25 |
+| **Responsible** | Rickard Nisses-Gagnér |
+| **Review** | Closed when PR #5 is reviewed, since the tests are reviewed together with the code there. |
+| **Gap-register link** | `GAP-D1-AITDD` |
+
+For MVP-001 phase 2, the owner explicitly chose to skip reviewing the AI-written tests
+before the AI wrote the implementation. The tests were still written first and shown to fail
+for the right reason (`ModuleNotFoundError`) before any implementation existed. They cover
+the profile validation and the `run` command (27 tests).
+
+This is **not a standing waiver**. Future MVPs follow D1 SKA 5, unless the owner records a new
+exception.

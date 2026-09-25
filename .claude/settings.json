@@ -32,9 +32,11 @@
       "Bash(rm *)",
       "Bash(git commit*)",
       "Bash(git push*)",
+      "Bash(gh pr merge*)",
       "PowerShell(Remove-Item *)",
       "PowerShell(git commit*)",
-      "PowerShell(git push*)"
+      "PowerShell(git push*)",
+      "PowerShell(gh pr merge*)"
     ]
   }
 }

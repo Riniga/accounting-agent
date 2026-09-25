@@ -7,9 +7,9 @@ data.
 
 **Status:** initialising — no code yet; see [MVP-001](docs/mvp/MVP-001-walking-skeleton.md).
 **Owner:** Rickard Nisses-Gagnér (product and technical owner, sole maintainer).
-**Licence:** PolyForm Noncommercial 1.0.0 — free for noncommercial use
-([ADR-005](docs/architecture/decisions/ADR-005-noncommercial-licence.md); `LICENSE` is added
-in MVP-001).
+**Licence:** [PolyForm Noncommercial 1.0.0](LICENSE) — free for any noncommercial use,
+including by non-profit organisations; commercial use is not permitted
+([ADR-005](docs/architecture/decisions/ADR-005-noncommercial-licence.md)).
 
 ## Vision
 

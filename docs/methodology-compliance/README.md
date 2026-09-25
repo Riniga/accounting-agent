@@ -9,8 +9,19 @@ choice, and what is still open.
 its build points at `docs/methodology/` by exact path (or an equivalent explicit list) and
 never globs this directory in — this compliance record is not meant to be published.
 
-Record the adoption decision as an ADR (see `docs/architecture/decisions/`). Link the MVP
-that established the baseline here.
+Adoption decision: [ADR-001](../architecture/decisions/ADR-001-adopt-development-methodology.md).
+Baseline established by [MVP-001](../mvp/MVP-001-walking-skeleton.md) on 2026-09-25.
+
+**Standing at a glance (2026-09-25):**
+
+| Area | Standing | Highest open gap |
+|---|---|---|
+| [A](a-grundforutsattningar.md) | partially met | M — AI tool agreement unconfirmed |
+| [B](b-skriva-kod.md) | mostly met (B4 n/a) | L |
+| [C](c-sakerhet.md) | partially met | M — no vulnerability prioritisation |
+| [D](d-kvalitetssakring.md) | partially met | **H — no non-author review (EX-001)** |
+| [E](e-leverans.md) | met / n/a (E1 partial) | M — AI trailers in history; masking before MVP-002 |
+| [F](f-ai-samarbete.md) | **not met (F2)** | **H — personal data reached AI context; AI can self-merge** |
 
 ## What establishing this baseline does and does not do
 
