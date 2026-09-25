@@ -94,7 +94,9 @@ attribution instruction in the AI-tooling environment; the repository follows E1
 AI assistance is recorded on the **pull request** instead (the "AI-assisted?" checkbox in
 `.github/pull_request_template.md`), which is where
 [F1](../methodology/f-ai-samarbete/riktlinjer-for-ai-assisterade-verktyg.md) BÖR 1 places
-it. Decided by the platform owner 2026-09-09; `GAP-E1-AITRAILER` closed.
+it. See `docs/methodology-compliance/interpretations.md` §7. Commits made on 2026-09-25,
+before this was enforced, carry such a trailer; they are left unrewritten and tracked as
+`GAP-E1-AITRAILER`.
 
 ## Pull Requests
 

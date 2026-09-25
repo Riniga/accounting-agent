@@ -11,15 +11,23 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-The repository has been initialised from the project template: vision, roadmap,
-architecture decisions and the first MVP are written, but there is **no code yet**. The
-current focus is R1, through
-[MVP-001 – Walking skeleton & baseline analysis](mvp/MVP-001-walking-skeleton.md)
-(planned, not started).
+**R1 – Foundation is implemented; MVP-001 is pending the merge of PR #5.**
+[MVP-001 – Walking skeleton & baseline analysis](mvp/MVP-001-walking-skeleton.md) delivered:
+- the `accounting-agent` package (v0.1.0, 29 tests);
+- six CI quality gates, each proven to block;
+- branch protection;
+- the licence;
+- the first methodology assessment.
+
+The next focus is R2, through
+[MVP-002 – Common book model and validation via core](mvp/MVP-002-common-book-model.md),
+which is defined but has no plan yet. The largest open methodology items are no second
+reviewer (EX-001), and the AI-data gaps `GAP-F2-CONFIDENTIAL` and `GAP-F2-DPA`. Apply the
+reading rule for `docs/reference/` (interpretations §9) when the MVP-002 analysis starts.
 
 ---
 
-## R1 – Foundation (Planned)
+## R1 – Foundation (Done — pending merge of PR #5)
 
 Establishes the core repository with its stack, CI quality gates and methodology baseline,
 plus an analysis of the existing organisation projects that tells us what to extract first.
@@ -33,9 +41,14 @@ plus an analysis of the existing organisation projects that tells us what to ext
 Establishes the common data model and the import → matching → posting → validation →
 report chain in the core, with Helsingborgs Judoklubb as the first organisation running on it.
 
-* MVP-002 – Bank statement import and matching via core — Helsingborgs Judoklubb's bank
-  statement is read through the core into a common transaction model and matched against
-  supporting documents, with a result equivalent to today's solution.
+* [MVP-002 – Common book model and validation via core](mvp/MVP-002-common-book-model.md) —
+  accounts, opening balances and vouchers modelled once in the core, with the general book
+  checks; Helsingborgs Judoklubb validated through it, Aktivitet Förebygger's format
+  compared.
+* MVP-003 – Bank statement import and reconciliation via core — the bank statement is
+  imported and reconciled against the vouchers through the core.
+* MVP-004 – Reports via core — the reports Helsingborgs Judoklubb and Aktivitet Förebygger
+  both generate today, produced once by the core.
 
 ## R3 – Agent tools & human-in-the-loop (Planned)
 
@@ -53,6 +66,15 @@ Moves Aktivitet Förebygger onto the core as a stress test, adding payroll, sala
 documentation, payments and stricter approval rules as general capabilities.
 
 ## Backlog of ideas to be implemented / fixed
+
+* Remove the remaining template leftovers — `.github/workflows/dast.yml` and the example
+  section in `docs/methodology-compliance/interpretations.md`. The owner does this together
+  with MVP-002. `_LÄS-MIG-FÖRST.md` and the EXAMPLE MVP and plan were removed in `947b599`.
+* Raise the coverage floor once MVP-002's domain code has a stable baseline
+  (interpretations §1).
+* Helsingborgs Judoklubb project: move the decision log ("Rättelser och beslut") out of the
+  bookkeeping rules file, so that the rules can be read without personal data
+  (`GAP-F2-CONFIDENTIAL`).
 
 * Relate the books' storage and audit trail to the Swedish Bookkeeping Act
   (bokföringslagen) — archiving and verification requirements. Not critical now.

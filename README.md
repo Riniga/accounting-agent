@@ -5,11 +5,13 @@ organisation keeps its own private project with data, chart of accounts, rules a
 configuration; this repository holds the general functionality they share — never their
 data.
 
-**Status:** initialising — no code yet; see [MVP-001](docs/mvp/MVP-001-walking-skeleton.md).
+**Status:** early development (0.1.0) — a walking skeleton: the package, a minimal `run`
+command and all CI quality gates ([MVP-001](docs/mvp/MVP-001-walking-skeleton.md)). No
+bookkeeping functionality yet; that starts with [MVP-002](docs/mvp/MVP-002-common-book-model.md).
 **Owner:** Rickard Nisses-Gagnér (product and technical owner, sole maintainer).
-**Licence:** PolyForm Noncommercial 1.0.0 — free for noncommercial use
-([ADR-005](docs/architecture/decisions/ADR-005-noncommercial-licence.md); `LICENSE` is added
-in MVP-001).
+**Licence:** [PolyForm Noncommercial 1.0.0](LICENSE) — free for any noncommercial use,
+including by non-profit organisations; commercial use is not permitted
+([ADR-005](docs/architecture/decisions/ADR-005-noncommercial-licence.md)).
 
 ## Vision
 
@@ -20,8 +22,8 @@ the same codebase, with strictly separated data, rules and permissions. See
 ## Workspace Structure
 
 ```text
-src/accounting_agent/  The core package (planned — MVP-001)
-tests/                 Tests and synthetic fixtures (planned — MVP-001)
+src/accounting_agent/  The core package: organisation profile + `accounting-agent` command
+tests/                 Tests and synthetic fixtures (no real data — ADR-003)
 
 docs/
     Architecture, development process, standards, roadmap, MVPs and implementation plans
@@ -29,7 +31,7 @@ docs/
 
 > **Note**
 >
-> The repository is currently being established. The organisation projects (JudoSyd,
+> The organisation projects (JudoSyd,
 > Helsingborgs Judoklubb, Aktivitet Förebygger) are separate private repositories and are
 > never part of this one ([ADR-003](docs/architecture/decisions/ADR-003-no-real-data-in-core-repo.md)).
 
@@ -65,7 +67,36 @@ process, and [`AGENTS.md`](AGENTS.md) for how AI tools work within it.
 4. Read the project idea in [`docs/initial-idea.md`](docs/initial-idea.md) and the active
    MVP in [`docs/mvp/`](docs/mvp/).
 
-Install, run and test commands are added here in MVP-001, once the package exists.
+## Quick start
+
+Requires Conda (Miniconda or Anaconda) and Git — details in
+[`docs/development/setup.md`](docs/development/setup.md).
+
+```bash
+# install
+git clone git@github.com:riniga/accounting-agent.git
+cd accounting-agent
+conda env create -f environment.yml
+conda activate accounting-agent
+pip install -e .
+pre-commit install
+
+# test
+pytest -q
+
+# run (against the synthetic example organisation)
+accounting-agent run example --config-dir tests/fixtures/example
+```
+
+An organisation project runs `accounting-agent run <organisation> --config-dir <path>`
+against the directory that holds its `organisation.yaml`:
+
+```yaml
+organisation: hbg-judo      # lowercase id; must match the command's <organisation>
+features:
+  accounting: true
+  payroll: false
+```
 
 ## Required GitHub Actions secrets
 

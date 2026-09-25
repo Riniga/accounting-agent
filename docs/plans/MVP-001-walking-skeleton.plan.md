@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-001-walking-skeleton.md`](../mvp/MVP-001-walking-skeleton.md)
 
-**Status:** Not started — plan written, awaiting review.
+**Status:** Implemented – pending PR
 
 ## 0. Investigation
 
@@ -59,6 +59,151 @@ payroll).
 Record the findings as a table or short bullets under this section, not as a copy of code
 or data.
 
+### Findings (2026-09-25)
+
+#### Toolchain and versions
+
+| Item | Found | Decision |
+|---|---|---|
+| Python | 3.14.7 is the latest stable version (3.15 is at rc2). It is on conda-forge for both `win-64` and `linux-64`. Ruff, pip-tools, Semgrep, pytest, pytest-cov, PyYAML, pip-licenses and pip-audit all declare 3.14 support. pre-commit and detect-secrets do not declare it, but are pure Python. | **Python 3.14.** Phase 3 verifies that pre-commit and detect-secrets actually run on it; fall back to 3.13 if they don't. |
+| Ruff | 0.16.9 (the template pinned 0.16.6) | Pin `ruff==0.16.9` and pre-commit `rev: v0.16.9` |
+| pre-commit / hooks | pre-commit 4.6.2; `pre-commit-hooks` v6.0.0; `detect-secrets` v1.5.0 | Update the ranges and revisions |
+| pip-tools | 7.6.1 | Unpinned in CI, as in the template |
+| pytest / pytest-cov / PyYAML | 9.1.1 / 7.1.0 / 6.0.3 | `pytest-cov` is added (coverage gate). PyYAML is the only runtime dependency — the YAML parser for `organisation.yaml`. The standard library has none |
+| GitHub Actions | `actions/checkout` v7.0.1, `actions/setup-python` v7.0.0, `actions/cache` v6.1.0, `conda-incubator/setup-miniconda` v4.1.0, `github/codeql-action` v4.38.2 | Update the tags that are behind (`setup-miniconda`) |
+| Conda | Conda 26.5.3 is installed locally (`~/anaconda3`), but not on the Git Bash PATH | Keep Conda (ADR-002). |
+| `uv` | Not installed | **Not trialled** — deviation from this section's plan. For one small, pure-Python package the expected benefit (faster environment setup) doesn't justify introducing and comparing a second toolchain now. Revisit if the CI environment step becomes a real bottleneck — measure its duration in phase 4. |
+
+#### GitHub security features (public repository)
+
+| Setting | State 2026-09-25 | Action |
+|---|---|---|
+| Secret scanning | enabled | Keep. Complements detect-secrets, which also runs as a pre-commit hook |
+| Push protection | enabled | Keep |
+| Dependabot alerts | **disabled** | Enable (4.3) |
+| Dependabot security updates | **disabled** | Enable (4.3) |
+| Private vulnerability reporting | **disabled** | Enable (4.3). `SECURITY.md` depends on it |
+| Branch protection / rulesets on `main` | **none** | Apply (4.3) |
+
+- **Vulnerability check in CI:** Dependabot alerts only watch the default branch after
+  merge. `pip-audit` against `requirements-lock.txt` checks the pull request *before*
+  merge. **Add `pip-audit` to the Dependencies job.**
+- **SAST:** CodeQL is free for public repositories. Semgrep does not run natively on
+  Windows, which doesn't matter because it only runs in CI. **Run both on the first pull
+  request in phase 4**, then keep the one with the better signal-to-noise ratio and run
+  time, and record the choice in `interpretations.md`.
+
+#### Baseline analysis — Helsingborgs Judoklubb (`HJK - Ekonomi`)
+
+Read: `2026/agent/*.py` (structure, plus the importer in full), `2026/agent/README.md`,
+`2026/Bokföring/README.md`. Not read: books, bank files, receipts, personnel and member
+data.
+
+> **Finding — personal data in the rules file.** `2026/Bokföring/README.md` combines the
+> rules with a running log, "Rättelser och beslut" (corrections and decisions), that names
+> members, parents and children next to amounts. Reading the rules therefore exposed real
+> personal data to the AI tool. Nothing from it has been copied here. **Recommendation for
+> the HJK project:** move the decision log out of `README.md` into its own file. The
+> extraction work can then read the rules without reading personal data.
+
+1. **Which scripts exist today?** Four standard-library-only Python scripts (about 2,200
+   lines) in `2026/agent/`:
+   - `importera_kontoutdrag.py` — bank CSV import with personal-identity-number masking.
+   - `kontroll.py` — read-only validation, with FEL (error), VARNING (warning) and INFO
+     levels and an exit code.
+   - `generera_redovisning.py` — ten Markdown reports. It refuses to run when the checks fail.
+   - `medlemskontroll.py` — member registers compared against attendance and payments.
+
+   A step-by-step routine for people and agents is in `Bokföring/SOP.md`.
+2. **Which data models are used?** Semicolon-separated UTF-8 CSV files with a decimal
+   point and ISO dates: chart of accounts (a BAS subset), opening balance, budget, members,
+   member payments, to-do list, comments and bank statement. **One Markdown file per
+   voucher**, with YAML-like front matter (`verifikation`, `datum`, `text`, `belopp`,
+   `debet`, `kredit`, `underlag`) and free text below. The whole BAS chart of accounts is
+   kept as reference in `kontobas/`.
+3. **Which parts are specific to Helsingborgs Judoklubb?**
+   - The organisation name and number, which are hard-coded.
+   - The Nordea export format.
+   - The member categories and fees.
+   - The Swedish sports-club registers (Svenska Lag, IdrottOnline) and attendance.
+   - The posting rules table (which counterparty maps to which account).
+   - The park accounts 3008/6990 as numbers.
+   - The hard-coded paths relative to the script.
+4. **Which parts are general?**
+   - The voucher model (one file per voucher, sequence without gaps, never deleted,
+     corrected by a reversing voucher).
+   - Chart of accounts and opening-balance validation.
+   - Double-entry checks.
+   - Bank-statement ↔ voucher reconciliation.
+   - Sign conventions.
+   - The FEL/VARNING/INFO check framework.
+   - Personal-identity-number masking.
+   - Balances.
+   - Reports: income statement, balance sheet, general ledger, voucher list, monthly
+     overview, budget follow-up.
+   - The "don't guess — park and flag" principle.
+5. **Which rules live implicitly in prompts or Python?**
+   - The posting rules are documented in the README, but applied by the agent following
+     prose rather than by code.
+   - Age and fee rules are constants in `medlemskontroll.py`.
+   - Report sign conventions (income statement: credit − debit; balance sheet: debit −
+     credit) are in code comments and the README.
+   - The "confidence" of a member link (`säker`/`trolig`/`gissad`) is an early form of the
+     idea's confidence value.
+6. **Which functions should become agent tools?**
+   - `kontroll` → `validate_books()`.
+   - The obokförda (unbooked transactions) list → `get_unprocessed_transactions()`.
+   - Voucher creation with the next number → `post_transaction()`.
+   - Report generation → `generate_report()`.
+   - Bank import → an importer.
+   - The planned "agent proposes new vouchers from new statements and receipts" →
+     `suggest_posting()`.
+7. **Which operations require human approval?** Per the README:
+   - Changing an existing voucher requires an explicit decision by the treasurer (kassör).
+   - Scripts and agents may only create new vouchers.
+   - Uncertain postings are parked and flagged to the treasurer.
+   - Decisions are logged.
+
+#### Lighter pass — JudoSyd and Aktivitet Förebygger
+
+- **JudoSyd (`Kassörsassitenten`):**
+  - Already runs **Claude Code headless (`claude -p`) from a scheduled PowerShell script**
+    (`scripts/kassor-run.ps1`), with an allowed-tools list and a log directory.
+  - Two home-built **MCP servers**:
+    - Gmail/Calendar: search, fetch, download attachment, archive, plus calendar events.
+    - Discord: DM and channel message.
+  - Design docs in `docs/` (assignment, technology, plans).
+  - No bookkeeping scripts; the books are mostly PDF/Excel.
+  - This is a working example of the pattern R3 has to decide on: Claude Code as the agent
+    in the organisation project, with tools as MCP servers.
+- **Aktivitet Förebygger:**
+  - One script, `Bokföring/bygg-redovisning.py` (about 620 lines), that builds reports from
+    **Markdown voucher files** (with voucher series: customer invoices, bank, …) plus CSV
+    chart of accounts, opening balance and budget.
+  - Also covers accounts receivable and taxes/fees (payroll-related).
+  - Hard-codes the organisation name and number.
+
+#### Conclusions for MVP-002 and the core
+
+- **The strongest overlap is not bank import but the book model.** Both Helsingborgs
+  Judoklubb and Aktivitet Förebygger have the same model: chart of accounts CSV, opening
+  balance CSV, and one Markdown file per voucher. Both also generate largely the same
+  reports (income statement, balance sheet, general ledger, voucher list, monthly
+  overview, budget) with separate, duplicated code. The bank import is Nordea-specific and
+  used only by Helsingborgs Judoklubb.
+- **Decided 2026-09-25 (owner):** MVP-002 is changed from "bank statement import and
+  matching" to **"common book model and validation via core"**. It reads the chart of
+  accounts, opening balance and voucher files into core models, and runs the general
+  checks from `kontroll.py`. It is proven on Helsingborgs Judoklubb and checked against
+  Aktivitet Förebygger's format. Written early, straight after the investigation:
+  [`MVP-002-common-book-model.md`](../mvp/MVP-002-common-book-model.md). Bank import and
+  reconciliation follow as MVP-003, and reports as MVP-004 (roadmap headings only).
+- Existing code is in Swedish (identifiers and messages). The core follows
+  `docs/standards/coding.md` (English code). Domain terms (verifikation, kontoplan) need a
+  small glossary when extracting.
+- The organisation projects hard-code paths relative to the script. The core's
+  `--config-dir` approach replaces this.
+
 ## 1. Goal
 
 When this plan is done:
@@ -81,6 +226,13 @@ When this plan is done:
   and `docs/mvp/MVP-002-*.md`.
 - **Out:** any accounting logic, a data model beyond the profile, LLM calls, changes to the
   organisation projects, CD, a scheduler, publishing to PyPI.
+- **Result (close review 2026-09-25):** one change fell outside the "In" list:
+  - `.claude/settings.json` — `gh pr merge` was made an ask-first action. It mitigates
+    `GAP-F1-SELFMERGE`, found in 5.2, and changes no product behaviour.
+
+  The close review also corrected template leftovers in `docs/standards/` (`git.md`,
+  `dependencies.md`, `testing.md`) and in `.github/pull_request_template.md`. These are
+  accuracy fixes, not convention changes.
 
 ## 3. Chapters addressed
 
@@ -100,73 +252,213 @@ When this plan is done:
 
 ### Phase 1 — Investigation
 
-- [ ] 1.1 Toolchain: Python version, tool and action versions, Conda vs. `uv`. Record in §0.
-- [ ] 1.2 GitHub-native security features for the repository, and Semgrep vs. CodeQL.
-      Record in §0.
-- [ ] 1.3 Baseline analysis of `HJK - Ekonomi` (the seven questions) plus the lighter pass
-      over JudoSyd and Aktivitet Förebygger. Record in §0.
+- [x] 1.1 Toolchain: Python version, tool and action versions, Conda vs. `uv`. Record in §0.
+      Result: Python 3.14, versions updated. `uv` was not trialled (see §0).
+- [x] 1.2 GitHub-native security features for the repository, and Semgrep vs. CodeQL.
+      Record in §0. Result: secret scanning and push protection are already on; the other
+      settings go to 4.3. `pip-audit` is added. The SAST choice is deferred to phase 4, after
+      running both tools.
+- [x] 1.3 Baseline analysis of `HJK - Ekonomi` (the seven questions) plus the lighter pass
+      over JudoSyd and Aktivitet Förebygger. Record in §0. Result: done. Personal data was
+      found in the HJK rules file (not copied). Proposal: MVP-002 becomes "common book
+      model and validation".
 
 Commit: `docs(mvp-001): record investigation findings for toolchain and baseline analysis`
 
 ### Phase 2 — Package skeleton (test first)
 
-- [ ] 2.1 Write the tests first and have them reviewed: valid profile → features logged,
+- [x] 2.1 Write the tests first and have them reviewed: valid profile → features logged,
       exit 0; missing file, invalid YAML, missing `organisation`, non-boolean feature →
       clear error, non-zero exit. Synthetic fixture `tests/fixtures/example/organisation.yaml`.
-- [ ] 2.2 Implement `src/accounting_agent/` (profile loading + `run` CLI) until the tests
+      Result: the tests were written first and failed for the right reason
+      (`ModuleNotFoundError`) before implementation. **Deviation from D1 SKA 5 (AI-TDD):** on
+      2026-09-25 the owner explicitly waived reviewing the tests *before* implementation. The
+      tests are reviewed together with the code in the pull request instead. Record this in
+      the D1 assessment (5.2). The tests also cover a few things beyond the list above:
+      - unsafe YAML tags are rejected (`yaml.safe_load`);
+      - the organisation id must be a lowercase slug;
+      - `1` / `"true"` / `null` are rejected as feature values;
+      - unknown top-level keys are ignored with a warning, so that later sections such as
+        `approval` don't break an older core;
+      - `run <org>` fails if `<org>` doesn't match the profile, which guards against running
+        against another organisation's configuration;
+      - `python -m accounting_agent` works end to end.
+- [x] 2.2 Implement `src/accounting_agent/` (profile loading + `run` CLI) until the tests
       pass. Add `[project]` and `[build-system]` to `pyproject.toml` with the console script
-      entry.
-- [ ] 2.3 Adapt `pytest.ini` (`testpaths = tests`) and the Ruff/coverage sections of
+      entry. Result: `profile.py` (`OrganisationProfile`, `load_profile`, `ProfileError`),
+      `cli.py` (argparse, logging to stderr, exit 0/1, usage errors exit 2) and
+      `__main__.py`. Build backend: setuptools. The version comes from
+      `accounting_agent.__version__` (0.1.0). The licence is declared as the SPDX id
+      `PolyForm-Noncommercial-1.0.0`; `license-files` is added with `LICENSE` in 5.1. The
+      only runtime dependency is PyYAML. All 27 tests pass on Python 3.14.7, coverage is
+      96 %, and Ruff format and check are clean.
+- [x] 2.3 Adapt `pytest.ini` (`testpaths = tests`) and the Ruff/coverage sections of
       `pyproject.toml` (`src`, `known-first-party`, coverage source) — no placeholders left.
+      Result: done. `fail_under` stays at 50 until 4.4 measures the baseline in CI.
 
 Commit: `feat(core): add accounting-agent package skeleton with run command and profile validation`
 
 ### Phase 3 — Environment and dependencies
 
-- [ ] 3.1 Set the environment name (`accounting-agent`) and the Python version from §0 in
+- [x] 3.1 Set the environment name (`accounting-agent`) and the Python version from §0 in
       `environment.yml`. Add the YAML parser to `requirements.in` (justify it in the PR),
       update tool pins, and generate `requirements-lock.txt`.
-- [ ] 3.2 Update `.pre-commit-config.yaml` revisions and regenerate `.secrets.baseline`
+      Result:
+      - `environment.yml` installs only Python 3.14 and pip from conda-forge, and everything
+        else from the lock. The `defaults` channel was dropped: nothing needs it, and it
+        carries Anaconda's terms of service.
+      - pytest and pytest-cov moved from Conda to `requirements.in`, so every pip-installable
+        tool is in the one hash-pinned lock.
+      - `colorama` is pinned unconditionally, because pytest needs it on Windows only and it
+        would otherwise cause Windows/Linux lock drift.
+      - The lock has 19 packages, compiled on Windows. The CI drift check (4.2), which
+        recompiles on Linux, confirms that both platforms resolve the same lock.
+      - A fresh environment from `environment.yml` took 30 s. `pip install -e .`, 27 tests
+        and the example run all work on it.
+- [x] 3.2 Update `.pre-commit-config.yaml` revisions and regenerate `.secrets.baseline`
       with forward-slash paths.
-- [ ] 3.3 Update `docs/development/setup.md`, `environment.md` and `tools.md` and the
+      Result: revisions are ruff v0.16.9, pre-commit-hooks v6.0.0 and detect-secrets v1.5.0.
+      The baseline was regenerated with 0 findings; it scans only git-tracked files, so
+      `docs/reference/` is never scanned. `pre-commit run --all-files` passed all seven
+      hooks on Python 3.14, so the §0 fallback to 3.13 is not needed.
+- [x] 3.3 Update `docs/development/setup.md`, `environment.md` and `tools.md` and the
       `AGENTS.md` "Local commands" block to the real commands. Verify them in a fresh clone.
+      Result: all four updated; `setup.md` rewritten in English. The commands were verified
+      in a fresh environment built from the working tree, not in a fresh clone, because the
+      phase-3 files were not yet committed. The fresh-clone check is part of 6.3.
 
 Commit: `build: pin Python toolchain, lock dependencies and document local setup`
 
 ### Phase 4 — CI gates
 
-- [ ] 4.1 Adapt `.github/workflows/ci.yml`: Python version, environment name, install step
+- [x] 4.1 Adapt `.github/workflows/ci.yml`: Python version, environment name, install step
       for the package, SAST scope `src`, licence-scan ignore list, and the SAST tool chosen
       in §0. Add a vulnerability check if §0 found it useful.
-- [ ] 4.2 Open a PR and get every job green. Then show that each gate fails at least once
+      Result:
+      - Python 3.14 in one place (`env.PYTHON_VERSION`). Actions pinned to full version
+        tags; pinning to commit SHAs is a C2 gap for the assessment.
+      - Workflow permissions are `contents: read` (least privilege). CodeQL alone gets
+        `security-events: write`.
+      - CI also runs on pushes to `main`.
+      - `pip-audit` was added to the Dependencies job. The licence scan now runs in a
+        separate venv that holds only the locked dependencies, so the scanning tools aren't
+        scanned themselves. All 19 licences are on the allowlist.
+      - Semgrep and CodeQL run side by side (separate jobs `SAST` and `CodeQL`).
+      - The instruction-file scan also covers `.github/copilot-instructions.md`.
+      - The first run on PR #5 (2026-09-25) passed everything first time, **including the
+        lock-drift check**, so the Windows-compiled lock matches the Linux compile.
+      - Timings: Ruff 11 s, Dependencies 26 s, SAST/Semgrep 27 s (201 rules, 0 findings),
+        CodeQL 57 s (0 alerts), Run tests 62 s, of which the Conda environment took 50 s.
+        That is fast enough that switching to `uv` (see §0) isn't needed.
+- [x] 4.2 Open a PR and get every job green. Then show that each gate fails at least once
       on a deliberately broken commit (formatting error, failing test, fake secret, lock
       drift, SAST finding). Revert, and record the result under this TODO.
-- [ ] 4.3 Apply branch protection and the security settings per
+      Result: PR #5 was green on its first run (see 4.1). The gate check ran on a throwaway
+      branch `ci/gate-check` with draft PR #6, pushed with `--no-verify` with the owner's
+      explicit approval. The PR was closed and the branch deleted the same day, so
+      MVP-001's history carries none of the broken code.
+
+      | Gate | Deliberate break | Result |
+      |---|---|---|
+      | Ruff | `x=1` (unformatted) | ❌ fail — "1 file would be reformatted"; all other jobs skipped (`needs: lint`) |
+      | Dependencies — lock drift | `six>=1.16` added to `requirements.in` without recompiling | ❌ fail — `+six==1.17.0` in the lock diff |
+      | Dependencies — pip-audit | `pyyaml==5.3` (run locally) | ❌ exit 1 — PYSEC-2020-96, PYSEC-2021-142 |
+      | Dependencies — licences | LGPL-licensed `chardet` (run locally) | ❌ exit 1 — "LGPLv2+ not in allow-only licenses" |
+      | SAST (Semgrep) | `shell=True`, `yaml.load(Loader=yaml.Loader)`, `eval()` | ❌ fail — 3 blocking findings |
+      | CodeQL | same code | ✅ **passed — no alerts** |
+      | Secret scan | `password = "..."` (fake) | ❌ fail — "Secret Keyword" at the exact line |
+      | Instruction file scan | U+200B in `AGENTS.md` | ❌ fail — "AGENTS.md:1:12: U+200B (ZERO WIDTH SPACE)" |
+      | Run tests | `assert 1 + 1 == 3` | ❌ fail — 1 failed, 27 passed |
+
+      **SAST decision:** Semgrep is kept and CodeQL is removed from CI (`interpretations.md`
+      §2). CodeQL reports only data flows from recognised remote sources, which this CLI
+      does not have. Revisit in R4, when e-mail and network input arrive.
+
+      pip-audit and the licence scan were demonstrated locally rather than in CI. Both run
+      after the lock-drift step in the same job, so breaking them in CI would have needed
+      a consistent vulnerable lock — more churn for the same evidence.
+- [x] 4.3 Apply branch protection and the security settings per
       `docs/development/repo-settings.md`, with required approvals at 0 under the documented
       exception. Record the ruleset id and date there.
-- [ ] 4.4 Measure coverage and set `fail_under` just below the baseline. Record it in
+      Result: applied 2026-09-25 with `gh api`, with the owner's approval.
+      - Ruleset "Protect main" (`23990881`), no bypass, admins included: PR required, 0
+        approvals, all six CI checks required and strict, no force push, no deletion.
+      - Dependabot alerts, Dependabot security fixes and private vulnerability reporting
+        are enabled.
+      - Verified: `rules/branches/main` returns all four rules, and PR #5 shows `CLEAN` with
+        six green checks.
+      - The EX-001 exception text itself is written in 5.2.
+- [x] 4.4 Measure coverage and set `fail_under` just below the baseline. Record it in
       `interpretations.md`.
+      Result: the CI baseline is 96.47 % (82 of 85 statements). The floor is set to **90**,
+      not 95, because a codebase this small moves several points with one new module (see
+      `interpretations.md` §1). Revisit in MVP-002.
 
 Commit: `ci: adapt quality gates to the core package and enforce them on main`
 
 ### Phase 5 — Licence and methodology baseline
 
-- [ ] 5.1 Add `LICENSE` with the PolyForm Noncommercial 1.0.0 text, copied verbatim from
+- [x] 5.1 Add `LICENSE` with the PolyForm Noncommercial 1.0.0 text, copied verbatim from
       the official source. Add a licence line to `README.md`.
-- [ ] 5.2 Assess areas A–F using `_template.md`. Fill in the gap register,
+      Result:
+      - The text comes from `polyformproject/polyform-licenses` at tag 1.0.0. The body is
+        byte-identical to the source (SHA-256 `c0ea4a89…`), preceded by the
+        `Required Notice:` copyright line that the licence's *Notices* section provides for.
+      - `license-files = ["LICENSE"]` was added to `pyproject.toml`. The package metadata
+        now shows `License-Expression: PolyForm-Noncommercial-1.0.0`.
+      - The licence text confirms ADR-005's premise: use by charitable organisations is
+        explicitly a permitted purpose.
+- [x] 5.2 Assess areas A–F using `_template.md`. Fill in the gap register,
       `interpretations.md` (formatter, complexity threshold, SAST/secret/SCA tools, coverage
       floor, branch model, AI trailer policy) and `exceptions.md` (EX-001: no non-author
       review, single maintainer).
+      Result:
+      - Six area files (`a-…` to `f-…`) assess all 21 chapters.
+      - `interpretations.md` §1–§9: coverage, SAST, Ruff and complexity, test strategy,
+        dependency tooling, secret-scanning layers, AI marking, branch model and versioning,
+        data classification for AI use.
+      - `exceptions.md`: EX-001 (no non-author review, active) and EX-002 (AI-TDD waived in
+        phase 2, closed, one-off).
+      - The gap register has 22 rows: 3 H, 6 M, 12 L, and 1 external.
+      - **Findings this step surfaced:**
+        - (a) E1 SKA 5 — the AI tool had been adding `Co-Authored-By` trailers against
+          `AGENTS.md`. Stopped from this phase; the history is not rewritten
+          (interpretations §7).
+        - (b) F1 — with 0 approvals the AI tool could merge a green PR. Mitigated by making
+          `gh pr merge` an ask-first action in `.claude/settings.json`.
+        - (c) F2 SKA 2 — the personal-data exposure from phase 1 is recorded as an H gap,
+          with a reading rule for `docs/reference/` (interpretations §9).
 
 Commit: `docs(methodology): add PolyForm Noncommercial licence and first methodology baseline`
 
 ### Phase 6 — Close
 
-- [ ] 6.1 Update `docs/architecture/overview.md`, `current-state.md` and `README.md` to
+- [x] 6.1 Update `docs/architecture/overview.md`, `current-state.md` and `README.md` to
       describe what now exists.
-- [ ] 6.2 Write `docs/mvp/MVP-002-*.md` from the §0 analysis, and link it from the roadmap.
-- [ ] 6.3 Verify each acceptance criterion for real, including a `git ls-files` check that
+      Result:
+      - README: current status, a quick start (install, test, run) and an
+        `organisation.yaml` example.
+      - `overview.md` and `current-state.md` rewritten from the actual structure; the test
+        counts were checked, not estimated.
+      - Roadmap: R1 marked done pending the merge of PR #5.
+      - MVP-002 now includes masking personal identity numbers (`GAP-E4-MASKING`).
+      - Also recorded at close: exception EX-003 (individual AI plan with the training
+        setting on — fix by 2026-10-02) and local-admin daily use (`GAP-A1-PRIVILEGE`).
+- [x] 6.2 Write `docs/mvp/MVP-002-*.md` from the §0 analysis, and link it from the roadmap.
+      Result: done early (2026-09-25), right after phase 1, at the owner's request. At close,
+      only check that MVP-002 still matches what MVP-001 actually delivered.
+- [x] 6.3 Verify each acceptance criterion for real, including a `git ls-files` check that
       nothing from `docs/reference/` is tracked. Fill in "Outcome at close".
+      Result:
+      - **Fresh clone** of `feature/mvp-001-walking-skeleton` from GitHub at `972481e`: the
+        environment was built from `environment.yml` in 30 s, `pip install -e .` worked, all
+        27 tests passed, and `accounting-agent run example …` exited 0. `docs/reference/`
+        does not exist in the clone.
+      - `git ls-files docs/reference` and the whole branch history contain 0 files from it.
+        Tracked files contain no personal-identity-number pattern and none of the
+        organisation or account numbers seen in the reference projects.
+      - `rules/branches/main` returns the four ruleset rules.
+      - "Outcome at close" is filled in, in the MVP.
 
 Commit: `docs(mvp-001): close MVP-001 and define MVP-002`
 

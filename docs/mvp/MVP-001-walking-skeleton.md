@@ -1,6 +1,6 @@
 # MVP-001 – Walking skeleton & baseline analysis
 
-Roadmap: [R1 – Foundation](../roadmap.md#r1--foundation-planned) ·
+Roadmap: [R1 – Foundation](../roadmap.md#r1--foundation-done--pending-merge-of-pr-5) ·
 Plan: [`MVP-001-walking-skeleton.plan.md`](../plans/MVP-001-walking-skeleton.plan.md)
 
 ## Purpose
@@ -91,6 +91,52 @@ structure.
 - No file under `docs/reference/` is tracked by git, and no real organisation data appears
   in any committed file.
 
-## Outcome at close (YYYY-MM-DD)
+## Outcome at close (2026-09-25)
 
-<!-- Fill in when the MVP is actually closed. -->
+Closed as **delivered**, pending the merge of PR #5. Re-verified in the MVP close review on
+the same day. Against the criteria above:
+
+- **Fresh clone → working environment → `run` exits 0: met.** Verified from a fresh clone
+  of the pushed branch (`972481e`): environment in 30 s, all tests passing, the example
+  run exiting 0.
+- **`pytest` passes locally and in CI, with the coverage floor below the measured baseline:
+  met, with a deliberate margin.**
+  - 29 tests pass locally. The close review added 2 tests for behaviour that already
+    existed: `--version`, and the output when no feature is enabled. CI was green with 27
+    tests on every earlier push.
+  - Coverage is 96.47 %. The floor is 90 %, not "just below", because a codebase of 85
+    statements swings several points with one new module. It is to be raised in MVP-002
+    (interpretations §1). The owner accepted this margin when it was reported in phase 4.
+- **Every gate runs on the PR and was shown to fail at least once: met, with two
+  adjustments the owner accepted.**
+  - Six required checks run on every PR, and each was shown to fail on throwaway PR #6.
+  - `pip-audit` and the licence scan were shown to fail locally, not on a PR commit,
+    because they run after the lock-drift step in the same job.
+  - CodeQL was removed after it let `shell=True`, `eval` and `yaml.load` through while
+    Semgrep blocked all three (interpretations §2).
+- **`main` protected, merge requires CI, approval exception documented: met.** Ruleset
+  "Protect main" has no bypass, the owner included. There are 0 required approvals, under
+  EX-001.
+- **Methodology assessment A–F plus gap register: met.** 21 chapters assessed, 22 gap rows,
+  9 interpretations, 3 exceptions. EX-003 (AI-tool training setting on) was **closed the
+  same day** after the owner turned the setting off. The honest headline remains that
+  **F2 is not met**: personal data reached the AI tool's context during the analysis
+  (`GAP-F2-CONFIDENTIAL`), and there is no DPA with the provider (`GAP-F2-DPA`).
+- **Analysis answers the seven questions; MVP-002 defined from it: met.** The analysis
+  moved MVP-002's focus from bank import to the book model that Helsingborgs Judoklubb and
+  Aktivitet Förebygger already share.
+- **Nothing from `docs/reference/` tracked, no real data committed: met.** Verified with
+  `git ls-files`, the branch history and pattern searches.
+
+**Deviations from the plan, all recorded where they happened:**
+- `uv` was not trialled (§0); the CI timings later showed Conda is fast enough.
+- The owner waived reviewing the tests before implementation in phase 2 (EX-002). The tests
+  are therefore reviewed in PR #5 — that review is still outstanding.
+- The AI tool added `Co-Authored-By` trailers against `AGENTS.md` until phase 5
+  (`GAP-E1-AITRAILER`).
+- MVP-002 was written right after phase 1, at the owner's request.
+- `.claude/settings.json` was changed (`gh pr merge` made an ask-first action). It lies
+  outside the plan's scope boundary, but is a direct mitigation of `GAP-F1-SELFMERGE`,
+  found in the phase-5 assessment.
+- The close review corrected template leftovers that were wrong for this project, in
+  `git.md`, `dependencies.md`, `testing.md`, the PR template and `AGENTS.md`.

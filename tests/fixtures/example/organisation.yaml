@@ -1,0 +1,8 @@
+# Synthetic example organisation used by the tests. Not a real organisation (ADR-003).
+organisation: example
+
+features:
+  accounting: true
+  payroll: false
+  gmail: false
+  discord: false
