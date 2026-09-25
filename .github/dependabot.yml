@@ -1,0 +1,17 @@
+version: 2
+
+updates:
+  # Python dependencies. Watches requirements.in (the source ranges) — Dependabot's pip
+  # ecosystem support understands pip-compile's requirements.in/requirements-lock.txt pair
+  # and opens PRs that update both together.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # The workflow files under .github/workflows/ pin third-party Actions (actions/checkout,
+  # azure/login, ...) — also a dependency supply chain, in scope for C2 (SKA 5).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

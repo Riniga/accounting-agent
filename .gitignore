@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+.env
+
+# Output
+output/
+exports/
+reports/
+
+# App-specific runtime state — add one block per app that generates local-only files,
+# with a comment explaining why (generated at runtime, not meant to be committed).
+# Example:
+# apps/<app-1>/runs/
+
+# IDE
+.vscode/
+.idea/
+.obsidian/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local development runtime scratch directory
+.local/

@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Write",
+      "Edit",
+      "Bash(mkdir *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(git status*)",
+      "Bash(git branch*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git show*)",
+      "Bash(git remote*)",
+      "PowerShell(New-Item *)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Get-Item *)",
+      "PowerShell(Resolve-Path *)",
+      "PowerShell(Select-String *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(Invoke-WebRequest *)",
+      "PowerShell(git status*)",
+      "PowerShell(git branch*)",
+      "PowerShell(git log*)",
+      "PowerShell(git diff*)",
+      "PowerShell(git show*)",
+      "PowerShell(git remote*)"
+    ],
+    "ask": [
+      "Bash(rm *)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(git commit*)",
+      "PowerShell(git push*)"
+    ]
+  }
+}

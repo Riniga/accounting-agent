@@ -1,0 +1,35 @@
+# Source list for requirements-lock.txt
+# (pip-compile --generate-hashes --no-annotate --no-header requirements.in).
+# This is the dependency surface environment.yml's `pip:` block lists directly;
+# environment.yml just points at the compiled lock (`-r requirements-lock.txt`).
+# Conda-managed dependencies (python, pytest, ...) are not here — they are pinned
+# directly in environment.yml. See docs/standards/dependencies.md.
+#
+# requirements-lock.txt is NOT included in this reference example — a committed lock is
+# a real, resolved snapshot that goes stale the moment you touch this file, so shipping a
+# frozen one here would be misleading (and it's never meant to be hand-preserved anyway —
+# see "To update" below). Generate your own first one before running `conda env create`:
+#   pip install pip-tools
+#   pip-compile --generate-hashes --no-annotate --no-header requirements.in
+# then commit the result. Regenerate it the same way every time you edit this file.
+#
+# To update: edit a range here, then re-run
+#   pip-compile --generate-hashes --no-annotate --no-header requirements.in
+# and commit both files together. CI fails if requirements-lock.txt drifts from this file.
+# Prefer letting CI's own recompile (Linux, the actual deploy target) be authoritative over
+# a local Windows recompile — Windows and Linux can silently resolve different transitive
+# packages for the same requirements.in (see the example comment below); if CI's drift
+# check fails after a local Windows edit, trust CI's diff over your own local output.
+
+# Example of the platform-conditional-package gotcha this project hit twice (colorama via
+# tqdm's Windows-only marker; tzdata via a pandas version that needed it on Windows but not
+# Linux): when a package silently differs between a local Windows compile and CI's Linux
+# compile, pin it here explicitly and unconditionally rather than letting a transitive
+# marker decide it per platform. Delete this comment and the example line below once you
+# have real dependencies and have hit (or ruled out) the same issue yourself.
+# example-transitive-package==1.2.3
+
+# Ruff is pinned exactly — its formatter/lint output changes between minor versions. Keep
+# it on the same version as `rev` in .pre-commit-config.yaml.
+ruff==0.16.6
+pre-commit>=3,<5

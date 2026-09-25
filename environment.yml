@@ -1,0 +1,18 @@
+name: <your-env-name>
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.13 # pin to your actual target version
+  # Pin genuinely Conda-native dependencies exactly (not a range) — see
+  # docs/standards/dependencies.md "Lockfile". Only pin things here that don't belong in
+  # the pip-compiled lock below; keep this list as short as possible.
+  - pytest>=8.0
+  - pip
+  - pip:
+      # Hash-pinned lock of everything else (methodology C2 SKA 3). Source ranges live in
+      # requirements.in; regenerate with
+      #   pip-compile --generate-hashes --no-annotate --no-header requirements.in
+      # after editing it. Do not add packages directly here — see
+      # docs/standards/dependencies.md.
+      - -r requirements-lock.txt

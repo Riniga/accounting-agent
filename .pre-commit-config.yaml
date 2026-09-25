@@ -1,0 +1,32 @@
+# Local pre-commit hooks. Install once: `pre-commit install`.
+#
+# Ruff is the formatter and linter (ADR-018) — keep the `rev` below on the SAME version as
+# `ruff==...` in environment.yml; they must move together.
+#
+# Scope note: this config enforces what 023-P2 enforces — Python format + lint, plus cheap
+# file validators. Repo-wide hygiene (final newlines / trailing whitespace on docs) is a
+# separate docs-quality concern, not added here. detect-secrets (023-P7) is the pre-commit
+# layer of C4 SKA 1 / F2 SKA 5-6 — see docs/development/secrets-rotation.md and
+# docs/methodology-compliance/interpretations.md.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.6
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']

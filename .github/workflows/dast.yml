@@ -1,0 +1,43 @@
+name: DAST (manual demo)
+
+# Manual-only, on-demand DAST scaffold (methodology C1 SKA 3). This is NOT a compliance
+# gate — it is not wired to any deploy, not required to pass, and not run automatically.
+# Useful as-is once you have a staging environment to point it at automatically; until
+# then, run it by hand to show the mechanism and get real findings on demand.
+#
+# SKA 3 asks for scanning a staging environment before production. If you don't have one
+# yet, this workflow alone doesn't satisfy that — track it as an open gap (see
+# docs/methodology-compliance/gap-register.md) re-scoped to "needs a staging environment",
+# not "needs a tool", once you've set this scaffold up.
+#
+# Run it by hand against any URL you control (e.g. a local instance, or a production URL
+# with the operator's own informed consent — ZAP's baseline scan is passive/low-risk but
+# still real traffic against a real target).
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "URL to scan (e.g. https://staging.example.com)"
+        type: string
+        required: true
+
+jobs:
+  dast:
+    name: OWASP ZAP baseline scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: ${{ inputs.target_url }}
+          # Baseline = passive scan only (no active attack payloads) — the appropriate
+          # default for a manual demo run against a URL that might be production.
+          cmd_options: "-a"
+          # This is a demo run, not a triage workflow — don't file/update a GitHub issue
+          # with the findings on every manual dispatch.
+          allow_issue_writing: false
+          artifact_name: zap-report
+          # Uses secrets.GITHUB_TOKEN per the action's own docs — no dedicated token needed.
+          token: ${{ secrets.GITHUB_TOKEN }}

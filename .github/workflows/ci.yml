@@ -1,0 +1,223 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    name: Ruff
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      # Keep this version in sync with `ruff==...` in environment.yml and the `rev` in
+      # .pre-commit-config.yaml.
+      - name: Install Ruff
+        run: python -m pip install ruff==0.16.6
+
+      - name: Ruff format check
+        run: ruff format --check .
+
+      - name: Ruff lint
+        run: ruff check --output-format=github .
+
+  dependencies:
+    name: Dependencies
+    needs: lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install pip-tools and pip-licenses
+        run: python -m pip install pip-tools pip-licenses
+
+      # Lockfile-drift check (methodology C2 SKA 3): requirements-lock.txt must be exactly
+      # what requirements.in compiles to today. Fails the build if someone edited one
+      # without the other, or the lock was hand-edited. Recompiles in place and diffs
+      # against git rather than a second output file — pip-compile's header comment
+      # records its own --output-file name, so a differently-named comparison file would
+      # always show a spurious one-line diff even with zero real drift.
+      #
+      # --no-header: pip-compile can intermittently record a --no-index flag in its header
+      # comment that was never actually passed (observed on Windows locally, cause
+      # unconfirmed) — a compile from a machine that hit this would otherwise always show
+      # a one-line header diff against CI's real compile. Dropping the header entirely
+      # removes the whole class of "what command produced this" text churn, same
+      # reasoning as --no-annotate above but for the file's header instead of its
+      # per-package comments. Also watch for platform-conditional transitive packages
+      # (present on Windows, absent on Linux CI, or vice versa) causing the same kind of
+      # false drift — pin them explicitly and unconditionally in requirements.in when
+      # found, with a comment explaining why (see requirements.in in this example).
+      - name: Check requirements-lock.txt is up to date
+        run: |
+          pip-compile --generate-hashes --no-annotate --no-header --output-file=requirements-lock.txt requirements.in
+          git diff --exit-code requirements-lock.txt
+
+      # Licence scan (methodology C2 SKA 4). Allowlist lives in
+      # docs/standards/dependencies.md — keep the two in sync; this step doesn't read that
+      # file, it's the enforcement copy. Replace --ignore-packages with your own
+      # workspace's package names (they report UNKNOWN to pip-licenses since they're
+      # internal, not published, and aren't third-party dependencies to check).
+      - name: Install dependencies for licence scan
+        run: pip install -r requirements-lock.txt
+
+      - name: Licence scan
+        run: |
+          pip-licenses --allow-only \
+            "Apache Software License;Apache-2.0;Apache Software License; BSD License;Apache Software License; MIT License;Apache-2.0 OR BSD-2-Clause;BSD License;BSD-2-Clause;BSD-3-Clause;BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0;MIT;MIT License;MPL-2.0 AND MIT;Mozilla Public License 2.0 (MPL 2.0);PSF-2.0;Python Software Foundation License" \
+            --ignore-packages <your-internal-package-names>
+
+  sast:
+    name: SAST
+    needs: lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install Semgrep
+        run: python -m pip install semgrep
+
+      # Named, blocking security check (methodology C1 SKA 2) — not folded into "tests
+      # passed". Rulesets chosen for signal over noise: --config=auto's broad default set
+      # tends to include compatibility rules irrelevant to a modern, single-version
+      # codebase; these two are OWASP-Top-10-focused, matching the methodology chapter's
+      # own framing. A genuine finding gets a documented `# nosemgrep` suppression at the
+      # call site, not a disabled rule or a lowered bar.
+      #
+      # Scope this to your actual application source directories (e.g. "src" or "apps
+      # packages") — C1 is explicitly about "egen kod" (own code), not third-party/CI-
+      # pipeline supply-chain concerns (that's C2's territory). Scanning the whole repo
+      # also matches CI workflow YAML against GitHub-Actions-specific rules (e.g. unpinned
+      # action tags) — a real, separate finding class worth its own look, not folded
+      # silently into this check.
+      #
+      # Tool choice: pick with the security architect / whoever owns the org's tool
+      # position, and record the decision in interpretations.md — see that file's
+      # template section for the SAST/DAST entry this project used as a worked example.
+      - name: Semgrep scan
+        run: |
+          semgrep scan --config=p/security-audit --config=p/owasp-top-ten --error <your-source-dirs>
+
+  secret-scan:
+    name: Secret scan
+    needs: lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install detect-secrets
+        run: python -m pip install detect-secrets
+
+      # Named, blocking check (methodology C4 SKA 1, F2 SKA 5-6). Check whether GitHub's
+      # native secret scanning is available for your repo first (it needs GitHub Advanced
+      # Security on a private repo) — this self-hosted scanner is the fallback when it
+      # isn't. detect-secrets-hook compares against .secrets.baseline (pass/fail against a
+      # baseline, not a raw file diff — avoids the header-churn problem pip-compile's own
+      # drift check below has to work around). git ls-files -z / xargs -0 avoids relying
+      # on shell globbing for the full file list.
+      #
+      # .secrets.baseline stores forward-slash paths deliberately — it was generated on
+      # Windows, which writes them as backslashes by default; normalise back to
+      # forward-slash after regenerating it locally, or CI's Linux runner (which reports
+      # git-tracked paths with forward slashes) won't match the baseline's entries and
+      # every previously-reviewed finding will look "new".
+      - name: Secret scan
+        run: |
+          git ls-files -z | xargs -0 detect-secrets-hook --baseline .secrets.baseline
+
+  instruction-file-scan:
+    name: Instruction file scan
+    needs: lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      # Methodology F3 SKA 8: instruction files (AGENTS.md, CLAUDE.md) are automatically
+      # scanned for suspicious/hidden Unicode — a known prompt-injection hiding technique.
+      # Bespoke script; no established off-the-shelf tool covers this specific case.
+      - name: Scan instruction files for hidden characters
+        run: python scripts/scan_instruction_files.py AGENTS.md CLAUDE.md
+
+  test:
+    name: Run tests
+    needs: lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      # Speeds up the Conda env solve/download as more gating jobs join this chain.
+      # Bump CACHE_NUMBER to force a cache reset if it ever goes stale.
+      - name: Cache Conda packages
+        uses: actions/cache@v6
+        env:
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key: conda-${{ runner.os }}-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+
+      - name: Set up Conda environment
+        uses: conda-incubator/setup-miniconda@v4.0.1
+        with:
+          environment-file: environment.yml
+          activate-environment: <your-env-name>
+          auto-activate: false
+          use-only-tar-bz2: true
+
+      # One `pip install -e <path>` step per installable package/app in the workspace.
+      # Keep them as separate, named steps (not a loop) — a failure names exactly which
+      # package broke, without reading a loop's output to find out.
+      - name: Install <package-name>
+        shell: bash -el {0}
+        run: pip install -e <path/to/package>
+
+      # Quarantined tests still run (visible in the log) but --cov's fail_under gate and
+      # the job's exit code ignore them, per the non-blocking quarantine policy
+      # (methodology D1 SKA 3, docs/standards/testing.md). The coverage floor itself lives
+      # in pyproject.toml ([tool.coverage.report] fail_under) so raising it is a
+      # reviewable, one-line diff there instead of a workflow change.
+      - name: Run tests (quarantined, non-blocking)
+        shell: bash -el {0}
+        run: pytest -v -m quarantine || true
+
+      - name: Run tests
+        shell: bash -el {0}
+        run: pytest -v -m "not quarantine" --cov --cov-report=term-missing
