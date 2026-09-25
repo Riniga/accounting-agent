@@ -1,7 +1,7 @@
 name: CI
 
 # Quality gates for every pull request to main (methodology E2), and for main itself so it
-# stays verifiably green and CodeQL has a baseline on the default branch. There is no CD.
+# stays verifiably green. There is no CD.
 on:
   pull_request:
     branches:
@@ -90,10 +90,10 @@ jobs:
             "Apache Software License;Apache-2.0;Apache Software License; BSD License;Apache Software License; MIT License;Apache-2.0 OR BSD-2-Clause;BSD License;BSD-2-Clause;BSD-3-Clause;BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0;MIT;MIT License;MPL-2.0 AND MIT;Mozilla Public License 2.0 (MPL 2.0);PSF-2.0;Python Software Foundation License" \
             --ignore-packages accounting-agent pip setuptools
 
-  # SAST (methodology C1 SKA 2): Semgrep and CodeQL both run for now. MVP-001 phase 4 keeps
-  # the one with the better signal-to-noise ratio and run time and records the choice in
-  # docs/methodology-compliance/interpretations.md. A genuine false positive gets a
-  # documented suppression at the call site, not a disabled rule.
+  # SAST (methodology C1 SKA 2). Semgrep was chosen over CodeQL after both ran against
+  # deliberately insecure code (MVP-001 plan, step 4.2) — see
+  # docs/methodology-compliance/interpretations.md §2. A genuine false positive gets a
+  # documented `# nosemgrep` suppression at the call site, not a disabled rule.
   sast:
     name: SAST
     needs: lint
@@ -114,27 +114,6 @@ jobs:
       # Scoped to our own code (C1 is about own code; supply chain is C2's territory).
       - name: Semgrep scan
         run: semgrep scan --config=p/security-audit --config=p/owasp-top-ten --error src
-
-  codeql:
-    name: CodeQL
-    needs: lint
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write # upload results to code scanning
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7.0.1
-
-      - name: Initialise CodeQL
-        uses: github/codeql-action/init@v4.38.2
-        with:
-          languages: python
-          queries: security-extended
-
-      - name: Analyse
-        uses: github/codeql-action/analyze@v4.38.2
 
   secret-scan:
     name: Secret scan

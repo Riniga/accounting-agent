@@ -60,3 +60,28 @@ deliberate PR once the codebase has grown and its coverage is stable (MVP-002 is
 first natural review point).
 
 **Follow-up:** [MVP-001 plan](../plans/MVP-001-walking-skeleton.plan.md), step 4.4.
+
+---
+
+### 2. SAST tool (C1)
+
+**Chapter:** [C1 – Secure coding-principer](../methodology/c-sakerhet/secure-coding-principer.md)
+(SKA 2). The chapter names Semgrep and CodeQL as examples and leaves the choice to the
+project.
+
+**Investigated (2026-09-25):** both tools ran in CI side by side, first on clean code
+(PR #5: both 0 findings; Semgrep 27 s, CodeQL 57 s), then on deliberately insecure code
+(throwaway PR #6: `subprocess.call(..., shell=True)`, `yaml.load(..., Loader=yaml.Loader)`
+and `eval()`).
+- **Semgrep** (`p/security-audit` + `p/owasp-top-ten`, 201 rules) flagged all three as
+  blocking.
+- **CodeQL** (`security-extended`) flagged none. Its Python queries report only when data
+  flows from a recognised remote source, such as a web request, and a local CLI has none.
+
+**Decision:** **Semgrep is the blocking SAST gate (`SAST` job); CodeQL is removed.** For
+this codebase, CodeQL doubled the run time without adding signal.
+
+**Revisit:** when the core starts handling external input — e-mail, Discord or network
+APIs (R4) — CodeQL's data-flow analysis becomes relevant. Re-evaluate adding it then.
+
+**Follow-up:** [MVP-001 plan](../plans/MVP-001-walking-skeleton.plan.md), step 4.2.

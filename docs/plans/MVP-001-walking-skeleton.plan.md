@@ -343,9 +343,33 @@ Commit: `build: pin Python toolchain, lock dependencies and document local setup
       - Timings: Ruff 11 s, Dependencies 26 s, SAST/Semgrep 27 s (201 rules, 0 findings),
         CodeQL 57 s (0 alerts), Run tests 62 s, of which the Conda environment took 50 s.
         That is fast enough that switching to `uv` (see §0) isn't needed.
-- [ ] 4.2 Open a PR and get every job green. Then show that each gate fails at least once
+- [x] 4.2 Open a PR and get every job green. Then show that each gate fails at least once
       on a deliberately broken commit (formatting error, failing test, fake secret, lock
       drift, SAST finding). Revert, and record the result under this TODO.
+      Result: PR #5 was green on its first run (see 4.1). The gate check ran on a throwaway
+      branch `ci/gate-check` with draft PR #6, pushed with `--no-verify` with the owner's
+      explicit approval. The PR was closed and the branch deleted the same day, so
+      MVP-001's history carries none of the broken code.
+
+      | Gate | Deliberate break | Result |
+      |---|---|---|
+      | Ruff | `x=1` (unformatted) | ❌ fail — "1 file would be reformatted"; all other jobs skipped (`needs: lint`) |
+      | Dependencies — lock drift | `six>=1.16` added to `requirements.in` without recompiling | ❌ fail — `+six==1.17.0` in the lock diff |
+      | Dependencies — pip-audit | `pyyaml==5.3` (run locally) | ❌ exit 1 — PYSEC-2020-96, PYSEC-2021-142 |
+      | Dependencies — licences | LGPL-licensed `chardet` (run locally) | ❌ exit 1 — "LGPLv2+ not in allow-only licenses" |
+      | SAST (Semgrep) | `shell=True`, `yaml.load(Loader=yaml.Loader)`, `eval()` | ❌ fail — 3 blocking findings |
+      | CodeQL | same code | ✅ **passed — no alerts** |
+      | Secret scan | `password = "..."` (fake) | ❌ fail — "Secret Keyword" at the exact line |
+      | Instruction file scan | U+200B in `AGENTS.md` | ❌ fail — "AGENTS.md:1:12: U+200B (ZERO WIDTH SPACE)" |
+      | Run tests | `assert 1 + 1 == 3` | ❌ fail — 1 failed, 27 passed |
+
+      **SAST decision:** Semgrep is kept and CodeQL is removed from CI (`interpretations.md`
+      §2). CodeQL reports only data flows from recognised remote sources, which this CLI
+      does not have. Revisit in R4, when e-mail and network input arrive.
+
+      pip-audit and the licence scan were demonstrated locally rather than in CI. Both run
+      after the lock-drift step in the same job, so breaking them in CI would have needed
+      a consistent vulnerable lock — more churn for the same evidence.
 - [ ] 4.3 Apply branch protection and the security settings per
       `docs/development/repo-settings.md`, with required approvals at 0 under the documented
       exception. Record the ruleset id and date there.
