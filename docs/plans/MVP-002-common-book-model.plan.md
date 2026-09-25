@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-002-common-book-model.md`](../mvp/MVP-002-common-book-model.md)
 
-**Status:** In progress — phases 1–4 done, phase 5 next.
+**Status:** In progress — phases 1–5 done, phase 6 next.
 
 ## 0. Investigation
 
@@ -382,7 +382,7 @@ Commit: `feat(formats): read front-matter books into the core model`
 
 ### Phase 5 — General checks
 
-- [ ] 5.1 **Tests first**, one test per rule on model objects, with severities as in
+- [x] 5.1 **Tests first**, one test per rule on model objects, with severities as in
   `kontroll.py`:
   - opening balance: sum ≠ 0; unknown account; not a balance account; duplicate;
   - chart of accounts: account not four digits;
@@ -391,10 +391,26 @@ Commit: `feat(formats): read front-matter books into the core model`
     year; personal identity number in text (warning, message masked).
 
   The `valid/` fixture gives no findings. *Verify:* the tests fail for the right reason.
-- [ ] 5.2 **STOP — the owner reviews the tests from 5.1.**
-- [ ] 5.3 Implement `books/checks.py` as a list of small check functions
+  Result: `tests/test_checks.py`, 25 tests: clean books (2, one of them reading the
+  synthetic fixture), opening balance (4), chart of accounts (4), voucher numbering (5, two
+  of them on series), voucher contents (8) and personal numbers (2). They fail at
+  collection with `ImportError: cannot import name 'check_books'`.
+
+  Locked semantics:
+  - rule ids and locations are `opening balance [account]`, `account N` and
+    `voucher <id>`;
+  - numbering is checked the way `kontroll.py` does it, in file order, and each series
+    separately.
+- [x] 5.2 **STOP — the owner reviews the tests from 5.1.** Result: approved 2026-09-25.
+- [x] 5.3 Implement `books/checks.py` as a list of small check functions
   (`check_books(books, fiscal_year) -> list[Finding]`), each within the complexity
   threshold. *Verify:* tests pass; Ruff, including C90, clean.
+  Result:
+  - All 150 tests pass on the first run; coverage is 98.59%; `checks.py` is 100 % covered.
+  - Every check function has cyclomatic complexity ≤ 7, measured with
+    `max-complexity = 7`, below the advisory 10.
+  - The only function in the package at the advisory value 10 is the reader's
+    `_read_front_matter` (phase 4). Review it for extraction; it is not blocking.
 
 Commit: `feat(books): add general book checks`
 
