@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-002-common-book-model.md`](../mvp/MVP-002-common-book-model.md)
 
-**Status:** In progress — phases 1–2 done, phase 3 next.
+**Status:** In progress — phases 1–3 done, phase 4 next.
 
 ## 0. Investigation
 
@@ -269,7 +269,7 @@ Commit: `feat(profile): add books section to organisation profiles`
 
 ### Phase 3 — Domain model and balances (`accounting_agent.books`)
 
-- [ ] 3.1 **Tests first**, with objects built in code, no files:
+- [x] 3.1 **Tests first**, with objects built in code, no files:
   - `Voucher` with series `None`, two lines;
   - `Voucher` with series `"B"`, three lines;
   - a line has either debit or credit;
@@ -280,10 +280,28 @@ Commit: `feat(profile): add books section to organisation profiles`
     without a separator) and leaves dates and amounts alone.
 
   *Verify:* the tests fail with `ModuleNotFoundError`.
-- [ ] 3.2 **STOP — the owner reviews the tests from 3.1.**
-- [ ] 3.3 Implement `books/model.py`, `books/balances.py`, `books/findings.py` and
+  Result: 33 tests in `test_books_model.py` (12), `test_books_balances.py` (5),
+  `test_findings.py` (4) and `test_masking.py` (12). All fail at collection with
+  `ModuleNotFoundError: No module named 'accounting_agent.books'`. The masking tests use only
+  Skatteverket's public test number (19)121212-1212, never numbers from real books.
+
+  Also locked by the tests:
+  - negative line amounts are rejected;
+  - float amounts are rejected (`TypeError`);
+  - a zero line is allowed, so that the checks can report a zero amount;
+  - duplicates are kept in the model, so that the checks can report them;
+  - `Voucher.id` is `"B12"` with a series and `"12"` without.
+- [x] 3.2 **STOP — the owner reviews the tests from 3.1.** Result: approved 2026-09-25.
+- [x] 3.3 Implement `books/model.py`, `books/balances.py`, `books/findings.py` and
   `books/masking.py`. *Verify:* tests pass; type hints on all signatures (coding.md); Ruff
   clean.
+  Result:
+  - All 83 tests pass; coverage is 97.95 %; Ruff is clean.
+  - One test failed on the first run: the error message said "a debit or a credit",
+    where the reviewed test expects "debit or credit". The implementation's message was
+    changed, not the test.
+  - `books/__init__.py` declares the public API (`__all__`), a first step on
+    `GAP-B3-BOUNDARIES`.
 
 Commit: `feat(books): add double-entry book model, balances and findings`
 
