@@ -195,7 +195,7 @@ jobs:
           key: conda-${{ runner.os }}-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
 
       - name: Set up Conda environment
-        uses: conda-incubator/setup-miniconda@v4.0.1
+        uses: conda-incubator/setup-miniconda@v4.1.0
         with:
           environment-file: environment.yml
           activate-environment: <your-env-name>
