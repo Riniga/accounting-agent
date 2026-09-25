@@ -156,13 +156,10 @@ Follow the standards docs — do not restate them here:
 
 ## Local commands
 
-Planned — verified and finalised in MVP-001 (Python version and tooling may change in its
-investigation step).
-
 ```bash
 # environment (see docs/development/environment.md)
 conda env create -f environment.yml && conda activate accounting-agent
-pip install -e .
+pip install -e . && pre-commit install
 
 # tests — from the repo root
 pytest -q

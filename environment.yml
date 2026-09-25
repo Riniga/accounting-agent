@@ -1,17 +1,14 @@
-name: <your-env-name>
+name: accounting-agent
 channels:
   - conda-forge
-  - defaults
 dependencies:
-  - python=3.13 # pin to your actual target version
-  # Pin genuinely Conda-native dependencies exactly (not a range) — see
-  # docs/standards/dependencies.md "Lockfile". Only pin things here that don't belong in
-  # the pip-compiled lock below; keep this list as short as possible.
-  - pytest>=8.0
+  # Python comes from Conda; everything else is pip-installed from the hash-pinned lock.
+  # Python 3.14 per the MVP-001 investigation (docs/plans/MVP-001-walking-skeleton.plan.md §0).
+  - python=3.14
   - pip
   - pip:
-      # Hash-pinned lock of everything else (methodology C2 SKA 3). Source ranges live in
-      # requirements.in; regenerate with
+      # Hash-pinned lock of every pip dependency (methodology C2 SKA 3). Source ranges live
+      # in requirements.in; regenerate with
       #   pip-compile --generate-hashes --no-annotate --no-header requirements.in
       # after editing it. Do not add packages directly here — see
       # docs/standards/dependencies.md.

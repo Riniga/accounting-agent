@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-001-walking-skeleton.md`](../mvp/MVP-001-walking-skeleton.md)
 
-**Status:** In progress — phases 1–2 done, phase 3 next.
+**Status:** In progress — phases 1–3 done, phase 4 next.
 
 ## 0. Investigation
 
@@ -293,13 +293,32 @@ Commit: `feat(core): add accounting-agent package skeleton with run command and 
 
 ### Phase 3 — Environment and dependencies
 
-- [ ] 3.1 Set the environment name (`accounting-agent`) and the Python version from §0 in
+- [x] 3.1 Set the environment name (`accounting-agent`) and the Python version from §0 in
       `environment.yml`. Add the YAML parser to `requirements.in` (justify it in the PR),
       update tool pins, and generate `requirements-lock.txt`.
-- [ ] 3.2 Update `.pre-commit-config.yaml` revisions and regenerate `.secrets.baseline`
+      Result:
+      - `environment.yml` installs only Python 3.14 and pip from conda-forge, and everything
+        else from the lock. The `defaults` channel was dropped: nothing needs it, and it
+        carries Anaconda's terms of service.
+      - pytest and pytest-cov moved from Conda to `requirements.in`, so every pip-installable
+        tool is in the one hash-pinned lock.
+      - `colorama` is pinned unconditionally, because pytest needs it on Windows only and it
+        would otherwise cause Windows/Linux lock drift.
+      - The lock has 19 packages, compiled on Windows. The CI drift check (4.2), which
+        recompiles on Linux, confirms that both platforms resolve the same lock.
+      - A fresh environment from `environment.yml` took 30 s. `pip install -e .`, 27 tests
+        and the example run all work on it.
+- [x] 3.2 Update `.pre-commit-config.yaml` revisions and regenerate `.secrets.baseline`
       with forward-slash paths.
-- [ ] 3.3 Update `docs/development/setup.md`, `environment.md` and `tools.md` and the
+      Result: revisions are ruff v0.16.9, pre-commit-hooks v6.0.0 and detect-secrets v1.5.0.
+      The baseline was regenerated with 0 findings; it scans only git-tracked files, so
+      `docs/reference/` is never scanned. `pre-commit run --all-files` passed all seven
+      hooks on Python 3.14, so the §0 fallback to 3.13 is not needed.
+- [x] 3.3 Update `docs/development/setup.md`, `environment.md` and `tools.md` and the
       `AGENTS.md` "Local commands" block to the real commands. Verify them in a fresh clone.
+      Result: all four updated; `setup.md` rewritten in English. The commands were verified
+      in a fresh environment built from the working tree, not in a fresh clone, because the
+      phase-3 files were not yet committed. The fresh-clone check is part of 6.3.
 
 Commit: `build: pin Python toolchain, lock dependencies and document local setup`
 
