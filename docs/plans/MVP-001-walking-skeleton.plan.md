@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-001-walking-skeleton.md`](../mvp/MVP-001-walking-skeleton.md)
 
-**Status:** In progress — phases 1–3 done, phase 4 next.
+**Status:** In progress — phases 1–4 done, phase 5 next.
 
 ## 0. Investigation
 
@@ -370,9 +370,17 @@ Commit: `build: pin Python toolchain, lock dependencies and document local setup
       pip-audit and the licence scan were demonstrated locally rather than in CI. Both run
       after the lock-drift step in the same job, so breaking them in CI would have needed
       a consistent vulnerable lock — more churn for the same evidence.
-- [ ] 4.3 Apply branch protection and the security settings per
+- [x] 4.3 Apply branch protection and the security settings per
       `docs/development/repo-settings.md`, with required approvals at 0 under the documented
       exception. Record the ruleset id and date there.
+      Result: applied 2026-09-25 with `gh api`, with the owner's approval.
+      - Ruleset "Protect main" (`23990881`), no bypass, admins included: PR required, 0
+        approvals, all six CI checks required and strict, no force push, no deletion.
+      - Dependabot alerts, Dependabot security fixes and private vulnerability reporting
+        are enabled.
+      - Verified: `rules/branches/main` returns all four rules, and PR #5 shows `CLEAN` with
+        six green checks.
+      - The EX-001 exception text itself is written in 5.2.
 - [x] 4.4 Measure coverage and set `fail_under` just below the baseline. Record it in
       `interpretations.md`.
       Result: the CI baseline is 96.47 % (82 of 85 statements). The floor is set to **90**,

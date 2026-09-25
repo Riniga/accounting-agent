@@ -9,12 +9,19 @@ in [`../methodology-compliance/gap-register.md`](../methodology-compliance/gap-r
 until it's applied — this project used `GAP-D2-BRANCHPROTECT`, `GAP-F1-ENFORCE`, and
 `GAP-E2-GREENMAIN` as a worked example.
 
-> **Status: not yet applied — fill in when you apply this to a real repo.** When you set
-> this up, record here (with the date and any ruleset/rule id) exactly what you applied and
-> any deliberate deviation (e.g. required-approval count while the project has a single
-> maintainer — document that as an exception, same pattern as
-> [`exceptions.md`](../methodology-compliance/exceptions.md), and track it as its own gap
-> row until a second reviewer exists to close it).
+> **Status: applied 2026-09-25** (MVP-001, step 4.3), with `gh api`:
+>
+> - Repository ruleset **"Protect main"**, id `23990881`, targeting `~DEFAULT_BRANCH`,
+>   enforcement `active`, **bypass list empty** (`current_user_can_bypass: never`).
+> - Rules: pull request required; **0 required approvals** (single maintainer — documented
+>   exception, see [`exceptions.md`](../methodology-compliance/exceptions.md)); stale
+>   approvals dismissed on push; conversation resolution required; required status checks
+>   `Ruff`, `Dependencies`, `SAST`, `Secret scan`, `Instruction file scan`, `Run tests`
+>   (GitHub Actions app), strict (branch must be up to date); force pushes and deletion
+>   blocked.
+> - Deviation from section 1: *Require review from Code Owners* is off (no `CODEOWNERS` —
+>   single maintainer). Linked-work-item enforcement (section 3) is not available as a
+>   ruleset rule on GitHub — tracked in the gap register.
 
 ---
 
@@ -99,17 +106,11 @@ If any AI tool (e.g. a Copilot coding-agent identity) is granted write access to
 
 ## 4. Dependency security (methodology C2)
 
-> **Status: not yet applied — fill in when you apply this to a real repo.** Three
-> repository-level security settings, applied via `gh api` (equivalent to
-> *Settings → Security*):
->
-> - **Dependency graph** — a prerequisite for the two settings below; some platforms
->   enable it automatically when you enable either of them.
-> - **Dependabot alerts** (`PUT /repos/.../vulnerability-alerts`) — the C2 SKA 2 SCA
->   baseline.
-> - **Dependabot automated security fixes**
->   (`PUT /repos/.../automated-security-fixes`) — opens a PR automatically when an alert has
->   a known fix.
+> **Status: applied 2026-09-25** (MVP-001, step 4.3): dependency graph, **Dependabot
+> alerts** (`PUT /repos/.../vulnerability-alerts`) and **Dependabot automated security
+> fixes** (`PUT /repos/.../automated-security-fixes`) enabled. Also enabled: **private
+> vulnerability reporting** (`SECURITY.md` points to it). Already on before MVP-001: secret
+> scanning and push protection (free for public repositories).
 >
 > `.github/dependabot.yml` (version-update PRs, C2 SKA 5) is committed code, not a repo
 > setting, so it isn't listed here — see `docs/standards/dependencies.md`.
@@ -118,16 +119,18 @@ If any AI tool (e.g. a Copilot coding-agent identity) is granted write access to
 
 ## Owner checklist
 
-- [ ] Branch protection on `main` applied per section 1 — record the ruleset id and date.
-- [ ] Bypass list confirmed empty (`bypass_actors: []`, admins included).
-- [ ] Required approvals set correctly (1, or 0 as a documented, tracked exception for a
-      genuinely single-maintainer project).
-- [ ] Each CI job you want to gate added to the required status checks.
-- [ ] Any AI-tool write access reviewed per section 2 (or: no AI tool has write access).
+- [x] Branch protection on `main` applied per section 1 — ruleset `23990881`, 2026-09-25.
+- [x] Bypass list confirmed empty (`bypass_actors: []`, admins included).
+- [x] Required approvals set correctly (1, or 0 as a documented, tracked exception for a
+      genuinely single-maintainer project) — 0, exception EX-001.
+- [x] Each CI job you want to gate added to the required status checks — all six.
+- [x] Any AI-tool write access reviewed per section 2 (or: no AI tool has write access) —
+      no AI tool has its own account; Claude Code acts through the owner's `gh` login and
+      is bound by the same ruleset.
 - [ ] **When a second reviewer joins:** raise required approvals to 1, add `CODEOWNERS`
       (section 3).
 - [ ] *(optional)* Enable "Require approval of the most recent reviewable push".
-- [ ] Dependency graph, Dependabot alerts, and automated security fixes enabled per
+- [x] Dependency graph, Dependabot alerts, and automated security fixes enabled per
       section 4.
-- [ ] **Private vulnerability reporting** enabled (*Settings → Security*) — `SECURITY.md`
+- [x] **Private vulnerability reporting** enabled (*Settings → Security*) — `SECURITY.md`
       points reporters to it.
