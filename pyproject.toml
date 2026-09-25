@@ -80,5 +80,5 @@ line-ending = "lf"
 source = ["accounting_agent"]
 
 [tool.coverage.report]
-fail_under = 50 # placeholder until MVP-001 plan step 4.4 measures the real baseline
+fail_under = 90 # measured baseline 96.47 % (2026-09-25) — see interpretations.md §1
 skip_covered = true

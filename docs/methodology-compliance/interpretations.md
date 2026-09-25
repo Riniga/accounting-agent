@@ -43,10 +43,20 @@ methodology chapter recommends for that profile, don't default to whatever's fam
 
 ---
 
-### 1. *(Next decision — name the chapter, e.g. "Formatter & linter (B2)")*
+### 1. Coverage floor (D1)
 
-**Chapter:** *(link)*.
+**Chapter:** [D1 – Testning](../methodology/d-kvalitetssakring/testning.md) (SKA 2).
 
-**Decision:** *(what was chosen, and why — the reasoning matters more than the choice)*.
+**Measured baseline:** 96.47 % (82 of 85 statements), `pytest-cov` in CI on
+2026-09-25, PR #5. The only uncovered file is `__main__.py`, which the tests run in a
+subprocess, where coverage doesn't measure it.
 
-**Follow-up:** *(the plan that implements it)*.
+**Decision:** **`fail_under = 90`**, repo-wide, enforced as a ratchet in `pyproject.toml`.
+It is set a few points below the baseline rather than right at it, because the codebase is
+tiny: one new, partly tested module could move the total several points, and a floor at
+96 % would turn normal growth into build failures instead of catching regressions. A
+per-package floor isn't relevant — there is only one package. Raise the floor in a
+deliberate PR once the codebase has grown and its coverage is stable (MVP-002 is the
+first natural review point).
+
+**Follow-up:** [MVP-001 plan](../plans/MVP-001-walking-skeleton.plan.md), step 4.4.

@@ -324,17 +324,36 @@ Commit: `build: pin Python toolchain, lock dependencies and document local setup
 
 ### Phase 4 — CI gates
 
-- [ ] 4.1 Adapt `.github/workflows/ci.yml`: Python version, environment name, install step
+- [x] 4.1 Adapt `.github/workflows/ci.yml`: Python version, environment name, install step
       for the package, SAST scope `src`, licence-scan ignore list, and the SAST tool chosen
       in §0. Add a vulnerability check if §0 found it useful.
+      Result:
+      - Python 3.14 in one place (`env.PYTHON_VERSION`). Actions pinned to full version
+        tags; pinning to commit SHAs is a C2 gap for the assessment.
+      - Workflow permissions are `contents: read` (least privilege). CodeQL alone gets
+        `security-events: write`.
+      - CI also runs on pushes to `main`.
+      - `pip-audit` was added to the Dependencies job. The licence scan now runs in a
+        separate venv that holds only the locked dependencies, so the scanning tools aren't
+        scanned themselves. All 19 licences are on the allowlist.
+      - Semgrep and CodeQL run side by side (separate jobs `SAST` and `CodeQL`).
+      - The instruction-file scan also covers `.github/copilot-instructions.md`.
+      - The first run on PR #5 (2026-09-25) passed everything first time, **including the
+        lock-drift check**, so the Windows-compiled lock matches the Linux compile.
+      - Timings: Ruff 11 s, Dependencies 26 s, SAST/Semgrep 27 s (201 rules, 0 findings),
+        CodeQL 57 s (0 alerts), Run tests 62 s, of which the Conda environment took 50 s.
+        That is fast enough that switching to `uv` (see §0) isn't needed.
 - [ ] 4.2 Open a PR and get every job green. Then show that each gate fails at least once
       on a deliberately broken commit (formatting error, failing test, fake secret, lock
       drift, SAST finding). Revert, and record the result under this TODO.
 - [ ] 4.3 Apply branch protection and the security settings per
       `docs/development/repo-settings.md`, with required approvals at 0 under the documented
       exception. Record the ruleset id and date there.
-- [ ] 4.4 Measure coverage and set `fail_under` just below the baseline. Record it in
+- [x] 4.4 Measure coverage and set `fail_under` just below the baseline. Record it in
       `interpretations.md`.
+      Result: the CI baseline is 96.47 % (82 of 85 statements). The floor is set to **90**,
+      not 95, because a codebase this small moves several points with one new module (see
+      `interpretations.md` §1). Revisit in MVP-002.
 
 Commit: `ci: adapt quality gates to the core package and enforce them on main`
 
