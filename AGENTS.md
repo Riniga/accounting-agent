@@ -179,7 +179,7 @@ pytest -q
 
 # run the agent core, check the books, or import a bank export, for one organisation
 accounting-agent run <org> --config-dir <path-to-organisation-config>
-accounting-agent validate <org> --config-dir <path-to-organisation-config> [--balances]
+accounting-agent validate <org> --config-dir <path-to-organisation-config> [--balances] [--unbooked]
 # turn a bank export into the organisation's statement or fund-value file (ADR-008)
 accounting-agent import-bank <org> --config-dir <path-to-organisation-config> <export>
 ```

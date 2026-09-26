@@ -15,9 +15,16 @@ from accounting_agent.books import (
     check_books,
     compute_balances,
     mask_personal_numbers,
+    reconcile,
 )
 from accounting_agent.formats import bank_statement, front_matter, nordea_csv
-from accounting_agent.profile import OrganisationProfile, ProfileError, load_profile
+from accounting_agent.profile import (
+    BankConfig,
+    BooksConfig,
+    OrganisationProfile,
+    ProfileError,
+    load_profile,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +65,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "--balances",
         action="store_true",
         help="Also list the balance per account (debit +, credit -).",
+    )
+    validate.add_argument(
+        "--unbooked",
+        action="store_true",
+        help="Also list the bank transactions after the last voucher (date, amount).",
     )
     validate.set_defaults(handler=_validate)
 
@@ -140,6 +152,8 @@ def _validate(args: argparse.Namespace) -> int:
             f"{len(books.vouchers)} vouchers"
         )
         findings = findings + check_books(books, config.fiscal_year)
+        if profile.bank is not None:
+            findings = findings + _reconcile(profile.bank, config, books, args.unbooked)
 
     _emit_findings(findings)
     if books is not None and args.balances:
@@ -156,6 +170,20 @@ def _validate(args: argparse.Namespace) -> int:
         f"warnings: {counts[Severity.WARNING]}, info: {counts[Severity.INFO]})"
     )
     return EXIT_ERROR if counts[Severity.ERROR] else EXIT_OK
+
+
+def _reconcile(
+    bank: BankConfig, config: BooksConfig, books: Books, unbooked: bool
+) -> list[Finding]:
+    """Read the statement file and reconcile the books against it."""
+    transactions, findings = bank_statement.read_statement(
+        bank.statement_file, config.fiscal_year
+    )
+    if transactions is None:
+        return findings
+    return findings + reconcile(
+        books, transactions, config.bank_account, list_unbooked=unbooked
+    )
 
 
 def _import_bank(args: argparse.Namespace) -> int:

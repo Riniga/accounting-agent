@@ -1,0 +1,19 @@
+# Synthetic example organisation with every MVP-003 section. Not a real organisation
+# (ADR-003). The books are shared with `example`; the other files live here.
+organisation: example
+
+features:
+  accounting: true
+  payroll: false
+  gmail: false
+  discord: false
+
+books:
+  path: ../books/valid
+  format: front-matter
+  fiscal_year: 2026
+  bank_account: "1930"
+
+bank:
+  export_format: nordea-csv
+  statement_file: statement.csv

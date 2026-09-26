@@ -7,15 +7,19 @@ Both are semicolon-separated UTF-8 without BOM, with LF line endings:
 
 This module holds the core's first write paths. It writes only these two files, and
 always through a temporary file that replaces the target, so that an interrupted run
-never leaves half a file.
+never leaves half a file. It also reads the statement file back into the core model for
+reconciliation — dates, amounts and balances only, never names or messages (ADR-007).
 """
 
 import csv
 import io
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
+from accounting_agent.books import BankTransaction, Finding, Severity
+from accounting_agent.formats.common import Findings, parse_amount, read_csv
 from accounting_agent.formats.nordea_csv import StatementRow
 
 STATEMENT_HEADER = ["datum", "belopp", "namn", "meddelande", "anteckning", "saldo"]
@@ -80,6 +84,83 @@ def write_fund_values(path: Path, values: dict[str, str]) -> FundWrite:
     dates = sorted(merged)
     _write_atomically(path, [FUND_HEADER] + [[d, merged[d]] for d in dates])
     return FundWrite(values=len(dates), latest_date=dates[-1])
+
+
+def read_statement(
+    path: Path, fiscal_year: int
+) -> tuple[tuple[BankTransaction, ...] | None, list[Finding]]:
+    """Read the statement file into bank transactions, oldest first.
+
+    Returns ``(None, findings)`` when there is nothing to reconcile against: the file is
+    missing (info, not an error — the organisation may not have imported yet), or it
+    cannot be read.
+    """
+    findings = Findings()
+    if not path.is_file():
+        findings.add(
+            Severity.INFO,
+            "bank-statement-missing",
+            path.name,
+            "file is missing; no reconciliation against the bank",
+        )
+        return None, findings.items
+    rows = read_csv(path, STATEMENT_HEADER, findings)
+    if rows is None:
+        return None, findings.items
+
+    transactions: list[BankTransaction] = []
+    for row in rows:
+        transaction = _transaction(row, path.name, findings)
+        if transaction is None:
+            continue
+        location = f"{path.name}:{transaction.row}"
+        if transaction.date.year != fiscal_year:
+            findings.add(
+                Severity.ERROR,
+                "bank-statement-year",
+                location,
+                f"date {transaction.date} is outside the fiscal year {fiscal_year}",
+            )
+        if transactions and transaction.date < transactions[-1].date:
+            findings.add(
+                Severity.ERROR,
+                "bank-statement-order",
+                location,
+                f"date {transaction.date} is earlier than the row before; "
+                f"the file must be oldest first",
+            )
+        transactions.append(transaction)
+    return tuple(transactions), findings.items
+
+
+def _transaction(
+    row: dict[str, str], name: str, findings: Findings
+) -> BankTransaction | None:
+    # Messages name the column, never the value: the row also holds names and messages.
+    location = f"{name}:{row['_line']}"
+    try:
+        day = date.fromisoformat(row["datum"])
+    except ValueError:
+        findings.add(
+            Severity.ERROR,
+            "bank-statement-date",
+            location,
+            "datum is not a valid date (YYYY-MM-DD)",
+        )
+        return None
+    amount = parse_amount(row["belopp"])
+    balance = parse_amount(row["saldo"]) if row["saldo"] else None
+    if amount is None or (row["saldo"] and balance is None):
+        findings.add(
+            Severity.ERROR,
+            "bank-statement-amount",
+            location,
+            "belopp or saldo is not a valid amount (decimal point, no spaces)",
+        )
+        return None
+    return BankTransaction(
+        date=day, amount=amount, balance=balance, row=int(row["_line"])
+    )
 
 
 def _read_rows(path: Path) -> list[list[str]] | None:

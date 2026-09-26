@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-003-bank-reconciliation-and-reports.md`](../mvp/MVP-003-bank-reconciliation-and-reports.md)
 
-**Status:** In progress – phase 3 done (plan approved 2026-09-26)
+**Status:** In progress – phase 4 done (plan approved 2026-09-26)
 
 ## 0. Investigation
 
@@ -304,7 +304,7 @@ Commit: `docs(mvp-003): correct the MVP and record ADR-007 and ADR-008`
 
 ### Phase 2 — Profile: the new sections
 
-- [ ] 2.1 **Tests first** (`tests/test_profile_sections.py`), all sections optional:
+- [x] 2.1 **Tests first** (`tests/test_profile_sections.py`), all sections optional:
   - `bank`: `export_format` (`nordea-csv`), `statement_file`, `fund_account`,
     `fund_value_file`;
   - `checks`: `reference_chart` (a directory), `documents` (a directory), `budget_file`,
@@ -422,7 +422,7 @@ Commit: `feat(bank): import bank exports into masked statement and fund-value fi
 
 ### Phase 4 — Reconciliation
 
-- [ ] 4.1 **Tests first:**
+- [x] 4.1 **Tests first:**
   - the statement-file reader: header, invalid date/amount, outside the fiscal year, not
     oldest first, missing file (info); the domain objects carry no name or message;
   - `reconcile(books, transactions, bank_account)`: a clean case; a bank-balance break;
@@ -435,9 +435,43 @@ Commit: `feat(bank): import bank exports into masked statement and fund-value fi
     amount and statement row only.
 
   *Verify:* the tests fail for the right reason.
-- [ ] 4.2 **STOP — the owner reviews the tests from 4.1.**
-- [ ] 4.3 Implement the reader, `books/reconciliation.py` and the CLI wiring.
+  Result: 34 tests, all failing for the right reason:
+  - `tests/test_reconciliation.py` (15) and `tests/test_bank_statement_reader.py` (13)
+    fail at collection: `ImportError: cannot import name 'BankTransaction'`;
+  - `tests/test_cli_validate_bank.py` (6): `SystemExit: 2` (no `--unbooked` yet) or the
+    reconciliation lines missing from the report.
+
+  New synthetic fixture `tests/fixtures/example-full/`: the `valid/` books plus a
+  `bank` section and a statement file that matches every bank voucher and has one
+  transaction after the last voucher.
+
+  API and output locked by the tests:
+  - `BankTransaction(date, amount, balance | None, row)` — exactly these fields;
+  - `read_statement(path, fiscal_year) -> (transactions | None, findings)`: `None` for
+    a missing file (info `bank-statement-missing`) or a wrong header; the shared CSV
+    rules (`encoding`, `columns`, …) as in the `front-matter` reader;
+    `bank-statement-date` and `bank-statement-amount` skip the row;
+    `bank-statement-year` and `bank-statement-order` keep it; locations
+    `<file>:<row>`;
+  - `reconcile(books, transactions, bank_account, list_unbooked=False)`, rules
+    `bank-balance`, `bank-opening-balance`, `bank-missing-transaction`, `bank-unbooked`
+    (errors), `bank-unbooked-recent` (warning), `unbooked` and `bank-summary` (info,
+    the summary last); locations `bank statement`, `bank statement <date>`,
+    `bank statement row <n>`, `voucher <id>`, `opening balance <account>`;
+  - `validate --unbooked`; without a `bank` section nothing changes.
+- [x] 4.2 **STOP — the owner reviews the tests from 4.1.** Result: approved 2026-09-26,
+  including `bank statement row N` as the location of reconciliation findings.
+- [x] 4.3 Implement the reader, `books/reconciliation.py` and the CLI wiring.
   *Verify:* tests pass; Ruff clean; README updated (`--unbooked`).
+  Result:
+  - All 291 tests pass on the first run; coverage 98.80 %; Ruff clean. No new function
+    reaches the advisory complexity 10.
+  - `formats/common.py`: the CSV rules (`Findings`, `read_text`, `read_csv`,
+    `parse_amount`) moved out of `front_matter.py` so that the statement reader applies
+    the same rules. A pure move — the MVP-002 reader tests pass unchanged.
+  - `validate example --config-dir tests/fixtures/example-full --unbooked` gives 1
+    warning and 2 info, as the tests say.
+  - README, AGENTS, `overview.md` and `current-state.md` updated.
 
 Commit: `feat(books): reconcile the books against the bank statement`
 

@@ -114,6 +114,10 @@ them:
 - It reports findings as `ERROR` / `WARNING` / `INFO`, and exits 1 on any error.
 - It never prints a voucher's text, and masks personal identity numbers in all output.
 - `--balances` also lists the balance per account.
+- With a `bank` section it also reconciles the books against the statement file: the
+  bank's own balances, the opening balance, and every bank voucher against a bank
+  transaction and the reverse. `--unbooked` lists the transactions after the last voucher
+  by date, amount and row — never by name or message.
 
 `accounting-agent import-bank <organisation> --config-dir <path> <export>` turns a file
 downloaded from the bank into the organisation's statement file or fund-value file:

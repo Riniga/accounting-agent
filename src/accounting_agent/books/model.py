@@ -87,3 +87,17 @@ class Books:
     accounts: tuple[Account, ...]
     opening_balances: tuple[OpeningBalance, ...]
     vouchers: tuple[Voucher, ...]
+
+
+@dataclass(frozen=True)
+class BankTransaction:
+    """One row of the bank statement (ADR-007).
+
+    Deliberately without the counterparty's name or the message: nothing built on the
+    model can then quote them. ``row`` is the row in the statement file, for locating it.
+    """
+
+    date: date
+    amount: Decimal
+    balance: Decimal | None
+    row: int

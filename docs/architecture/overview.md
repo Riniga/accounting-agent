@@ -38,15 +38,17 @@ src/accounting_agent/   The core package (ADR-002)
     cli.py              `accounting-agent` command line: run, validate (argparse)
     profile.py          Organisation profile: organisation.yaml → OrganisationProfile (+ books)
     books/              The book domain — no file I/O (ADR-006; Ruff TID251)
-        model.py        Account, OpeningBalance, PostingLine, Voucher, Books
+        model.py        Account, OpeningBalance, PostingLine, Voucher, Books, BankTransaction
         balances.py     compute_balances()
         checks.py       check_books() — the general checks
+        reconciliation.py  reconcile() — the books against the bank statement
         findings.py     Finding, Severity
         masking.py      Personal identity number masking
     formats/            One reader per file format (ADR-006, ADR-007); the only writers (ADR-008)
+        common.py       Shared CSV rules (encoding, header, columns, amounts)
         front_matter.py read_books() for the `front-matter` format
         nordea_csv.py   read_export() for the `nordea-csv` bank export
-        bank_statement.py  write_statement(), write_fund_values() — atomic writes
+        bank_statement.py  read_statement(); write_statement(), write_fund_values() — atomic writes
 tests/                  pytest suite; fixtures/ holds synthetic organisations only (ADR-003)
 docs/                   Vision, roadmap, architecture + ADRs, MVPs, plans, standards,
                         development setup, methodology + compliance, Claude prompts
@@ -87,6 +89,10 @@ LICENSE                 PolyForm Noncommercial 1.0.0 (ADR-005)
   opening-balance CSV and one Markdown voucher file per voucher — with the same field
   semantics as the organisation's own tool. It reports parse- and format-level findings,
   including the bank-sign rule.
+- **`books/reconciliation.py`** reconciles the books against the bank statement as
+  `kontroll.py` does: the bank's balance arithmetic, the opening balance, and matching on
+  (date, amount), where a voucher's amount is the net of its bank lines. A
+  `BankTransaction` holds no name or message (ADR-007), so no finding can quote one.
 - **`formats/nordea_csv.py`** reads a `nordea-csv` bank export — a statement or fund
   values, told apart by the header — into rows that are normalised, masked with
   `[personnummer]` and oldest first. **`formats/bank_statement.py`** writes the
@@ -96,8 +102,9 @@ LICENSE                 PolyForm Noncommercial 1.0.0 (ADR-005)
 - **`cli.py`** provides three commands. All load the profile, and all refuse if
   `<organisation>` doesn't match it.
   - `run <organisation> --config-dir <path>` logs the enabled features.
-  - `validate <organisation> --config-dir <path> [--balances]` prints a masked report to
-    stdout and exits 1 on errors.
+  - `validate <organisation> --config-dir <path> [--balances] [--unbooked]` prints a
+    masked report to stdout and exits 1 on errors. With a `bank` section it also
+    reconciles against the statement file.
   - `import-bank <organisation> --config-dir <path> <export>` writes the statement or
     fund-value file and prints only file names, dates and counts.
 

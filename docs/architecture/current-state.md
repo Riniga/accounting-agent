@@ -8,7 +8,7 @@ in the same PR as any change to an app's status, test count, or key capabilities
 
 | App | Status | Tests | Key capabilities |
 |-----|--------|-------|-------------------|
-| `accounting-agent` (`src/accounting_agent/`, v0.1.0) | Implemented — MVP-001 walking skeleton, MVP-002 book model and validation (merged, PR #7); MVP-003 in progress | 257 | organisation profile loading/validation (incl. `books`, `bank`, `checks`, `conventions` and `reports` sections), `run`, `validate` and `import-bank` commands, `nordea-csv` bank import into masked statement and fund-value files, book model (vouchers with posting lines and series), balances, findings, personal-number masking, `front-matter` format reader, general book checks |
+| `accounting-agent` (`src/accounting_agent/`, v0.1.0) | Implemented — MVP-001 walking skeleton, MVP-002 book model and validation (merged, PR #7); MVP-003 in progress | 291 | organisation profile loading/validation (incl. `books`, `bank`, `checks`, `conventions` and `reports` sections), `run`, `validate` and `import-bank` commands, `nordea-csv` bank import into masked statement and fund-value files, reconciliation against the bank statement (`validate --unbooked`), book model (vouchers with posting lines and series), balances, findings, personal-number masking, `front-matter` format reader, general book checks |
 
 Organisation projects (JudoSyd, Helsingborgs Judoklubb, Aktivitet Förebygger) are separate
 private repositories and are not tracked here (ADR-002, ADR-003).
@@ -40,7 +40,7 @@ See [`docs/standards/`](../standards/). Project-specific:
 
 | Package | Tests | Coverage |
 |---|---|---|
-| `accounting_agent` | 257 (profile 20, profile books 21, profile sections 66, bank import 27, CLI run 9, CLI validate 12, book model 12, balances 5, findings 4, masking 14, front-matter reader 42, checks 25) | 98.56% (floor 95 %) |
+| `accounting_agent` | 291 (profile 20, profile books 21, profile sections 66, bank import 27, bank statement reader 13, reconciliation 15, CLI validate bank 6, CLI run 9, CLI validate 12, book model 12, balances 5, findings 4, masking 14, front-matter reader 42, checks 25) | 98.80% (floor 95 %) |
 
 ## Methodology compliance
 
