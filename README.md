@@ -84,19 +84,31 @@ pre-commit install
 # test
 pytest -q
 
-# run (against the synthetic example organisation)
+# run and validate (against the synthetic example organisation)
 accounting-agent run example --config-dir tests/fixtures/example
+accounting-agent validate example --config-dir tests/fixtures/example --balances
 ```
 
-An organisation project runs `accounting-agent run <organisation> --config-dir <path>`
-against the directory that holds its `organisation.yaml`:
+An organisation project points the commands at the directory that holds its
+`organisation.yaml`:
 
 ```yaml
 organisation: hbg-judo      # lowercase id; must match the command's <organisation>
 features:
   accounting: true
   payroll: false
+books:                      # needed by `validate`
+  path: Bokföring           # relative to this file's directory
+  format: front-matter      # the book file format (ADR-006)
+  fiscal_year: 2026
+  bank_account: "1930"
 ```
+
+`accounting-agent validate <organisation> --config-dir <path>` reads the books and checks
+them:
+- It reports findings as `ERROR` / `WARNING` / `INFO`, and exits 1 on any error.
+- It never prints a voucher's text, and masks personal identity numbers in all output.
+- `--balances` also lists the balance per account.
 
 ## Required GitHub Actions secrets
 
@@ -107,6 +119,7 @@ None currently. CI runs on pull requests only and needs no secrets; there is no 
 | Area | Location |
 |------|----------|
 | Architecture | [`docs/architecture/`](docs/architecture/) |
+| Using the core from an organisation project | [`docs/development/organisation-projects.md`](docs/development/organisation-projects.md) |
 | Development process | [`docs/development/methodology.md`](docs/development/methodology.md) |
 | Standards | [`docs/standards/`](docs/standards/) |
 | Organisation methodology | [`docs/methodology/`](docs/methodology/) |

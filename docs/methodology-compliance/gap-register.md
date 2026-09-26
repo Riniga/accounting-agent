@@ -13,6 +13,12 @@ follow-up plans progress, and struck through (`~~GAP-ID~~`) when closed.
 
 **Changelog**
 
+- 2026-09-26 — MVP-002 closed `GAP-E4-MASKING` (all `validate` output masked; findings
+  never quote voucher text) and `GAP-B3-BOUNDARIES` (a declared public API in
+  `accounting_agent.books`, and a domain boundary enforced by Ruff `TID251`). Coverage
+  floor raised to 95 %. `GAP-F2-CONFIDENTIAL`: the reading rule held for the pilot (counts
+  only), but listing Aktivitet Förebygger's voucher file names exposed counterparty names.
+  The row stays open.
 - 2026-09-25 — First assessment (MVP-001, step 5.2). Areas A–F assessed; all rows below
   opened. MVP-001 already closed its own work: CI gates, branch protection, Dependabot,
   private vulnerability reporting, coverage floor and licence.
@@ -46,7 +52,7 @@ follow-up plans progress, and struck through (`~~GAP-ID~~`) when closed.
 |----|---------|-----|-------|-----------|--------|
 | GAP-D2-REVIEW | D2 SKA 2–3, D3 SKA 3 | No non-author review; the ruleset requires 0 approvals | owner | Second reviewer → approvals 1 + `CODEOWNERS` (EX-001) | open — exception EX-001 |
 | GAP-F1-SELFMERGE | F1 SKA 1, 6 | Claude Code acts through the owner's credentials, and with 0 approvals nothing in GitHub stops it merging a green PR | owner | Partly mitigated: `gh pr merge` requires in-the-moment approval in `.claude/settings.json`. Closes with GAP-D2-REVIEW | open |
-| GAP-F2-CONFIDENTIAL | F2 SKA 2 | Personal data from an organisation project's rules file entered the AI tool's context during the baseline analysis (2026-09-25) | owner | Reading rule in interpretations §9. The HJK project should move its decision log out of the rules file | open |
+| GAP-F2-CONFIDENTIAL | F2 SKA 2 | Personal data from an organisation project's rules file entered the AI tool's context during the baseline analysis (2026-09-25) | owner | Reading rule in interpretations §9. The HJK project should move its decision log out of the rules file. 2026-09-26: the pilot followed the rule (counts only); listing Aktivitet Förebygger's voucher file names exposed counterparty names (not copied). Rule: never list file names inside a voucher or book folder | open |
 
 ### Severity M
 
@@ -55,7 +61,7 @@ follow-up plans progress, and struck through (`~~GAP-ID~~`) when closed.
 | GAP-A2-AGREEMENT | A2 SKA 1–2 | Individual Pro plan, not an organisation agreement. The model-training setting was turned off 2026-09-25 (EX-003, closed); retention follows the individual-plan terms, not verified | owner | Accept for a one-person project, or move to a commercial plan if the project grows | open |
 | GAP-F2-DPA | F2 SKA 3 | No data processing agreement with the AI provider (individual plan), although personal data can reach it (GAP-F2-CONFIDENTIAL) | owner | A DPA needs a commercial plan; until then, keep Confidential data out of AI context (interpretations §9) | open |
 | GAP-F2-CLASSIFICATION | F2 SKA 1 | The classification covers this repository only (interpretations §9), not the organisations' own AI use | owner | Decide per organisation project | open |
-| GAP-E4-MASKING | E4 SKA 3 | No automated masking of personal identity numbers in logs; needed once the core reads voucher texts | platform | MVP-002 | open |
+| ~~GAP-E4-MASKING~~ | E4 SKA 3 | No automated masking of personal identity numbers in logs; needed once the core reads voucher texts | platform | [MVP-002](../plans/MVP-002-common-book-model.plan.md): `mask_personal_numbers()` on every output line; findings never quote voucher text | closed |
 | GAP-E1-AITRAILER | E1 SKA 5 | Commits from 2026-09-25 carry an AI `Co-Authored-By` trailer | platform | No trailers from MVP-001 phase 5; published history not rewritten (interpretations §7) | in progress (MVP-001) |
 | GAP-C3-PRIORITY | C3 SKA 3 | No written vulnerability prioritisation or response times | owner | Add to `SECURITY.md` | open |
 
@@ -65,7 +71,7 @@ follow-up plans progress, and struck through (`~~GAP-ID~~`) when closed.
 |----|---------|-----|-------|-----------|--------|
 | GAP-A1-WORKSTATION | A1 SKA 1, 7 | Personal, unmanaged workstation, which also holds the organisation projects' data | owner | Owner decision — accept or improve (e.g. disk encryption, separate user) | open |
 | GAP-A1-PRIVILEGE | A1 SKA 4 | Daily work runs as a local administrator (confirmed 2026-09-25) | owner | Use a standard user and elevate only when needed | open |
-| GAP-B3-BOUNDARIES | B3 SKA 2–3 | No declared public API or tool-enforced module boundaries | platform | MVP-002 (domain/IO split) | open |
+| ~~GAP-B3-BOUNDARIES~~ | B3 SKA 2–3 | No declared public API or tool-enforced module boundaries | platform | [MVP-002](../plans/MVP-002-common-book-model.plan.md): `books.__all__`; Ruff `TID251` banned-api (interpretations §3) | closed |
 | GAP-B5-README | B5 SKA 1 | README lacks install/run/test commands | platform | MVP-001 step 6.1 | in progress (MVP-001) |
 | GAP-B5-DOCTEST | B5 SKA 5 | Setup commands in `docs/development/` not validated automatically | platform | — | open |
 | GAP-C2-SBOM | C2 SKA 1 | SBOM not generated automatically (no release pipeline) | platform | When releases exist | not applicable yet |
@@ -89,4 +95,4 @@ follow-up plans progress, and struck through (`~~GAP-ID~~`) when closed.
 | Plan | Closes |
 |------|--------|
 | [MVP-001](../plans/MVP-001-walking-skeleton.plan.md) | Baseline; GAP-B5-README, GAP-E1-AITRAILER in progress |
-| MVP-002 (plan not yet written) | GAP-E4-MASKING, GAP-B3-BOUNDARIES |
+| [MVP-002](../plans/MVP-002-common-book-model.plan.md) | ~~GAP-E4-MASKING~~, ~~GAP-B3-BOUNDARIES~~ |

@@ -1,13 +1,19 @@
 # MVP-002 – Common book model and validation via core
 
-Roadmap: [R2 – Helsingborgs Judoklubb pilot via core](../roadmap.md#r2--helsingborgs-judoklubb-pilot-via-core-planned) ·
-Plan: not yet written (created with `docs/claude-prompts/create-plan-prompt.md` once MVP-001 is closed)
+Roadmap: [R2 – Helsingborgs Judoklubb pilot via core](../roadmap.md#r2--helsingborgs-judoklubb-pilot-via-core-ongoing) ·
+Plan: [`MVP-002-common-book-model.plan.md`](../plans/MVP-002-common-book-model.plan.md)
+
+> **Corrected 2026-09-25 (plan §0.1):** the first version of this MVP said Helsingborgs
+> Judoklubb and Aktivitet Förebygger keep their books "in the same way". The plan's
+> investigation showed that they share the concept but not the format or the voucher model.
+> Aktivitet Förebygger uses Markdown-table vouchers with several posting lines and voucher
+> series. The scope below was adjusted accordingly, with the owner's approval.
 
 ## Purpose
 
-Helsingborgs Judoklubb and Aktivitet Förebygger keep their books in the same way — a chart
-of accounts and an opening balance as CSV, plus one Markdown file per voucher — but each has
-its own code to read and check them. That is exactly the duplication the project exists to
+Helsingborgs Judoklubb and Aktivitet Förebygger keep their books in the same kind of way — a
+chart of accounts and an opening balance as CSV, plus one Markdown file per voucher — but
+in different file formats, and each has its own code to read and check them. That is exactly the duplication the project exists to
 remove, and it sits at the bottom of everything else: import, matching, posting, reports
 and agent tools all need a correct, shared understanding of "the books".
 
@@ -44,20 +50,35 @@ the existing projects. It is therefore the first functionality to extract.
 
 ## Scope
 
-- Core models for **account** (chart of accounts), **opening balance** and **voucher**
-  (number, date, text, amount, debit account, credit account, supporting documents, free
-  text).
-- Reading those from an organisation's files: chart of accounts CSV, opening balance CSV,
-  and a folder of Markdown voucher files with front matter. Where the files are, and
-  organisation-specific values such as the bank account and the parking accounts, come from
-  the organisation's configuration, not from code.
-- The general checks:
-  - The opening balance sums to zero.
-  - Voucher numbers run 1..N without gaps or duplicates, and file names match their fields.
-  - Required fields are present and unknown fields are flagged.
+- A **general double-entry model**:
+  - **account** (chart of accounts);
+  - **opening balance**;
+  - **voucher**, with an optional series, a number, a date, a text, *N posting lines*
+    (account, debit, credit), supporting documents and free text.
+
+  A Helsingborgs Judoklubb voucher is a voucher with two lines. Aktivitet Förebygger's
+  multi-line, per-series vouchers fit the same model.
+- **One reader**, for the `front-matter` file format that Helsingborgs Judoklubb uses: a
+  chart of accounts CSV, an opening balance CSV, and a folder of Markdown voucher files
+  with front matter. Where the files are, the file format, the fiscal year and the bank
+  account come from the organisation's configuration, not from code.
+- The checks — the format's own rules first:
+  - Files are readable: UTF-8 without BOM, the expected header and column count, voucher
+    file names that follow the format.
+  - Required fields are present and unknown fields are flagged; amounts and dates are
+    valid.
+  - File names match their fields.
+  - The sign of the amount is consistent with the bank account's side (a rule of the
+    `front-matter` format, whose amounts are "as the bank shows them").
+
+  Then the general checks on the model:
+  - The opening balance sums to zero, uses only known balance accounts, and lists each
+    account once.
+  - Account numbers in the chart of accounts have four digits.
+  - Voucher numbers run 1..N per series, without gaps or duplicates.
   - Every account used exists in the chart of accounts.
-  - Debit and credit are different accounts.
-  - The sign of the amount is consistent with the bank account's side.
+  - The same account is not both debited and credited; the lines balance.
+  - The amount is not zero, the text is not empty, and the date is inside the fiscal year.
   - Personal identity numbers in voucher text are flagged.
 - Personal identity numbers are masked in everything the core logs or reports, because
   voucher texts can contain them (methodology E4 SKA 3; gap `GAP-E4-MASKING`).
@@ -66,8 +87,8 @@ the existing projects. It is therefore the first functionality to extract.
   that reports findings as error / warning / info and exits non-zero on error.
 - Helsingborgs Judoklubb's project gets the organisation configuration it needs and is
   validated through the core.
-- A written comparison against Aktivitet Förebygger's voucher format: what fits, and what
-  would need to change (for example voucher series).
+- A written comparison against Aktivitet Förebygger's file format: what fits the model,
+  and what a reader for its table format must handle.
 - A short glossary of the Swedish bookkeeping terms (verifikation, kontoplan, ingående
   balans, …) and the English names used in the core.
 
@@ -81,8 +102,14 @@ the existing projects. It is therefore the first functionality to extract.
   now.
 - Migrating Aktivitet Förebygger or JudoSyd onto the core.
 - Agent tools, LLM calls, confidence values, approval policies.
+- A reader for Aktivitet Förebygger's table format — a later MVP (roadmap).
 - Replacing the whole of Helsingborgs Judoklubb's `kontroll.py` — only the checks listed
-  above move. The rest stays in the organisation project until later MVPs.
+  above move. The rest stays in the organisation project until later MVPs. That includes:
+  - the BAS chart validation;
+  - the revenue/cost-account warnings, the duplicate warning and date order;
+  - the existence of supporting documents;
+  - the parking-account and unused-account summaries. Parking accounts are not configured
+    until a check or report needs them.
 
 ## Acceptance Criteria
 
@@ -93,11 +120,66 @@ the existing projects. It is therefore the first functionality to extract.
   does today, and account balances match to the öre.
 - No Helsingborgs Judoklubb name, account number or other organisation-specific value is
   hard-coded in the core. It all comes from configuration.
-- The Aktivitet Förebygger comparison is written down, and any gap is either handled or
+- The Aktivitet Förebygger comparison is written down, and what its reader needs is
   recorded as a follow-up.
 - Everything from MVP-001's gates still holds: CI green, coverage floor held, no real data
   committed.
 
-## Outcome at close (YYYY-MM-DD)
+## Outcome at close (2026-09-26)
 
-<!-- Fill in when the MVP is actually closed. -->
+Closed as **delivered**, pending the pull request. Against the criteria above:
+
+- **Synthetic books pass; one broken variant per check gives the expected finding: met.**
+  - The valid books read and check with no findings.
+  - Every format rule (42 reader tests) and every general check (25 check tests) has its
+    own broken variant with the expected rule and severity.
+  - 162 tests in total, coverage 98.76 %.
+- **Helsingborgs Judoklubb's real books give the same outcome as `kontroll.py`, and
+  balances match to the öre: met.**
+  - Run through the core on 2026-09-26 (counts only; no data left the organisation
+    project): 33 accounts, 8 opening balances, 163 vouchers, 0 errors, 4
+    personal-identity-number warnings — identical to `kontroll.py`.
+  - Balances are equal for **25 of 25** accounts that carry a balance. The plan's "33 of
+    33" counted the chart of accounts; 8 accounts are unused.
+- **No organisation-specific value hard-coded in the core: met.**
+  - `git grep` over `src/` for the organisations' names, bank account, year and folder
+    names is empty.
+  - Three illustrative values in help, error and comment text were made neutral during
+    the close.
+  - The bank account, fiscal year, book path and format all come from `organisation.yaml`.
+- **Aktivitet Förebygger comparison written; what its reader needs recorded: met.** It is
+  in `docs/architecture/overview.md` ("Book formats"), and the reader is on the roadmap.
+- **MVP-001's gates still hold: met locally; the pull request run is pending.**
+  - Every CI check was run locally and is green.
+  - The coverage floor was raised from 90 to 95 %.
+  - `docs/reference/` is not tracked.
+
+**What turned out differently, recorded where it happened:**
+- **The MVP's premise was wrong**: Aktivitet Förebygger's books are not "the same". Caught
+  in the plan's investigation, before any code. The model became general double entry
+  (ADR-006) and the MVP was corrected with a dated note.
+- The front matter turned out not to be YAML. The core reproduces the organisation's own
+  parser instead.
+- Personal data: the pilot kept to counts only. But listing Aktivitet Förebygger's voucher
+  file names exposed counterparty names (`GAP-F2-CONFIDENTIAL`), and the reading rule was
+  tightened.
+- AI-TDD: each of the five test sets was reviewed by the owner before implementation. One
+  test first passed for the wrong reason and was tightened before review.
+- The detect-secrets hook stopped one commit (a test constant named `SECRET_TEXT`); it was
+  renamed, not allow-listed.
+- The scratchpad test environment broke overnight; the work continued in the owner's
+  `accounting-agent` environment.
+
+**Close review (2026-09-26, `complete-mvp.md`):**
+- Every CI check was re-run locally and is green (162 tests, 98.76 % ≥ 95 %).
+- Three small gaps were fixed: a missing docstring, a stale coverage figure in
+  `overview.md`, and an inconsistent path in the new guide.
+- At the owner's request, two documentation changes outside the plan joined the branch:
+  - `docs/development/organisation-projects.md` — how organisation projects use the core,
+    and a `CLAUDE.md` section for them;
+  - `complete-mvp.md` and `create-plan-prompt.md` now find the MVP from the branch or the
+    roadmap.
+
+**Still open:**
+- the owner commits `organisation.yaml` in the Helsingborgs Judoklubb repository;
+- the CI run on the pull request.

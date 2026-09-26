@@ -21,7 +21,8 @@ once a working concrete function exists to generalise
 
 | Area | Location |
 |------|----------|
-| Core package | `src/accounting_agent/`. This repository *is* the shared code; there is no `apps/`/`packages/` split (ADR-002) |
+| Core package | `src/accounting_agent/`. This repository *is* the shared code; there is no `apps/`/`packages/` split (ADR-002). `books/` is the domain (no file I/O, enforced by Ruff `TID251`), `formats/` holds one reader per book file format (ADR-006) |
+| Organisation projects | How they use the core, and a `CLAUDE.md` snippet for them: `docs/development/organisation-projects.md` |
 | Reference material | `docs/reference/` — local, git-ignored copies of the private organisation projects. Contains real data: read only code, instructions, configuration and rules; never commit or copy data from it ([ADR-003](docs/architecture/decisions/ADR-003-no-real-data-in-core-repo.md)) |
 | Roadmap / MVPs / plans | `docs/roadmap.md`, `docs/mvp/`, `docs/plans/` |
 | Architecture + ADRs | `docs/architecture/`, `docs/architecture/decisions/` |
@@ -73,8 +74,20 @@ Roadmap → MVP → Plan → Implementation → Test → Pull Request
   numbered TODOs with acceptance criteria, grouped into phases with a commit message each.
 - Implement **one TODO / one phase at a time**. Update the plan as you go; mark items done
   when verified.
-- Keep changes small and reviewable. Do not mix unrelated refactoring with a feature. Do
-  not change production code in a documentation-only task.
+- Keep changes small and reviewable. Do not change production code in a
+  documentation-only task.
+- **Found during an MVP:**
+  - A *fix or change* discovered while working on an MVP is made on that MVP's branch,
+    even if it is unrelated. It gets its own commit (`fix:` / `docs:` / `chore:`), never
+    mixed into a feature commit, and a line in the plan's "6. Found during this MVP". A
+    behaviour fix gets a regression test.
+  - An *idea* goes to the roadmap backlog (dated, with the MVP it came from) and is not
+    implemented in the current MVP.
+  - Anything large, risky, or needing its own decision (a new dependency, an ADR, a
+    security change) becomes a backlog item or its own MVP — ask the owner.
+
+  See [`docs/development/methodology.md`](docs/development/methodology.md)
+  "Implementation".
 - Preserve existing behaviour unless the plan says otherwise.
 - New dependency → the plan must justify it; update `pyproject.toml` / `environment.yml`;
   add an ADR for anything significant (see [`docs/standards/coding.md`](docs/standards/coding.md) "Dependencies").
@@ -164,6 +177,7 @@ pip install -e . && pre-commit install
 # tests — from the repo root
 pytest -q
 
-# run the agent core for one organisation
+# run the agent core, or check the books, for one organisation
 accounting-agent run <org> --config-dir <path-to-organisation-config>
+accounting-agent validate <org> --config-dir <path-to-organisation-config> [--balances]
 ```

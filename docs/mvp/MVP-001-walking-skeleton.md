@@ -1,6 +1,6 @@
 # MVP-001 – Walking skeleton & baseline analysis
 
-Roadmap: [R1 – Foundation](../roadmap.md#r1--foundation-done--pending-merge-of-pr-5) ·
+Roadmap: [R1 – Foundation](../roadmap.md#r1--foundation-done) ·
 Plan: [`MVP-001-walking-skeleton.plan.md`](../plans/MVP-001-walking-skeleton.plan.md)
 
 ## Purpose

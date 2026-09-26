@@ -59,7 +59,16 @@ per-package floor isn't relevant — there is only one package. Raise the floor 
 deliberate PR once the codebase has grown and its coverage is stable (MVP-002 is the
 first natural review point).
 
-**Follow-up:** [MVP-001 plan](../plans/MVP-001-walking-skeleton.plan.md), step 4.4.
+**Raised 2026-09-26 (MVP-002):**
+- **Measured baseline:** 98.76 % (476 of 482 statements), locally with the CI command. The
+  uncovered statements are `__main__.py` (3, run as a subprocess), two reader branches
+  without a dedicated test (invalid UTF-8 in a voucher file, a blank line inside front
+  matter), and one profile branch.
+- **New floor:** `fail_under = 95`. It is raised, never lowered, and keeps a few points of
+  margin for the same reason as before: the codebase is still small (482 statements).
+
+**Follow-up:** [MVP-001 plan](../plans/MVP-001-walking-skeleton.plan.md), step 4.4;
+[MVP-002 plan](../plans/MVP-002-common-book-model.plan.md), step 8.2.
 
 ---
 
@@ -100,6 +109,14 @@ check. Cyclomatic complexity **blocks at 20** (`mccabe.max-complexity`). The adv
 is **10** (`docs/standards/coding.md`). Cognitive complexity is advisory only, because
 there is no suitable tool for it yet. The values are inherited from the template and are
 generous for a new codebase. Revisit them in MVP-002, once real domain code exists.
+
+**Module boundary (B3, added in MVP-002):** `TID251` (`flake8-tidy-imports.banned-api`)
+bans `csv`, `io`, `pathlib`, `accounting_agent.formats` and `accounting_agent.cli`
+everywhere. `per-file-ignores` allows them only in `formats/**`, `cli.py`, `__main__.py`,
+`profile.py`, `tests/**` and `scripts/**`. This keeps the book domain
+(`accounting_agent.books`) free of file I/O without a new dependency (ADR-006). It checks
+imports only; a bare built-in `open()` is left to review. It was verified by adding
+`import csv` to `books/model.py`, which Ruff reported as TID251.
 
 **Follow-up:** none.
 
@@ -189,6 +206,17 @@ called that. **Semantic Versioning** for the package (`accounting_agent.__versio
 starting at `0.1.0`. It stays below 1.0.0 until the core's API is stable enough for the
 organisation projects to depend on.
 
+**Discoveries during an MVP (added 2026-09-26, owner decision):**
+- Fixes and small changes found while working on an MVP — even unrelated ones — go on
+  that MVP's branch, not on separate fix branches.
+- Each one gets its own commit and a line in the plan's "6. Found during this MVP", and it
+  is listed in the pull request.
+- Ideas go to the roadmap backlog.
+- Large, risky or decision-worthy items become their own MVP.
+
+This trades a little PR focus for much less branch and PR overhead in a one-person
+project. Traceability is kept through the separate commits and the plan section.
+
 **Follow-up:** none.
 
 ---
@@ -211,6 +239,9 @@ while working **in this repository**:
 - If an Internal file turns out to contain Confidential content (as happened on
   2026-09-25), stop, record that it happened without copying the content, and continue
   only with material known to be clean.
+- Never list the file names inside a voucher or book folder. They can carry
+  counterparties' names (seen 2026-09-26). Count them instead, or read only their shape
+  (digits and punctuation).
 - Organisation projects are encouraged to keep rules and decision logs apart, so that
   rules can be read without personal data.
 

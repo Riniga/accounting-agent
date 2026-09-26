@@ -52,17 +52,17 @@ Methodology chapter: [`kodstandard-och-stil`](../methodology/b-skriva-kod/kodsta
 Methodology chapter: [`arkitektur-och-designprinciper`](../methodology/b-skriva-kod/arkitektur-och-designprinciper.md)
 
 - **Methodology status:** `utkast` (pending: architect review)
-- **Platform standing:** `partially met`
+- **Platform standing:** `met` (since MVP-002)
 
 | # | Requirement (short) | Standing | Note |
 |---|---------------------|----------|------|
-| 1 | Dependencies point to the domain core, not infrastructure | met | Nothing to violate yet. The rule becomes real in MVP-002, when the book model must not depend on file I/O. |
-| 2 | Explicit public surface vs. internals | partial | Private helpers are `_`-prefixed; there is no declared public API (`__all__`) yet. |
-| 3 | Module boundaries enforced by tooling | not met | Not needed with two modules. Revisit when MVP-002 adds a domain package. |
+| 1 | Dependencies point to the domain core, not infrastructure | met | `accounting_agent.books` imports no file I/O, readers or CLI; readers and the CLI depend on it, not the reverse (ADR-006). |
+| 2 | Explicit public surface vs. internals | met | `accounting_agent.books` declares its API in `__all__`; helpers are `_`-prefixed. |
+| 3 | Module boundaries enforced by tooling | met | Ruff `TID251` bans `csv`/`io`/`pathlib`/`formats`/`cli` outside the allowed files (interpretations §3); proven by a deliberate violation. |
 
 **External dependency:** none.
-**Follow-up plan:** MVP-002 — introduce the domain/IO split and decide on boundary tooling.
-**Gap-register rows:** `GAP-B3-BOUNDARIES`
+**Follow-up plan:** none needed.
+**Gap-register rows:** ~~`GAP-B3-BOUNDARIES`~~ (closed by MVP-002)
 
 ---
 

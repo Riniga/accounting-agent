@@ -49,13 +49,30 @@ extend-exclude = ["*.md", "*.rst", "*.egg-info", "build", "dist"]
 #   E4/E7/E9  pycodestyle (imports / statements / runtime)   F  pyflakes
 #   W  pycodestyle warnings   I  isort   UP  pyupgrade   B  flake8-bugbear
 #   C4  flake8-comprehensions   C90  mccabe complexity
-select = ["E4", "E7", "E9", "F", "W", "I", "UP", "B", "C4", "C90"]
+select = ["E4", "E7", "E9", "F", "W", "I", "UP", "B", "C4", "C90", "TID251"]
 # Example of a deliberate, documented rule deviation — remove if you don't need it.
 # ignore = ["UP042"]  # str+Enum -> StrEnum: only if you rely on (str, Enum)'s repr today.
 
 [tool.ruff.lint.per-file-ignores]
 # __init__.py files deliberately re-export a public API.
 "**/__init__.py" = ["F401"]
+# Module boundary (ADR-006, B3): only these may do file I/O or reach readers and the CLI.
+"src/accounting_agent/formats/**" = ["TID251"]
+"src/accounting_agent/cli.py" = ["TID251"]
+"src/accounting_agent/__main__.py" = ["TID251"]
+"src/accounting_agent/profile.py" = ["TID251"]
+"tests/**" = ["TID251"]
+"scripts/**" = ["TID251"]
+
+# The book domain (accounting_agent.books) does no file I/O and never depends on the
+# readers or the CLI (ADR-006). Banned everywhere, allowed per file above. Covers imports
+# only — a bare built-in open() is not caught; code review covers that.
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"csv".msg = "File I/O belongs in accounting_agent.formats, not in the book domain (ADR-006)."
+"io".msg = "File I/O belongs in accounting_agent.formats, not in the book domain (ADR-006)."
+"pathlib".msg = "File I/O belongs in accounting_agent.formats, not in the book domain (ADR-006)."
+"accounting_agent.formats".msg = "The book domain must not depend on the readers (ADR-006)."
+"accounting_agent.cli".msg = "The book domain must not depend on the CLI (ADR-006)."
 
 [tool.ruff.lint.mccabe]
 # PR-blocking cyclomatic-complexity value — record the chosen threshold and its rationale
@@ -81,5 +98,5 @@ line-ending = "lf"
 source = ["accounting_agent"]
 
 [tool.coverage.report]
-fail_under = 90 # measured baseline 96.47 % (2026-09-25) — see interpretations.md §1
+fail_under = 95 # measured baseline 98.76 % (2026-09-26, MVP-002) — see interpretations.md §1
 skip_covered = true

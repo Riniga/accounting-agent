@@ -10,7 +10,16 @@ MVP-dokumentet. Ingen kod skrivs i det här steget.
    och är godkänd av den som äger vad som ska byggas. En plan för en MVP som
    fortfarande ändras blir inaktuell direkt.
 2. MVP:n är länkad från `docs/roadmap.md`.
-3. Byt ut `MVP-NNN-<slug>` i prompten mot den verkliga filen.
+
+## Så kör du den
+
+Skriv till exempel:
+
+> Kör docs/claude-prompts/create-plan-prompt.md
+
+Claude läser filen och följer avsnittet *Prompt*. Du behöver inte ange MVP:n: Claude tar
+reda på den i fas 0 och säger vilken den valde och varför. Vill du planera en annan MVP
+än den som ligger närmast i tur, nämn den i samma meddelande.
 
 För MVP-001 behövs normalt inte den här prompten, eftersom
 `initialize-project.md` skriver den planen.
@@ -23,8 +32,22 @@ färdig plan.
 
 ## Prompt
 
-    Skapa implementationsplanen för docs/mvp/MVP-NNN-<slug>.md. Arbeta i fyra
-    faser och stanna där det står STOPP.
+    Skapa implementationsplanen för nästa MVP. Arbeta i faserna nedan och
+    stanna där det står STOPP.
+
+    ## Fas 0 – Identifiera MVP:n
+
+    Ta reda på vilken MVP som ska planeras, i den här ordningen:
+
+    1. Den MVP jag nämner i mitt meddelande, om jag nämner någon.
+    2. Den aktuella grenen, om den heter `feature/mvp-NNN-<slug>`.
+    3. Den första MVP:n i docs/roadmap.md som har ett MVP-dokument i
+       docs/mvp/ men ännu ingen plan i docs/plans/.
+
+    Planen sparas som docs/plans/MVP-NNN-<slug>.plan.md med samma NNN och
+    slug som MVP-filen. Skriv i första raden av ditt svar vilken MVP du valde
+    och varför. Om källorna pekar på olika MVP:er, eller ingen passar: STOPP
+    och fråga.
 
     Svara mig på svenska. Planen skrivs på det språk som anges i
     docs/standards/documentation.md.
@@ -74,7 +97,7 @@ färdig plan.
 
     ## Fas 3 – Skriv planen
 
-    Spara planen som docs/plans/MVP-NNN-<slug>.plan.md och följ TEMPLATE.md:s
+    Spara planen enligt fas 0 och följ TEMPLATE.md:s
     avsnitt.
 
     - **0. Investigation:** det du fann i fas 2, med siffror och källa. Skriv
@@ -89,6 +112,8 @@ färdig plan.
       commit-meddelande enligt docs/standards/git.md.
     - **5. Risks / open questions:** det som är osäkert, det som skjuts upp och
       varför, och STRIDE-genomgången om den behövs.
+    - **6. Found during this MVP:** lämnas tomt ("*(none yet)*"). Det fylls
+      under genomförandet med fixar som upptäcks utanför planen.
 
     Krav på TODO-listan:
 
