@@ -86,6 +86,20 @@ Ideas that come up while working on an MVP land here, not in the MVP. Format:
 `* (YYYY-MM-DD, MVP-NNN) the idea`. Fixes found during an MVP are made on its branch
 instead — see `docs/development/methodology.md` "Found during an MVP".
 
+* (2026-09-26, MVP-002) **No links to real consumers in this repository.** Another
+  association must be able to use the core without finding any trace of the current
+  organisations.
+  - Remove every reference to real organisations and their specific values — names, ids
+    such as `hbg-judo`, bank accounts, years, folder names — from code, **tests** (for
+    example the `"Hbg Judo"` example in `tests/test_profile.py`) and user-facing docs
+    (README, `organisation-projects.md`, the glossary). Use invented examples instead.
+  - The code already contains none (`git grep` in `src/` is empty).
+  - To decide when cleaning: what happens to the project-history documents that describe
+    the real organisations (`initial-idea.md`, vision, roadmap, MVPs, plans, ADRs,
+    methodology compliance). Make them neutral, or move them to a private repository?
+  - Consider adding it as a principle in the vision, and as an automated check (a CI grep
+    for known consumer names).
+
 * Remove the remaining template leftovers — `.github/workflows/dast.yml` and the example
   section in `docs/methodology-compliance/interpretations.md`. The owner does this together
   with MVP-002. `_LÄS-MIG-FÖRST.md` and the EXAMPLE MVP and plan were removed in `947b599`.
