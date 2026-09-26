@@ -59,7 +59,16 @@ per-package floor isn't relevant — there is only one package. Raise the floor 
 deliberate PR once the codebase has grown and its coverage is stable (MVP-002 is the
 first natural review point).
 
-**Follow-up:** [MVP-001 plan](../plans/MVP-001-walking-skeleton.plan.md), step 4.4.
+**Raised 2026-09-26 (MVP-002):**
+- **Measured baseline:** 98.76 % (476 of 482 statements), locally with the CI command. The
+  uncovered statements are `__main__.py` (3, run as a subprocess), two reader branches
+  without a dedicated test (invalid UTF-8 in a voucher file, a blank line inside front
+  matter), and one profile branch.
+- **New floor:** `fail_under = 95`. It is raised, never lowered, and keeps a few points of
+  margin for the same reason as before: the codebase is still small (482 statements).
+
+**Follow-up:** [MVP-001 plan](../plans/MVP-001-walking-skeleton.plan.md), step 4.4;
+[MVP-002 plan](../plans/MVP-002-common-book-model.plan.md), step 8.2.
 
 ---
 
@@ -219,6 +228,9 @@ while working **in this repository**:
 - If an Internal file turns out to contain Confidential content (as happened on
   2026-09-25), stop, record that it happened without copying the content, and continue
   only with material known to be clean.
+- Never list the file names inside a voucher or book folder. They can carry
+  counterparties' names (seen 2026-09-26). Count them instead, or read only their shape
+  (digits and punctuation).
 - Organisation projects are encouraged to keep rules and decision logs apart, so that
   rules can be read without personal data.
 

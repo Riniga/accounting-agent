@@ -1,6 +1,6 @@
 # MVP-002 – Common book model and validation via core
 
-Roadmap: [R2 – Helsingborgs Judoklubb pilot via core](../roadmap.md#r2--helsingborgs-judoklubb-pilot-via-core-planned) ·
+Roadmap: [R2 – Helsingborgs Judoklubb pilot via core](../roadmap.md#r2--helsingborgs-judoklubb-pilot-via-core-ongoing) ·
 Plan: [`MVP-002-common-book-model.plan.md`](../plans/MVP-002-common-book-model.plan.md)
 
 > **Corrected 2026-09-25 (plan §0.1):** the first version of this MVP said Helsingborgs
@@ -125,6 +125,51 @@ the existing projects. It is therefore the first functionality to extract.
 - Everything from MVP-001's gates still holds: CI green, coverage floor held, no real data
   committed.
 
-## Outcome at close (YYYY-MM-DD)
+## Outcome at close (2026-09-26)
 
-<!-- Fill in when the MVP is actually closed. -->
+Closed as **delivered**, pending the pull request. Against the criteria above:
+
+- **Synthetic books pass; one broken variant per check gives the expected finding: met.**
+  - The valid books read and check with no findings.
+  - Every format rule (42 reader tests) and every general check (25 check tests) has its
+    own broken variant with the expected rule and severity.
+  - 162 tests in total, coverage 98.76 %.
+- **Helsingborgs Judoklubb's real books give the same outcome as `kontroll.py`, and
+  balances match to the öre: met.**
+  - Run through the core on 2026-09-26 (counts only; no data left the organisation
+    project): 33 accounts, 8 opening balances, 163 vouchers, 0 errors, 4
+    personal-identity-number warnings — identical to `kontroll.py`.
+  - Balances are equal for **25 of 25** accounts that carry a balance. The plan's "33 of
+    33" counted the chart of accounts; 8 accounts are unused.
+- **No organisation-specific value hard-coded in the core: met.**
+  - `git grep` over `src/` for the organisations' names, bank account, year and folder
+    names is empty.
+  - Three illustrative values in help, error and comment text were made neutral during
+    the close.
+  - The bank account, fiscal year, book path and format all come from `organisation.yaml`.
+- **Aktivitet Förebygger comparison written; what its reader needs recorded: met.** It is
+  in `docs/architecture/overview.md` ("Book formats"), and the reader is on the roadmap.
+- **MVP-001's gates still hold: met locally; the pull request run is pending.**
+  - Every CI check was run locally and is green.
+  - The coverage floor was raised from 90 to 95 %.
+  - `docs/reference/` is not tracked.
+
+**What turned out differently, recorded where it happened:**
+- **The MVP's premise was wrong**: Aktivitet Förebygger's books are not "the same". Caught
+  in the plan's investigation, before any code. The model became general double entry
+  (ADR-006) and the MVP was corrected with a dated note.
+- The front matter turned out not to be YAML. The core reproduces the organisation's own
+  parser instead.
+- Personal data: the pilot kept to counts only. But listing Aktivitet Förebygger's voucher
+  file names exposed counterparty names (`GAP-F2-CONFIDENTIAL`), and the reading rule was
+  tightened.
+- AI-TDD: each of the five test sets was reviewed by the owner before implementation. One
+  test first passed for the wrong reason and was tightened before review.
+- The detect-secrets hook stopped one commit (a test constant named `SECRET_TEXT`); it was
+  renamed, not allow-listed.
+- The scratchpad test environment broke overnight; the work continued in the owner's
+  `accounting-agent` environment.
+
+**Still open:**
+- the owner commits `organisation.yaml` in the Helsingborgs Judoklubb repository;
+- the CI run on the pull request.

@@ -64,7 +64,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _add_organisation_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("organisation", help="Organisation id, e.g. 'hbg-judo'.")
+    parser.add_argument("organisation", help="Organisation id, e.g. 'my-club'.")
     parser.add_argument(
         "--config-dir",
         type=Path,

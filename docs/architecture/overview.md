@@ -178,6 +178,47 @@ projects will run it on a local schedule.
   found the book model (chart of accounts, opening balance, one Markdown file per voucher)
   to be the strongest overlap, so it is extracted first (MVP-002).
 
+## Book formats
+
+The core reads each organisation's books through a reader for its file format, into one
+general model (ADR-006). The comparison below is based on the two projects' code and CSV
+header rows only (MVP-002 plan §0.1 and TODO 8.1), never on their books.
+
+| | `front-matter` (Helsingborgs Judoklubb) — **reader exists** | Table format (Aktivitet Förebygger) — **no reader yet** |
+|---|---|---|
+| Chart of accounts | `kontoplan.csv`: `kontoklass;kontogrupp;konto;bas_beskrivning;lokal_benämning` | `kontoplan.csv`: `nummer;beskrivning;typ;användning` |
+| Opening balance | `ingående-balans.csv`: `konto;lokal_benämning;ingående_balans` — one signed column | `ingående-balans.csv`: `nummer;beskrivning;debet;kredit` — amount = debit − credit |
+| Encoding | UTF-8 **without** BOM (a BOM is an error), LF | UTF-8 **with** BOM, read tolerantly |
+| Voucher folder | `verifikationer/` | `Verifikationer/` |
+| Voucher file name | `NNNN_YYYY-MM-DD.md`, checked against the fields | `<series><number> <date> <description>.md` — free text, not checked |
+| Voucher fields | Front matter `key: value` between `---` lines; quoted values are JSON strings | Markdown key/value table rows `\| **Key** \| value \|` (Verifikation, Datum, Text, …) |
+| Posting lines | Implicit: one `debet`/`kredit` pair and one `belopp` | Explicit table rows `\| account \| name \| debit \| credit \|`, **several per voucher** |
+| Numbering | 1..N across the year | **Per series** (letters in the voucher id, e.g. B, K), 1..N in each |
+| Amounts | `-?\d+(\.\d{1,2})?` — decimal point only | Tolerant: spaces, non-breaking spaces, `−`, comma decimal, `*` marks |
+| Format rule | Amount signed as the bank shows it (the bank-sign rule) | None — debit and credit columns carry the sign |
+
+**What already fits the model:**
+- voucher series and N posting lines;
+- the per-series numbering check;
+- the balanced-voucher check (which the `front-matter` format can never fail);
+- the unknown-account, zero-amount, text and fiscal-year checks;
+- balances.
+
+**What an Aktivitet Förebygger reader must do** (roadmap: "Aktivitet Förebygger reader"):
+- parse the key/value table and the posting-line table;
+- derive the series and number from the voucher id;
+- read the four-column chart of accounts and the debit/credit opening balance;
+- decide how strict to be about BOMs and the tolerant amount format — likely accept what
+  the organisation writes today, and report it as a warning rather than an error;
+- ignore free-text file names.
+
+Its own tool also checks that debits equal credits and that numbering is contiguous per
+series, and the core's general checks already cover both.
+
+**Open for that MVP:**
+- what the chart's `typ` and `användning` columns mean for the model;
+- whether Aktivitet Förebygger's balance sheet uses BAS classes 1–2 the same way.
+
 ## Planned Evolution of the Workspace
 
 *Everything in this section is planned, not existing.*

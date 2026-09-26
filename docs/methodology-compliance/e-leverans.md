@@ -76,9 +76,9 @@ Methodology chapter: [`observability`](../methodology/e-leverans/observability.m
 |---|---------------------|----------|------|
 | 1 | Instrumentation via OpenTelemetry | n/a | Local CLI, not a service. |
 | 2 | Structured JSON logs with trace id | n/a (yet) | Plain-text logging to stderr. Revisit in R3, where the agent's audit trail and scheduled runs make structured logs useful. |
-| 3 | No personal data, credentials or secrets in logs; automated masking | partial | No such data is handled yet. From MVP-002 the core reads voucher texts that contain names and personal identity numbers, so masking must exist before those texts can reach a log. |
+| 3 | No personal data, credentials or secrets in logs; automated masking | met | Every line `validate` prints passes `mask_personal_numbers()`; findings never quote voucher text; tested, including a deliberately leaky finding (MVP-002). |
 | 4 | Health endpoints (liveness/readiness) | n/a | No service. |
 | 5 | RED metrics per endpoint | n/a | No service. |
 
-**Follow-up plan:** MVP-002 — masking of personal identity numbers in anything the core logs.
-**Gap-register rows:** `GAP-E4-MASKING`
+**Follow-up plan:** none needed for SKA 3; revisit SKA 2 (structured logs) in R3.
+**Gap-register rows:** ~~`GAP-E4-MASKING`~~ (closed by MVP-002)

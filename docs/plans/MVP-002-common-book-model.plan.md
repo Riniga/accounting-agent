@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-002-common-book-model.md`](../mvp/MVP-002-common-book-model.md)
 
-**Status:** In progress — phases 1–7 done, phase 8 (close) next.
+**Status:** Implemented – pending PR
 
 ## 0. Investigation
 
@@ -518,17 +518,33 @@ Commit: `docs(mvp-002): record the Helsingborgs Judoklubb pilot result`
 
 ### Phase 8 — Aktivitet Förebygger comparison and close
 
-- [ ] 8.1 Write the comparison as a "Book formats" section in
+- [x] 8.1 Write the comparison as a "Book formats" section in
   `docs/architecture/overview.md`. It covers what fits the model
   (lines, series, chart, opening balance) and what a table-format reader must do (key/value
   table, line table, debit/credit opening balance, `utf-8-sig`). It is based on code only.
   *Verify:* every row of the §0.1 table is addressed.
-- [ ] 8.2 Re-measure coverage and raise `fail_under` to just below the new baseline. Update
+  Result: "Book formats" section in `overview.md`, a 10-row comparison with what fits the
+  model, what an Aktivitet Förebygger reader must do, and what is open for that MVP.
+  Checking Aktivitet Förebygger's code and CSV header rows corrected §0.1: its chart has
+  **4** columns (`nummer;beskrivning;typ;användning`), not 3, and both CSVs carry a BOM.
+  **Deviation from the reading rule:** listing its voucher file names (digits masked) still
+  showed descriptions with counterparty names (organisations, not persons). Nothing was
+  copied. It is recorded under `GAP-F2-CONFIDENTIAL`, and the rule in interpretations §9
+  now says never to list file names inside a book folder.
+- [x] 8.2 Re-measure coverage and raise `fail_under` to just below the new baseline. Update
   interpretations §1. *Verify:* `pytest --cov` passes at the new floor.
-- [ ] 8.3 Update the gap register: close `GAP-E4-MASKING` and `GAP-B3-BOUNDARIES`, and note
+  Result: baseline 98.76 % (476 of 482 statements); `fail_under` raised from 90 to **95**;
+  interpretations §1 updated; `pytest --cov` passes at 95.
+- [x] 8.3 Update the gap register: close `GAP-E4-MASKING` and `GAP-B3-BOUNDARIES`, and note
   the §9 reading rule applied in `GAP-F2-CONFIDENTIAL`. Add a changelog entry. *Verify:*
   the rows reference this plan.
-- [ ] 8.4 Verify each acceptance criterion against the real system:
+  Result:
+  - `GAP-E4-MASKING` and `GAP-B3-BOUNDARIES` are closed (struck through, linked to this
+    plan).
+  - The B3 and E4 assessments are updated to "met".
+  - `GAP-F2-CONFIDENTIAL` stays open, with the 2026-09-26 note.
+  - There is a changelog entry and the follow-up plan index is updated.
+- [x] 8.4 Verify each acceptance criterion against the real system:
   - fixtures pass/fail per rule (test run);
   - pilot outcome and balances (7.2–7.3);
   - `git grep` for organisation-specific values in `src/` (organisation names, `1930`,
@@ -538,6 +554,24 @@ Commit: `docs(mvp-002): record the Helsingborgs Judoklubb pilot result`
   - `git ls-files docs/reference` is empty.
 
   Fill in "Outcome at close".
+  Result (2026-09-26, all run for real):
+  - The `git grep` found three example values in help, error and comment text
+    (`'hbg-judo'`, `1930`). They were replaced with neutral ones, and the grep is now
+    empty.
+  - All CI checks ran locally and are green:
+    - Ruff;
+    - all 7 pre-commit hooks;
+    - lock drift;
+    - pip-audit;
+    - licences;
+    - Semgrep, 201 rules on 12 files, 0 findings;
+    - the secret scan;
+    - the instruction-file scan;
+    - tests: 162 passed, coverage 98.76 % ≥ 95 %.
+  - `git ls-files docs/reference` → 0.
+  - The pilot and the balance comparison were re-run after the last code change, with
+    identical results.
+  - The PR run is still pending.
 
 Commit: `docs(mvp-002): compare Aktivitet Förebygger's format and close MVP-002`
 

@@ -93,7 +93,7 @@ def load_profile(config_dir: Path) -> OrganisationProfile:
 def _parse_organisation(value: object, path: Path) -> str:
     if not isinstance(value, str) or not ORGANISATION_ID.fullmatch(value):
         raise ProfileError(
-            f"'organisation' in {path} must be a lowercase id such as 'hbg-judo', "
+            f"'organisation' in {path} must be a lowercase id such as 'my-club', "
             f"got {value!r}."
         )
     return value
@@ -166,7 +166,7 @@ def _parse_fiscal_year(value: object, path: Path) -> int:
 
 
 def _parse_bank_account(value: object, path: Path) -> str:
-    # Accepted as 1930 or "1930"; YAML reads the unquoted form as an integer.
+    # Accepted quoted or unquoted; YAML reads an unquoted account number as an integer.
     text = (
         str(value) if isinstance(value, int) and not isinstance(value, bool) else value
     )

@@ -11,7 +11,19 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-**R1 – Foundation is implemented; MVP-001 is pending the merge of PR #5.**
+**MVP-002 is implemented and pending its pull request.**
+[MVP-002 – Common book model and validation via core](mvp/MVP-002-common-book-model.md)
+delivered:
+- a general double-entry book model (ADR-006);
+- a reader for the `front-matter` book format;
+- the general book checks;
+- `accounting-agent validate`, with masked output.
+
+Helsingborgs Judoklubb's real 2026 books validate through the core with the same outcome
+as its own tool, and identical balances. Next: the Aktivitet Förebygger reader or MVP-003
+(bank import and reconciliation) — to be prioritised.
+
+*Earlier:* **R1 – Foundation is done** (MVP-001, merged in PR #5).
 [MVP-001 – Walking skeleton & baseline analysis](mvp/MVP-001-walking-skeleton.md) delivered:
 - the `accounting-agent` package (v0.1.0, 29 tests);
 - six CI quality gates, each proven to block;
@@ -27,7 +39,7 @@ reading rule for `docs/reference/` (interpretations §9) when the MVP-002 analys
 
 ---
 
-## R1 – Foundation (Done — pending merge of PR #5)
+## R1 – Foundation (Done)
 
 Establishes the core repository with its stack, CI quality gates and methodology baseline,
 plus an analysis of the existing organisation projects that tells us what to extract first.
@@ -36,7 +48,7 @@ plus an analysis of the existing organisation projects that tells us what to ext
   installable package with a minimal `run` CLI, CI gates, first methodology assessment,
   and an analysis of the Helsingborgs Judoklubb project.
 
-## R2 – Helsingborgs Judoklubb pilot via core (Planned)
+## R2 – Helsingborgs Judoklubb pilot via core (Ongoing)
 
 Establishes the common data model and the import → matching → posting → validation →
 report chain in the core, with Helsingborgs Judoklubb as the first organisation running on it.
