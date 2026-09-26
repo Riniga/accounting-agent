@@ -102,6 +102,11 @@ books:                      # needed by `validate`
   format: front-matter      # the book file format (ADR-006)
   fiscal_year: 2026
   bank_account: "1930"
+bank:                       # needed by `import-bank` (ADR-008)
+  export_format: nordea-csv # the bank's export format
+  statement_file: Bokföring/kontoutdrag.csv
+  fund_account: "1350"      # optional, together with fund_value_file
+  fund_value_file: Bokföring/fondvärde.csv
 ```
 
 `accounting-agent validate <organisation> --config-dir <path>` reads the books and checks
@@ -109,6 +114,15 @@ them:
 - It reports findings as `ERROR` / `WARNING` / `INFO`, and exits 1 on any error.
 - It never prints a voucher's text, and masks personal identity numbers in all output.
 - `--balances` also lists the balance per account.
+
+`accounting-agent import-bank <organisation> --config-dir <path> <export>` turns a file
+downloaded from the bank into the organisation's statement file or fund-value file:
+- The export's header tells which; the export itself is never changed.
+- The statement file is replaced, oldest transaction first. An export that starts later
+  than the existing file is refused, since it would drop transactions.
+- Fund values are merged by date.
+- Personal identity numbers are masked as `[personnummer]` in the written file. The
+  terminal shows only file names, dates and counts.
 
 ## Required GitHub Actions secrets
 

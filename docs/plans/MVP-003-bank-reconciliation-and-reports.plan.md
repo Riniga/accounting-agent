@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-003-bank-reconciliation-and-reports.md`](../mvp/MVP-003-bank-reconciliation-and-reports.md)
 
-**Status:** In progress – phase 1 done (plan approved 2026-09-26)
+**Status:** In progress – phase 3 done (plan approved 2026-09-26)
 
 ## 0. Investigation
 
@@ -318,20 +318,54 @@ Commit: `docs(mvp-003): correct the MVP and record ADR-007 and ADR-008`
   export format, non-four-digit accounts, a missing input directory. Unknown sub-keys
   give a warning. A profile without the sections still loads.
   *Verify:* the tests fail for the right reason.
-- [ ] 2.2 **STOP — the owner reviews the tests from 2.1.**
-- [ ] 2.3 Implement the sections in `profile.py` and add them to `KNOWN_KEYS`.
+  Result: `tests/test_profile_sections.py`, 66 tests (parametrised). All fail for the
+  right reason:
+  - `AttributeError: 'OrganisationProfile' object has no attribute 'bank'` (and
+    `checks`, `conventions`, `reports`);
+  - `DID NOT RAISE ProfileError` for the error cases;
+  - the four unknown-sub-key tests, because the whole section is still ignored as an
+    unknown top-level key.
+
+  API locked by the tests:
+  - `profile.bank`, `profile.checks`, `profile.reports` are `None` when absent;
+    `profile.conventions` always exists, with empty defaults;
+  - `bank`: `export_format` and `statement_file` required; `fund_account` and
+    `fund_value_file` optional but only together; the statement file's folder must
+    exist, the file need not;
+  - `checks`: every key optional; `reference_chart` and `documents` must be existing
+    folders; the three files may be missing (their checks are skipped);
+  - `conventions`: account lists accept quoted or unquoted four-digit accounts,
+    normalised to strings, stored as tuples;
+  - `reports`: all three keys required, non-empty text; the output folder need not
+    exist.
+- [x] 2.2 **STOP — the owner reviews the tests from 2.1.** Result: approved 2026-09-26.
+- [x] 2.3 Implement the sections in `profile.py` and add them to `KNOWN_KEYS`.
   *Verify:* all tests pass; Ruff clean; the MVP-002 profile tests unchanged.
+  Result:
+  - All 228 tests pass on the first run; coverage 98.94 %; Ruff clean. The MVP-002
+    profile tests are unchanged.
+  - `BankConfig`, `ChecksConfig`, `ConventionsConfig` and `ReportsConfig`; the
+    `books` parser now shares one `_section()` helper (mapping, required keys, unknown
+    sub-key warning) and one `_parse_account()` with the new sections.
+  - `current-state.md` updated (tests, capability).
 
 Commit: `feat(profile): add bank, checks, conventions and reports sections`
 
 ### Phase 3 — Bank import
 
-- [ ] 3.1 **Synthetic fixtures:** `tests/fixtures/bank/` with a small `nordea-csv`
+- [x] 3.1 **Synthetic fixtures:** `tests/fixtures/bank/` with a small `nordea-csv`
   statement export (newest first, `utf-8-sig`, amounts with spaces and decimal comma, a
   blank row, a name only in `Namn`, one in `Ytterligare detaljer`, an all-digit message
   with leading zeros, Skatteverket's public test number in a message) and a fund-value
   export. Invented names only. *Verify:* each rule in §0.3 "Bank import" is represented.
-- [ ] 3.2 **Tests first:**
+  Result: `nordea-statement.csv` (5 transactions and a blank row, newest first, BOM, an
+  extra `Valuta` column and a trailing `;` in the header, a non-breaking space in a
+  balance) and `nordea-fund.csv` (2 values). The transactions match the bank side of the
+  `valid/` books (opening balance 1000.00), plus one after the last voucher, so phase 4
+  can reuse them. Rules not in the file fixtures — spaces as thousands separators,
+  short rows, an unknown header, an export without transactions — are built inline by
+  the tests.
+- [x] 3.2 **Tests first:**
   - `mask_personal_numbers(text, mask=...)` with the Swedish mask; the default
     unchanged;
   - the export reader: header detection (statement, fund value, refused);
@@ -344,10 +378,45 @@ Commit: `feat(profile): add bank, checks, conventions and reports sections`
     names on stdout.
 
   *Verify:* the tests fail for the right reason.
-- [ ] 3.3 **STOP — the owner reviews the fixtures and tests from 3.1–3.2.**
-- [ ] 3.4 Implement `formats/nordea_csv.py`, `formats/bank_statement.py` (write path,
+  Result: `tests/test_bank_import.py` (27 tests) and 2 new tests in
+  `tests/test_masking.py`. Both files fail at collection for the right reason:
+  `ImportError: cannot import name 'FILE_MASK'` and `ModuleNotFoundError: No module
+  named 'accounting_agent.formats.bank_statement'`.
+
+  API locked by the tests:
+  - `FILE_MASK = "[personnummer]"`; `mask_personal_numbers(text, mask=MASK)`;
+  - `nordea_csv.read_export(path) -> StatementExport | FundExport`, raising
+    `ExportFormatError` for an unknown header or an export without transactions;
+    statement rows are strings, already normalised and masked, oldest first;
+  - `bank_statement.write_statement(path, rows)` → rows, first and last date, replaced
+    rows (or `None`); `StatementRefusedError` when the export starts later;
+    `write_fund_values(path, values)` → number of values, latest date;
+  - `accounting-agent import-bank <org> --config-dir <dir> <export>`: stdout
+    `Wrote <file>: N rows, <first> to <last>.` (and `Replaced N rows with M.`), or
+    `Wrote <file>: N values, latest <date>.`; errors are logged, exit 1; no name or
+    message in stdout, stderr or the log.
+
+  **Deviation:** the CLI tests write a small profile with a `bank` section into a
+  temporary folder instead of copying `example-full`, which only arrives with the
+  checks in phases 4–7. Import needs no books.
+- [x] 3.3 **STOP — the owner reviews the fixtures and tests from 3.1–3.2.** Result:
+  approved 2026-09-26, including the two tolerances (missing columns give empty fields;
+  an export without transactions is refused).
+- [x] 3.4 Implement `formats/nordea_csv.py`, `formats/bank_statement.py` (write path,
   atomic replace) and the `import-bank` command. *Verify:* tests pass; Ruff clean.
   Update `README.md` and `AGENTS.md` (commands).
+  Result:
+  - All 257 tests pass on the first run; coverage 98.56 %; Ruff clean.
+  - The atomic write is a `<name>.tmp` next to the target, replaced with
+    `Path.replace()`, and removed if the replace fails.
+  - Three defensive branches in `nordea_csv.py` have no reviewed test yet: an empty
+    file, a fund export with no values, and an amount that is not a number (raised as
+    `ExportFormatError` without quoting the value, which could be a name in a malformed
+    row). They are left for review rather than covered by unreviewed tests.
+  - `README.md` (the `bank` section and `import-bank`), `AGENTS.md` (commands),
+    `overview.md` (structure, components) and `current-state.md` (257 tests) updated.
+    The README example uses neutral file names, not the organisation's (backlog "no
+    links to real consumers").
 
 Commit: `feat(bank): import bank exports into masked statement and fund-value files`
 

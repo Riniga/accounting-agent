@@ -43,8 +43,10 @@ src/accounting_agent/   The core package (ADR-002)
         checks.py       check_books() — the general checks
         findings.py     Finding, Severity
         masking.py      Personal identity number masking
-    formats/            One reader per book file format (ADR-006)
+    formats/            One reader per file format (ADR-006, ADR-007); the only writers (ADR-008)
         front_matter.py read_books() for the `front-matter` format
+        nordea_csv.py   read_export() for the `nordea-csv` bank export
+        bank_statement.py  write_statement(), write_fund_values() — atomic writes
 tests/                  pytest suite; fixtures/ holds synthetic organisations only (ADR-003)
 docs/                   Vision, roadmap, architecture + ADRs, MVPs, plans, standards,
                         development setup, methodology + compliance, Claude prompts
@@ -85,11 +87,19 @@ LICENSE                 PolyForm Noncommercial 1.0.0 (ADR-005)
   opening-balance CSV and one Markdown voucher file per voucher — with the same field
   semantics as the organisation's own tool. It reports parse- and format-level findings,
   including the bank-sign rule.
-- **`cli.py`** provides two commands. Both load the profile, and both refuse if
+- **`formats/nordea_csv.py`** reads a `nordea-csv` bank export — a statement or fund
+  values, told apart by the header — into rows that are normalised, masked with
+  `[personnummer]` and oldest first. **`formats/bank_statement.py`** writes the
+  organisation's statement and fund-value files. These are the core's only write paths
+  (ADR-008): configured paths only, through a temporary file that replaces the target,
+  and never vouchers.
+- **`cli.py`** provides three commands. All load the profile, and all refuse if
   `<organisation>` doesn't match it.
   - `run <organisation> --config-dir <path>` logs the enabled features.
   - `validate <organisation> --config-dir <path> [--balances]` prints a masked report to
     stdout and exits 1 on errors.
+  - `import-bank <organisation> --config-dir <path> <export>` writes the statement or
+    fund-value file and prints only file names, dates and counts.
 
 The first consumer is Helsingborgs Judoklubb's 2026 books, in the MVP-002 pilot.
 

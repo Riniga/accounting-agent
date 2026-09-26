@@ -16,7 +16,7 @@ from accounting_agent.books import (
     compute_balances,
     mask_personal_numbers,
 )
-from accounting_agent.formats import front_matter
+from accounting_agent.formats import bank_statement, front_matter, nordea_csv
 from accounting_agent.profile import OrganisationProfile, ProfileError, load_profile
 
 logger = logging.getLogger(__name__)
@@ -60,6 +60,16 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Also list the balance per account (debit +, credit -).",
     )
     validate.set_defaults(handler=_validate)
+
+    import_bank = commands.add_parser(
+        "import-bank",
+        help="Turn a bank export into the organisation's statement or fund-value file.",
+    )
+    _add_organisation_arguments(import_bank)
+    import_bank.add_argument(
+        "export", type=Path, help="The file downloaded from the bank; never changed."
+    )
+    import_bank.set_defaults(handler=_import_bank)
     return parser
 
 
@@ -146,6 +156,59 @@ def _validate(args: argparse.Namespace) -> int:
         f"warnings: {counts[Severity.WARNING]}, info: {counts[Severity.INFO]})"
     )
     return EXIT_ERROR if counts[Severity.ERROR] else EXIT_OK
+
+
+def _import_bank(args: argparse.Namespace) -> int:
+    profile = _load_matching_profile(args)
+    if profile is None:
+        return EXIT_ERROR
+    if profile.bank is None:
+        logger.error(
+            "%s has no 'bank' section in organisation.yaml; import-bank needs one.",
+            args.config_dir,
+        )
+        return EXIT_ERROR
+    if not args.export.is_file():
+        logger.error("The export %s does not exist.", args.export)
+        return EXIT_ERROR
+
+    # Messages name files, dates and counts only — never a row's name or message.
+    try:
+        export = nordea_csv.read_export(args.export)
+        if isinstance(export, nordea_csv.StatementExport):
+            _write_statement(profile.bank.statement_file, export)
+        elif profile.bank.fund_value_file is None:
+            logger.error(
+                "%s is a fund-value export, but 'bank.fund_value_file' is not "
+                "configured.",
+                args.export.name,
+            )
+            return EXIT_ERROR
+        else:
+            written = bank_statement.write_fund_values(
+                profile.bank.fund_value_file, export.values
+            )
+            _emit(
+                f"Wrote {profile.bank.fund_value_file.name}: {written.values} values, "
+                f"latest {written.latest_date}."
+            )
+    except (
+        nordea_csv.ExportFormatError,
+        bank_statement.StatementRefusedError,
+    ) as error:
+        logger.error("%s", error)
+        return EXIT_ERROR
+    return EXIT_OK
+
+
+def _write_statement(path: Path, export: nordea_csv.StatementExport) -> None:
+    written = bank_statement.write_statement(path, export.rows)
+    if written.replaced_rows is not None:
+        _emit(f"Replaced {written.replaced_rows} rows with {written.rows}.")
+    _emit(
+        f"Wrote {path.name}: {written.rows} rows, "
+        f"{written.first_date} to {written.last_date}."
+    )
 
 
 def _emit_findings(findings: list[Finding]) -> None:
