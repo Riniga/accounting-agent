@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-003-bank-reconciliation-and-reports.md`](../mvp/MVP-003-bank-reconciliation-and-reports.md)
 
-**Status:** In progress – phase 4 done (plan approved 2026-09-26)
+**Status:** In progress – phase 5 done (plan approved 2026-09-26)
 
 ## 0. Investigation
 
@@ -477,7 +477,7 @@ Commit: `feat(books): reconcile the books against the bank statement`
 
 ### Phase 5 — Remaining voucher checks and summaries
 
-- [ ] 5.1 **Tests first**, on model objects:
+- [x] 5.1 **Tests first**, on model objects:
   - duplicate (date, text, bank-signed amount) → warning naming the voucher numbers, not
     the text;
   - date earlier than the previous voucher → warning;
@@ -490,9 +490,50 @@ Commit: `feat(books): reconcile the books against the bank statement`
 
   CLI: `validate` lists the configured documents folder and passes the names. The
   `valid/` fixture still gives no errors. *Verify:* the tests fail for the right reason.
-- [ ] 5.2 **STOP — the owner reviews the tests from 5.1.**
-- [ ] 5.3 Implement in `books/checks.py` (or a sibling module if it passes the advisory
+  Result: 21 new tests, all failing for the right reason:
+  - `tests/test_detail_checks.py` (18) fails at collection:
+    `ImportError: cannot import name 'check_details'`;
+  - `tests/test_cli_validate_details.py` (3): the two `example-full` tests fail because
+    the detail checks are not wired in; the one on `example` passes, since it asserts
+    that nothing changes without a `checks` section.
+
+  **Deviation — a separate function, run only with a `checks` section:** the rules go
+  into `check_details(books, bank_account, parking_accounts=(), documents=None)`, not
+  into `check_books()`. MVP-002's approved `check_books()` tests use two identical
+  vouchers as "clean books", which the duplicate rule would flag, and MVP-002's
+  `example` output must stay unchanged. `validate` runs `check_details()` when the
+  profile has a `checks` section; `documents=None` (no documents folder) skips only the
+  existence check.
+
+  **Changed approved tests:** `example-full` now has `checks` (a `documents` folder with
+  the three documents its vouchers name) and `conventions` (2890 as parking account), so
+  two phase-4 CLI tests expect 3 and 4 info findings instead of 1 and 2.
+
+  Locked by the tests:
+  - rules `voucher-duplicate`, `voucher-date-order`, `revenue-account-debited`,
+    `cost-account-credited`, `account-duplicate` (warnings); `document-missing`,
+    `account-missing-name` (errors); `documents-summary`, `parking-summary`,
+    `unused-accounts` (info);
+  - the duplicate key uses the bank-signed amount, so money in and money out of the
+    same size are not duplicates; the message gives date and amount, not the text;
+  - a missing document is named by its position ("2 of 2"), never by its file name,
+    which can hold a person's name; documents are matched by path relative to the
+    documents folder;
+  - costs in the documents summary are vouchers with a debit on classes 4–7; the
+    parking net is credit − debit on the parking account; an account with only an
+    opening balance is not unused.
+- [x] 5.2 **STOP — the owner reviews the tests from 5.1.** Result: approved 2026-09-26,
+  including the separate `check_details()` and the two changed phase-4 counts.
+- [x] 5.3 Implement in `books/checks.py` (or a sibling module if it passes the advisory
   complexity 10) and the CLI wiring. *Verify:* tests pass; Ruff, including C90, clean.
+  Result:
+  - `books/details.py` with `check_details()`; all 312 tests pass on the first run;
+    coverage 98.92 %; Ruff clean; no new function reaches the advisory complexity 10.
+  - The CLI lists the documents folder recursively as paths relative to it. The match
+    is exact, so on Windows it is case-sensitive where `kontroll.py`'s `exists()` is
+    not; the pilot (phase 10) will show whether that matters.
+  - `validate` on `example-full` gives 1 warning and 3 info, as the tests say.
+  - README (`checks`, `conventions`), `overview.md` and `current-state.md` updated.
 
 Commit: `feat(books): add duplicate, date-order, account-side and document checks`
 

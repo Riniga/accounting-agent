@@ -17,3 +17,10 @@ books:
 bank:
   export_format: nordea-csv
   statement_file: statement.csv
+
+checks:
+  documents: documents
+
+conventions:
+  # 2890 stands in for a parking account in this synthetic organisation.
+  parking_accounts: ["2890"]

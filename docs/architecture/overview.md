@@ -41,6 +41,7 @@ src/accounting_agent/   The core package (ADR-002)
         model.py        Account, OpeningBalance, PostingLine, Voucher, Books, BankTransaction
         balances.py     compute_balances()
         checks.py       check_books() — the general checks
+        details.py      check_details() — the detail checks from kontroll.py
         reconciliation.py  reconcile() — the books against the bank statement
         findings.py     Finding, Severity
         masking.py      Personal identity number masking
@@ -89,6 +90,10 @@ LICENSE                 PolyForm Noncommercial 1.0.0 (ADR-005)
   opening-balance CSV and one Markdown voucher file per voucher — with the same field
   semantics as the organisation's own tool. It reports parse- and format-level findings,
   including the bank-sign rule.
+- **`books/details.py`** has the detail checks that MVP-002 deferred (duplicates, date
+  order, account sides, supporting documents, parking and unused accounts, the chart's
+  own rules). `validate` runs them when the profile has a `checks` section; the CLI
+  lists the documents folder, so the domain stays free of I/O.
 - **`books/reconciliation.py`** reconciles the books against the bank statement as
   `kontroll.py` does: the bank's balance arithmetic, the opening balance, and matching on
   (date, amount), where a voucher's amount is the net of its bank lines. A

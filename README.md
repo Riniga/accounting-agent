@@ -107,6 +107,10 @@ bank:                       # needed by `import-bank` (ADR-008)
   statement_file: Bokföring/kontoutdrag.csv
   fund_account: "1350"      # optional, together with fund_value_file
   fund_value_file: Bokföring/fondvärde.csv
+checks:                     # turns on the detail checks in `validate`
+  documents: underlag       # the supporting-documents folder
+conventions:                # organisation conventions (optional)
+  parking_accounts: ["3008"]
 ```
 
 `accounting-agent validate <organisation> --config-dir <path>` reads the books and checks
@@ -114,6 +118,10 @@ them:
 - It reports findings as `ERROR` / `WARNING` / `INFO`, and exits 1 on any error.
 - It never prints a voucher's text, and masks personal identity numbers in all output.
 - `--balances` also lists the balance per account.
+- With a `checks` section it also runs the detail checks: duplicates, date order,
+  revenue and cost accounts on the unexpected side, supporting documents that do not
+  exist, and summaries of vouchers without documents, parking accounts and unused
+  accounts. A missing document is named by its position, never by its file name.
 - With a `bank` section it also reconciles the books against the statement file: the
   bank's own balances, the opening balance, and every bank voucher against a bank
   transaction and the reverse. `--unbooked` lists the transactions after the last voucher

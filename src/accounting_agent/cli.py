@@ -13,6 +13,7 @@ from accounting_agent.books import (
     Finding,
     Severity,
     check_books,
+    check_details,
     compute_balances,
     mask_personal_numbers,
     reconcile,
@@ -21,6 +22,7 @@ from accounting_agent.formats import bank_statement, front_matter, nordea_csv
 from accounting_agent.profile import (
     BankConfig,
     BooksConfig,
+    ChecksConfig,
     OrganisationProfile,
     ProfileError,
     load_profile,
@@ -152,6 +154,8 @@ def _validate(args: argparse.Namespace) -> int:
             f"{len(books.vouchers)} vouchers"
         )
         findings = findings + check_books(books, config.fiscal_year)
+        if profile.checks is not None:
+            findings = findings + _check_details(profile, profile.checks, config, books)
         if profile.bank is not None:
             findings = findings + _reconcile(profile.bank, config, books, args.unbooked)
 
@@ -170,6 +174,28 @@ def _validate(args: argparse.Namespace) -> int:
         f"warnings: {counts[Severity.WARNING]}, info: {counts[Severity.INFO]})"
     )
     return EXIT_ERROR if counts[Severity.ERROR] else EXIT_OK
+
+
+def _check_details(
+    profile: OrganisationProfile,
+    checks: ChecksConfig,
+    config: BooksConfig,
+    books: Books,
+) -> list[Finding]:
+    """Run the detail checks, with the documents folder listed here (ADR-007)."""
+    documents = None
+    if checks.documents is not None:
+        documents = frozenset(
+            path.relative_to(checks.documents).as_posix()
+            for path in checks.documents.rglob("*")
+            if path.is_file()
+        )
+    return check_details(
+        books,
+        config.bank_account,
+        parking_accounts=profile.conventions.parking_accounts,
+        documents=documents,
+    )
 
 
 def _reconcile(
