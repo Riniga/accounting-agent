@@ -14,7 +14,16 @@ att MVP:n känns klar.
 
 1. Alla faser i planen är genomförda och committade på feature-grenen.
 2. Arbetskopian är ren, så att det som granskas är det som faktiskt ligger i grenen.
-3. Byt ut `MVP-NNN-<slug>` i prompten mot den verkliga MVP:n.
+
+## Så kör du den
+
+Stå på MVP:ns feature-gren och skriv till exempel:
+
+> Kör docs/claude-prompts/complete-mvp.md
+
+Claude läser filen och följer avsnittet *Prompt* nedan. Du behöver inte ange vilken MVP
+det gäller: Claude tar reda på det i fas 0 och säger vilken MVP den valde och varför.
+Vill du avsluta en annan MVP än den grenen pekar på, nämn den bara i samma meddelande.
 
 Claude åtgärdar självklara luckor direkt, till exempel dokumentation som inte
 uppdaterats eller ett saknat test för beteende som redan ingår i MVP:n. Allt som ändrar
@@ -24,11 +33,29 @@ beteende, omfattning eller ett beslut tas upp med dig först.
 
 ## Prompt
 
-    Avsluta MVP:n docs/mvp/MVP-NNN-<slug>.md och förbered den för pull request.
-    Arbeta i fyra faser och stanna där det står STOPP.
+    Avsluta den aktuella MVP:n och förbered den för pull request. Arbeta i
+    faserna nedan och stanna där det står STOPP.
 
     Svara mig på svenska. Projektdokumenten skrivs på det språk som anges i
     docs/standards/documentation.md.
+
+    ## Fas 0 – Identifiera MVP:n
+
+    Ta reda på vilken MVP som ska avslutas, i den här ordningen:
+
+    1. Den MVP jag nämner i mitt meddelande, om jag nämner någon.
+    2. Den aktuella grenen: `feature/mvp-NNN-<slug>` pekar på
+       docs/mvp/MVP-NNN-*.md och docs/plans/MVP-NNN-*.plan.md.
+    3. Den plan i docs/plans/ vars Status är "In progress" eller
+       "Implemented".
+
+    Skriv i första raden av ditt svar vilken MVP du valde och varför, till
+    exempel "MVP-002 (från grenen feature/mvp-002-common-book-model)". Om
+    källorna pekar på olika MVP:er, eller ingen passar: STOPP och fråga.
+
+    Finns det redan en öppen pull request för grenen (gh pr list --head
+    <grenen>), ge PR-beskrivningen i fas 4 som en ersättning för den
+    befintliga, inte som en ny.
 
     ## Fas 1 – Läs in
 

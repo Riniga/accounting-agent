@@ -119,6 +119,7 @@ None currently. CI runs on pull requests only and needs no secrets; there is no 
 | Area | Location |
 |------|----------|
 | Architecture | [`docs/architecture/`](docs/architecture/) |
+| Using the core from an organisation project | [`docs/development/organisation-projects.md`](docs/development/organisation-projects.md) |
 | Development process | [`docs/development/methodology.md`](docs/development/methodology.md) |
 | Standards | [`docs/standards/`](docs/standards/) |
 | Organisation methodology | [`docs/methodology/`](docs/methodology/) |
