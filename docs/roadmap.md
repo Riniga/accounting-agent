@@ -20,8 +20,8 @@ delivered:
 - `accounting-agent validate`, with masked output.
 
 Helsingborgs Judoklubb's real 2026 books validate through the core with the same outcome
-as its own tool, and identical balances. Next: the Aktivitet Förebygger reader or MVP-003
-(bank import and reconciliation) — to be prioritised.
+as its own tool, and identical balances. Next: [MVP-003](mvp/MVP-003-bank-reconciliation-and-reports.md) — bank import,
+reconciliation, the remaining checks and the reports (owner decision 2026-09-26).
 
 *Earlier:* **R1 – Foundation is done** (MVP-001, merged in PR #5).
 [MVP-001 – Walking skeleton & baseline analysis](mvp/MVP-001-walking-skeleton.md) delivered:
@@ -60,10 +60,11 @@ report chain in the core, with Helsingborgs Judoklubb as the first organisation 
 * Aktivitet Förebygger reader — a reader for the table-format books (multi-line vouchers,
   voucher series) into the same core model; needed before R5. Found in the MVP-002 plan's
   investigation (§0.1).
-* MVP-003 – Bank statement import and reconciliation via core — the bank statement is
-  imported and reconciled against the vouchers through the core.
-* MVP-004 – Reports via core — the reports Helsingborgs Judoklubb and Aktivitet Förebygger
-  both generate today, produced once by the core.
+* [MVP-003 – Bank import, reconciliation, remaining checks and reports via core](mvp/MVP-003-bank-reconciliation-and-reports.md)
+  — Helsingborgs Judoklubb's agent tooling (bank import, reconciliation, the rest of
+  `kontroll.py`, the reports) through the core, except member management. It replaces
+  the earlier headings "MVP-003 bank import" and "MVP-004 reports" (owner decision
+  2026-09-26).
 
 ## R3 – Agent tools & human-in-the-loop (Planned)
 
@@ -86,6 +87,12 @@ Ideas that come up while working on an MVP land here, not in the MVP. Format:
 `* (YYYY-MM-DD, MVP-NNN) the idea`. Fixes found during an MVP are made on its branch
 instead — see `docs/development/methodology.md` "Found during an MVP".
 
+* (2026-09-26, MVP-002) **Member management via core — high priority, next after
+  MVP-003.** This covers Helsingborgs Judoklubb's `medlemskontroll.py`, the member checks
+  in `kontroll.py` (the member register and the member payments linked to vouchers) and
+  the member-fee report. It was left out of MVP-003 by owner decision. It handles
+  personal data about members and children, so it needs its own STRIDE pass, and the
+  reading rule (interpretations §9) applies strictly.
 * (2026-09-26, MVP-002) **No links to real consumers in this repository.** Another
   association must be able to use the core without finding any trace of the current
   organisations.

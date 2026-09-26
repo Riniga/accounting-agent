@@ -636,3 +636,10 @@ Changes on this branch that were not TODOs in this plan.
 
   Written into `AGENTS.md`, `docs/development/methodology.md`, `docs/plans/TEMPLATE.md`,
   both prompts, interpretations §8 and the roadmap. Owner decision 2026-09-26.
+- **Backlog item "no links to real consumers"** (`b04b196`) — owner idea: added to the
+  roadmap backlog.
+- **MVP-003 defined** (this commit), at the owner's request after testing:
+  - Helsingborgs Judoklubb's agent tooling except member management, which replaces the
+    earlier MVP-003 and MVP-004 headings;
+  - member management added to the backlog with high priority, above "no links to real
+    consumers".
