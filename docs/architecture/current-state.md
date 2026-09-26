@@ -8,7 +8,7 @@ in the same PR as any change to an app's status, test count, or key capabilities
 
 | App | Status | Tests | Key capabilities |
 |-----|--------|-------|-------------------|
-| `accounting-agent` (`src/accounting_agent/`, v0.1.0) | Implemented — walking skeleton (MVP-001); MVP-002 in progress | 150 | organisation profile loading/validation (incl. `books` section), `run <org> --config-dir` command, book model (vouchers with posting lines and series), balances, findings, personal-number masking, `front-matter` format reader, general book checks |
+| `accounting-agent` (`src/accounting_agent/`, v0.1.0) | Implemented — walking skeleton (MVP-001); MVP-002 in progress | 162 | organisation profile loading/validation (incl. `books` section), `run` and `validate` commands, book model (vouchers with posting lines and series), balances, findings, personal-number masking, `front-matter` format reader, general book checks |
 
 Organisation projects (JudoSyd, Helsingborgs Judoklubb, Aktivitet Förebygger) are separate
 private repositories and are not tracked here (ADR-002, ADR-003).
@@ -40,7 +40,7 @@ See [`docs/standards/`](../standards/). Project-specific:
 
 | Package | Tests | Coverage |
 |---|---|---|
-| `accounting_agent` | 150 (profile 20, profile books 21, CLI 9, book model 12, balances 5, findings 4, masking 12, front-matter reader 42, checks 25) | 98.59% (floor 90 %) |
+| `accounting_agent` | 162 (profile 20, profile books 21, CLI run 9, CLI validate 12, book model 12, balances 5, findings 4, masking 12, front-matter reader 42, checks 25) | 98.76% (floor 90 %) |
 
 ## Methodology compliance
 

@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-002-common-book-model.md`](../mvp/MVP-002-common-book-model.md)
 
-**Status:** In progress — phases 1–5 done, phase 6 next.
+**Status:** In progress — phases 1–5 done; phase 6 waiting for test review (6.2).
 
 ## 0. Investigation
 
@@ -416,7 +416,7 @@ Commit: `feat(books): add general book checks`
 
 ### Phase 6 — `validate` command, masking and module boundary
 
-- [ ] 6.1 **Tests first** (CLI, end to end):
+- [x] 6.1 **Tests first** (CLI, end to end):
   - `validate example --config-dir tests/fixtures/example` → exit 0 and "OK";
   - a broken fixture → exit 1, findings grouped by severity with counts;
   - `--balances` prints `account;balance` lines, sorted;
@@ -426,6 +426,23 @@ Commit: `feat(books): add general book checks`
   - `python -m accounting_agent validate …` works.
 
   *Verify:* the tests fail for the right reason.
+  Result: `tests/test_cli_validate.py`, 12 tests. All fail for the right reason:
+  - 10 × `SystemExit` — `validate` is not a command yet;
+  - 1 × `AttributeError` — there is no `cli.check_books` to patch;
+  - 1 × an assertion that the usage error names `--config-dir`.
+
+  One test first *passed* for the wrong reason: argparse's "invalid choice" also exits 2.
+  It was tightened to require the error to mention `--config-dir` before the review.
+
+  Report format locked by the tests:
+  - a header with the fiscal year;
+  - counts of accounts, opening balances and vouchers;
+  - findings grouped under `ERROR (n)`, `WARNING (n)` and `INFO (n)`;
+  - `BALANCES (debit +, credit -)` with `account;balance` lines, only with `--balances`;
+  - the result line `RESULT: OK|ERROR (errors: n, warnings: n, info: n)`, or `RESULT:
+    ERROR (the books could not be read)`;
+  - exit 1 only on errors;
+  - the report on stdout, and profile problems logged to stderr.
 - [ ] 6.2 **STOP — the owner reviews the tests from 6.1.**
 - [ ] 6.3 Implement `validate` in `cli.py`. Every printed line passes through
   `mask_personal_numbers()`. *Verify:* tests pass.

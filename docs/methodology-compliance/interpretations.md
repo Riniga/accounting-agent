@@ -101,6 +101,14 @@ is **10** (`docs/standards/coding.md`). Cognitive complexity is advisory only, b
 there is no suitable tool for it yet. The values are inherited from the template and are
 generous for a new codebase. Revisit them in MVP-002, once real domain code exists.
 
+**Module boundary (B3, added in MVP-002):** `TID251` (`flake8-tidy-imports.banned-api`)
+bans `csv`, `io`, `pathlib`, `accounting_agent.formats` and `accounting_agent.cli`
+everywhere. `per-file-ignores` allows them only in `formats/**`, `cli.py`, `__main__.py`,
+`profile.py`, `tests/**` and `scripts/**`. This keeps the book domain
+(`accounting_agent.books`) free of file I/O without a new dependency (ADR-006). It checks
+imports only; a bare built-in `open()` is left to review. It was verified by adding
+`import csv` to `books/model.py`, which Ruff reported as TID251.
+
 **Follow-up:** none.
 
 ---

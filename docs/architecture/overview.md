@@ -16,10 +16,16 @@ public repository holds the general functionality they share. See
 Swedish bookkeeping terms and their English names in the code are in the
 [glossary](glossary.md).
 
-**Current state (after MVP-001):** a walking skeleton. It is one installable package with
-an organisation-profile loader and a minimal `accounting-agent run` command, behind a full
-set of CI quality gates. There is no bookkeeping functionality yet. It starts with
-[MVP-002](../mvp/MVP-002-common-book-model.md).
+**Current state (MVP-002 in progress):** one installable package, behind the CI quality
+gates from MVP-001, containing:
+- an organisation-profile loader;
+- a general double-entry book model (ADR-006);
+- a reader for the `front-matter` book format;
+- the general book checks;
+- `accounting-agent run` and `accounting-agent validate`.
+
+The Helsingborgs Judoklubb pilot ([MVP-002](../mvp/MVP-002-common-book-model.md), phase 7)
+is next.
 
 ## Current Workspace Structure
 
@@ -27,8 +33,16 @@ set of CI quality gates. There is no bookkeeping functionality yet. It starts wi
 src/accounting_agent/   The core package (ADR-002)
     __init__.py         Package version
     __main__.py         `python -m accounting_agent`
-    cli.py              `accounting-agent` command line (argparse)
-    profile.py          Organisation profile: organisation.yaml → OrganisationProfile
+    cli.py              `accounting-agent` command line: run, validate (argparse)
+    profile.py          Organisation profile: organisation.yaml → OrganisationProfile (+ books)
+    books/              The book domain — no file I/O (ADR-006; Ruff TID251)
+        model.py        Account, OpeningBalance, PostingLine, Voucher, Books
+        balances.py     compute_balances()
+        checks.py       check_books() — the general checks
+        findings.py     Finding, Severity
+        masking.py      Personal identity number masking
+    formats/            One reader per book file format (ADR-006)
+        front_matter.py read_books() for the `front-matter` format
 tests/                  pytest suite; fixtures/ holds synthetic organisations only (ADR-003)
 docs/                   Vision, roadmap, architecture + ADRs, MVPs, plans, standards,
                         development setup, methodology + compliance, Claude prompts
@@ -53,15 +67,29 @@ LICENSE                 PolyForm Noncommercial 1.0.0 (ADR-005)
   - unknown top-level keys produce a warning, not an error;
   - the file is read with `yaml.safe_load`.
 
-  It returns an immutable `OrganisationProfile` or raises `ProfileError`. This is the only
-  place organisation-specific settings enter the core.
-- **`cli.py`** provides `accounting-agent run <organisation> --config-dir <path>`. It
-  loads the profile and refuses to run if `<organisation>` doesn't match the profile. It
-  logs the enabled and disabled features to stderr, and exits 0 (ok), 1 (invalid profile
-  or mismatch) or 2 (usage error).
+  An optional `books` section gives the books' path, file format, fiscal year and bank
+  account. The profile is returned as an immutable `OrganisationProfile`, or loading
+  raises `ProfileError`. This is the only place organisation-specific settings enter the
+  core.
+- **`books/`** is the domain. It is pure and does no file I/O; this is enforced by Ruff
+  `TID251`.
+  - The model is general double entry: a `Voucher` has an optional series and N
+    `PostingLine`s, and amounts are always `Decimal` (ADR-006).
+  - `check_books(books, fiscal_year)` returns `Finding`s: `ERROR`, `WARNING` or `INFO`,
+    with a rule id and a location.
+  - No finding quotes a voucher's text, and personal identity numbers are masked in all
+    output.
+- **`formats/front_matter.py`** reads the `front-matter` format — chart-of-accounts CSV,
+  opening-balance CSV and one Markdown voucher file per voucher — with the same field
+  semantics as the organisation's own tool. It reports parse- and format-level findings,
+  including the bank-sign rule.
+- **`cli.py`** provides two commands. Both load the profile, and both refuse if
+  `<organisation>` doesn't match it.
+  - `run <organisation> --config-dir <path>` logs the enabled features.
+  - `validate <organisation> --config-dir <path> [--balances]` prints a masked report to
+    stdout and exits 1 on errors.
 
-Nothing depends on the package yet. The organisation projects start consuming it from
-MVP-002 onward.
+The first consumer is Helsingborgs Judoklubb's 2026 books, in the MVP-002 pilot.
 
 ## Existing Dependencies
 
@@ -97,8 +125,8 @@ a fresh clone in MVP-001.
 
 ### Running Tests
 
-`pytest -q` from the repository root. The coverage floor is 90 % (`pyproject.toml`); the
-measured baseline is 96.47 %.
+`pytest -q` from the repository root. The coverage floor is 90 % (`pyproject.toml`);
+coverage is currently 98.76%. The floor is re-measured and raised at the close of MVP-002.
 
 ### Development Workflow
 
@@ -154,9 +182,10 @@ projects will run it on a local schedule.
 
 *Everything in this section is planned, not existing.*
 
-- **MVP-002:** book-model classes (account, opening balance, voucher), readers for the
-  organisation files, and the general validation checks. This brings a domain/IO split
-  inside the package and a decision on module-boundary tooling (`GAP-B3-BOUNDARIES`).
+- **MVP-002 (remaining):** the Helsingborgs Judoklubb pilot, and a written comparison
+  with Aktivitet Förebygger's table format (a "Book formats" section here).
+- **Aktivitet Förebygger reader:** a second reader for the table format (multi-line
+  vouchers, series) into the same model.
 - **Later module areas** (from the initial idea, added only as extraction justifies them):
   bank import and reconciliation (MVP-003), reports (MVP-004), agent tools, confidence
   and approval policies, and the audit trail (R3), integrations (R4), payroll (R5).
