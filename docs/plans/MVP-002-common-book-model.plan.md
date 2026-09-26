@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-002-common-book-model.md`](../mvp/MVP-002-common-book-model.md)
 
-**Status:** In progress — phases 1–6 done, phase 7 (pilot) next.
+**Status:** In progress — phases 1–7 done, phase 8 (close) next.
 
 ## 0. Investigation
 
@@ -482,20 +482,37 @@ Commit: `feat(cli): add validate command with masked output and enforce the doma
 
 ### Phase 7 — Pilot: Helsingborgs Judoklubb through the core
 
-- [ ] 7.1 Write `HJK - Ekonomi/2026/organisation.yaml` (configuration only), in the
+- [x] 7.1 Write `HJK - Ekonomi/2026/organisation.yaml` (configuration only), in the
   owner's HJK project: `organisation: hbg-judo`, features, and `books:` with `path:
   Bokföring`, `format: front-matter`, `fiscal_year: 2026`, `bank_account: "1930"`.
   *Verify:* the owner commits it in the HJK repository; nothing is added to this
   repository.
-- [ ] 7.2 Run `accounting-agent validate hbg-judo --config-dir "…/2026"` and extract only the
+  Result: written on 2026-09-26, after checking that no such file existed and that
+  `Bokföring/` contains `kontoplan.csv`, `ingående-balans.csv` and `verifikationer/`
+  (163 files). It is configuration only. **Pending: the owner commits it in the HJK
+  repository.**
+- [x] 7.2 Run `accounting-agent validate hbg-judo --config-dir "…/2026"` and extract only the
   result line, the counts per severity and the counts per rule. The output goes to a
   temporary file, which is deleted afterwards. *Verify:* 0 errors and 4
   personal-identity-number warnings, as in §0.4. Any difference is investigated using
   rule names and voucher numbers only.
-- [ ] 7.3 Compare the balances with a throwaway script in the scratchpad (not committed). It
+  Result (2026-09-26, counts only; the output file was deleted):
+  - **33 accounts, 8 opening balances, 163 vouchers** — identical to `kontroll.py`.
+  - **0 errors, 4 × `personal-number` warnings** — identical to `kontroll.py`'s 4 ×
+    `personuppgift`.
+  - `RESULT: OK (errors: 0, warnings: 4, info: 0)`, exit 0.
+
+  `kontroll.py`'s other 4 warnings (3 duplicate, 1 other) and its 15 info findings are
+  outside this MVP's scope (§0.5).
+- [x] 7.3 Compare the balances with a throwaway script in the scratchpad (not committed). It
   imports `kontroll.ladda()` and the core's `compute_balances()`, and prints only "N of M
   accounts equal" plus the account numbers that differ. *Verify:* 33 of 33 equal, or every
   difference explained. Record the result in this plan.
+  Result (2026-09-26): **25 of 25 accounts equal**; no account appears on only one side.
+  The plan's "33 of 33" was a slip: 33 is the size of the chart of accounts, and only 25
+  accounts carry a balance (an opening balance or postings). The other 8 are the unused
+  accounts `kontroll.py` lists as info. The script ran from the scratchpad, suppressed
+  `kontroll.py`'s own output, printed only counts, and is not committed.
 
 Commit: `docs(mvp-002): record the Helsingborgs Judoklubb pilot result`
 
