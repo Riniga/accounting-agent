@@ -1,7 +1,7 @@
 # MVP-003 – Bank import, reconciliation, remaining checks and reports via core
 
 Roadmap: [R2 – Helsingborgs Judoklubb pilot via core](../roadmap.md#r2--helsingborgs-judoklubb-pilot-via-core-ongoing) ·
-Plan: not yet written (created with `docs/claude-prompts/create-plan-prompt.md`)
+Plan: [MVP-003 plan](../plans/MVP-003-bank-reconciliation-and-reports.plan.md)
 
 ## Purpose
 
