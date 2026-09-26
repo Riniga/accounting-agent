@@ -75,7 +75,7 @@ conda run -n accounting-agent accounting-agent validate hbg-judo --config-dir 20
   is safe to show it to an AI tool or paste it into an issue.
 
 Until the core covers everything, run **both** the core and the organisation's own checks
-(for Helsingborgs Judoklubb, `python agent/kontroll.py`). On the checks both perform, they
+(for Helsingborgs Judoklubb, `python 2026/agent/kontroll.py`). On the checks both perform, they
 give the same result: verified in MVP-002 on the 2026 books.
 
 ## Instructions for Claude Code in an organisation project

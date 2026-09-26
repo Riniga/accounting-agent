@@ -125,8 +125,8 @@ a fresh clone in MVP-001.
 
 ### Running Tests
 
-`pytest -q` from the repository root. The coverage floor is 90 % (`pyproject.toml`);
-coverage is currently 98.76%. The floor is re-measured and raised at the close of MVP-002.
+`pytest -q` from the repository root. The coverage floor is 95 % (`pyproject.toml`,
+raised at the close of MVP-002); coverage is currently 98.76 %.
 
 ### Development Workflow
 

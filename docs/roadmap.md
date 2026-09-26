@@ -85,8 +85,9 @@ documentation, payments and stricter approval rules as general capabilities.
 * Remove the remaining template leftovers — `.github/workflows/dast.yml` and the example
   section in `docs/methodology-compliance/interpretations.md`. The owner does this together
   with MVP-002. `_LÄS-MIG-FÖRST.md` and the EXAMPLE MVP and plan were removed in `947b599`.
-* Raise the coverage floor once MVP-002's domain code has a stable baseline
-  (interpretations §1).
+* Front-matter reader: add tests for invalid UTF-8 in a *voucher* file and a blank line
+  inside front matter (both implemented, not yet tested). Consider splitting
+  `_read_front_matter`, which is at the advisory complexity value 10.
 * Helsingborgs Judoklubb project: move the decision log ("Rättelser och beslut") out of the
   bookkeeping rules file, so that the rules can be read without personal data
   (`GAP-F2-CONFIDENTIAL`).

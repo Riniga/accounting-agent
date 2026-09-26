@@ -572,6 +572,13 @@ Commit: `docs(mvp-002): record the Helsingborgs Judoklubb pilot result`
   - The pilot and the balance comparison were re-run after the last code change, with
     identical results.
   - The PR run is still pending.
+  - **Close review (`complete-mvp.md`, 2026-09-26):**
+    - All checks were re-run locally and are green.
+    - Fixed: a missing docstring (`_Findings.add`), the stale 90 % floor in
+      `overview.md`, and the `kontroll.py` path in the guide.
+    - Outside this plan's scope, added at the owner's request:
+      `docs/development/organisation-projects.md`, and the prompt simplification in
+      `docs/claude-prompts/`.
 
 Commit: `docs(mvp-002): compare Aktivitet Förebygger's format and close MVP-002`
 

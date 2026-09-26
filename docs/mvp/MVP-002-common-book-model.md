@@ -170,6 +170,16 @@ Closed as **delivered**, pending the pull request. Against the criteria above:
 - The scratchpad test environment broke overnight; the work continued in the owner's
   `accounting-agent` environment.
 
+**Close review (2026-09-26, `complete-mvp.md`):**
+- Every CI check was re-run locally and is green (162 tests, 98.76 % ≥ 95 %).
+- Three small gaps were fixed: a missing docstring, a stale coverage figure in
+  `overview.md`, and an inconsistent path in the new guide.
+- At the owner's request, two documentation changes outside the plan joined the branch:
+  - `docs/development/organisation-projects.md` — how organisation projects use the core,
+    and a `CLAUDE.md` section for them;
+  - `complete-mvp.md` and `create-plan-prompt.md` now find the MVP from the branch or the
+    roadmap.
+
 **Still open:**
 - the owner commits `organisation.yaml` in the Helsingborgs Judoklubb repository;
 - the CI run on the pull request.

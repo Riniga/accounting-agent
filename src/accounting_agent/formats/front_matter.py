@@ -53,6 +53,7 @@ class _Findings:
         self.items: list[Finding] = []
 
     def add(self, severity: Severity, rule: str, location: str, message: str) -> None:
+        """Record one finding."""
         self.items.append(Finding(severity, rule, location, message))
 
 
