@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-002-common-book-model.md`](../mvp/MVP-002-common-book-model.md)
 
-**Status:** In progress — phases 1–5 done; phase 6 waiting for test review (6.2).
+**Status:** In progress — phases 1–6 done, phase 7 (pilot) next.
 
 ## 0. Investigation
 
@@ -443,17 +443,40 @@ Commit: `feat(books): add general book checks`
     ERROR (the books could not be read)`;
   - exit 1 only on errors;
   - the report on stdout, and profile problems logged to stderr.
-- [ ] 6.2 **STOP — the owner reviews the tests from 6.1.**
-- [ ] 6.3 Implement `validate` in `cli.py`. Every printed line passes through
+- [x] 6.2 **STOP — the owner reviews the tests from 6.1.** Result: approved 2026-09-25.
+- [x] 6.3 Implement `validate` in `cli.py`. Every printed line passes through
   `mask_personal_numbers()`. *Verify:* tests pass.
-- [ ] 6.4 Enforce the module boundary: a Ruff `banned-api` for `csv`, `pathlib`, `io`,
+  Result:
+  - All 162 tests pass; coverage 98.76 %; `cli.py` is 100 % covered.
+  - `run` and `validate` share one profile loader, including the organisation check.
+  - A `READERS` table maps `books.format` to its reader, so an Aktivitet Förebygger
+    reader is one new entry.
+  - Tests now run in the owner's `accounting-agent` Conda environment. The scratchpad
+    environment broke overnight: its standard library was removed from the temp folder.
+- [x] 6.4 Enforce the module boundary: a Ruff `banned-api` for `csv`, `pathlib`, `io`,
   `accounting_agent.formats` and `accounting_agent.cli`, with `per-file-ignores` for
   `formats/**`, `cli.py`, `profile.py` and `tests/**`. *Verify:* `ruff check` is clean; a temporary
   `import csv` in `books/model.py` is reported as TID251, then removed. Record the rule in
   interpretations §3.
-- [ ] 6.5 Update `README.md` (validate usage, the `books` example), `AGENTS.md` (structure
+  Result:
+  - `TID251` was added to Ruff's `select`.
+  - The `per-file-ignores` also cover `__main__.py` (it imports the CLI) and `scripts/**`
+    (it uses `pathlib`); both were found by grepping for the banned imports first.
+  - Proven: `import csv` / `from pathlib import Path` in `books/model.py` gave two TID251
+    errors; the file was restored with no diff.
+  - Limitation, recorded in interpretations §3: only imports are covered, not a bare
+    `open()`.
+- [x] 6.5 Update `README.md` (validate usage, the `books` example), `AGENTS.md` (structure
   table), `docs/architecture/overview.md` and `current-state.md` (modules, test counts).
   *Verify:* the documented commands run as written.
+  Result:
+  - README: `validate` usage, the `books` example and the output rules.
+  - AGENTS: the `books/` / `formats/` roles and the `validate` command.
+  - `overview.md` and `current-state.md`: structure, components, 162 tests.
+  - `accounting-agent validate example --config-dir tests/fixtures/example --balances`
+    ran as documented and exited 0.
+  - The phase commit (`797d085`) went in before this plan update. The TODOs are ticked in
+    a separate commit instead of rewriting it.
 
 Commit: `feat(cli): add validate command with masked output and enforce the domain boundary`
 
