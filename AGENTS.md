@@ -74,8 +74,20 @@ Roadmap → MVP → Plan → Implementation → Test → Pull Request
   numbered TODOs with acceptance criteria, grouped into phases with a commit message each.
 - Implement **one TODO / one phase at a time**. Update the plan as you go; mark items done
   when verified.
-- Keep changes small and reviewable. Do not mix unrelated refactoring with a feature. Do
-  not change production code in a documentation-only task.
+- Keep changes small and reviewable. Do not change production code in a
+  documentation-only task.
+- **Found during an MVP:**
+  - A *fix or change* discovered while working on an MVP is made on that MVP's branch,
+    even if it is unrelated. It gets its own commit (`fix:` / `docs:` / `chore:`), never
+    mixed into a feature commit, and a line in the plan's "6. Found during this MVP". A
+    behaviour fix gets a regression test.
+  - An *idea* goes to the roadmap backlog (dated, with the MVP it came from) and is not
+    implemented in the current MVP.
+  - Anything large, risky, or needing its own decision (a new dependency, an ADR, a
+    security change) becomes a backlog item or its own MVP — ask the owner.
+
+  See [`docs/development/methodology.md`](docs/development/methodology.md)
+  "Implementation".
 - Preserve existing behaviour unless the plan says otherwise.
 - New dependency → the plan must justify it; update `pyproject.toml` / `environment.yml`;
   add an ADR for anything significant (see [`docs/standards/coding.md`](docs/standards/coding.md) "Dependencies").

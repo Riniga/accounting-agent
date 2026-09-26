@@ -48,3 +48,14 @@ don't just silently do something different from what's written.
 ## 5. Risks / open questions
 
 <!-- What could go wrong, what's still uncertain, what's deliberately deferred and why. -->
+
+## 6. Found during this MVP
+
+<!--
+Fixes and changes made on this MVP's branch that are not in the TODOs above — discovered
+while implementing, testing or reviewing. One line each: what changed, why, and the
+commit. Ideas do not go here; they go to the roadmap backlog. See
+docs/development/methodology.md "Found during an MVP".
+-->
+
+- *(none yet)*

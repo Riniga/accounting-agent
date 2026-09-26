@@ -224,6 +224,26 @@ General rules:
 * Do not implement outside the agreed scope without updating the MVP or implementation plan.
 * Every implementation should remain traceable to an MVP.
 
+### Found during an MVP
+
+Testing and reviewing an MVP turns up things outside its plan. They are handled on the
+MVP's own branch rather than on separate fix branches:
+
+* **Fixes and small changes** — even unrelated ones — are made on the MVP branch:
+  * each one in its **own commit** with its own type (`fix:`, `docs:`, `chore:`), never
+    mixed into a feature commit, so it can be reviewed and reverted on its own;
+  * each recorded as one line in the plan's **"6. Found during this MVP"** (what and why);
+  * listed in the pull request's "Notes for the reviewer";
+  * a behaviour fix gets a regression test, and AI-written production code still follows
+    AI-TDD ([`docs/standards/testing.md`](../standards/testing.md)).
+* **Ideas** go to the "Backlog of ideas" in `docs/roadmap.md`, dated and marked with the
+  MVP they came from. They are not implemented in the current MVP.
+* **Large, risky or decision-worthy items** — a new dependency, an ADR, a security change,
+  anything that would change the MVP's goal — become a backlog item or their own MVP. The
+  owner decides.
+* Keep the MVP short: collecting fixes must not keep a branch open for weeks
+  (methodology E1 SKA 1).
+
 The source code is the primary source of truth for how the system works.
 
 ---

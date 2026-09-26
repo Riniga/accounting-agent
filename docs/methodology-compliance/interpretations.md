@@ -206,6 +206,17 @@ called that. **Semantic Versioning** for the package (`accounting_agent.__versio
 starting at `0.1.0`. It stays below 1.0.0 until the core's API is stable enough for the
 organisation projects to depend on.
 
+**Discoveries during an MVP (added 2026-09-26, owner decision):**
+- Fixes and small changes found while working on an MVP — even unrelated ones — go on
+  that MVP's branch, not on separate fix branches.
+- Each one gets its own commit and a line in the plan's "6. Found during this MVP", and it
+  is listed in the pull request.
+- Ideas go to the roadmap backlog.
+- Large, risky or decision-worthy items become their own MVP.
+
+This trades a little PR focus for much less branch and PR overhead in a one-person
+project. Traceability is kept through the separate commits and the plan section.
+
 **Follow-up:** none.
 
 ---

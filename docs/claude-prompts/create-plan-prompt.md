@@ -112,6 +112,8 @@ färdig plan.
       commit-meddelande enligt docs/standards/git.md.
     - **5. Risks / open questions:** det som är osäkert, det som skjuts upp och
       varför, och STRIDE-genomgången om den behövs.
+    - **6. Found during this MVP:** lämnas tomt ("*(none yet)*"). Det fylls
+      under genomförandet med fixar som upptäcks utanför planen.
 
     Krav på TODO-listan:
 

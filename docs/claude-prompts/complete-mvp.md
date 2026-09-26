@@ -86,8 +86,10 @@ beteende, omfattning eller ett beslut tas upp med dig först.
       ett. Ange hur (test, kommando, observation).
     - Varje TODO i planen är avbockad, eller har en "Result:"-rad som förklarar
       varför utfallet blev ett annat.
-    - Inga ändringar ligger utanför planens Scope boundary, och ingen orelaterad
-      refaktorering har blandats in.
+    - Varje ändring utanför planens Scope boundary och TODOs finns i planens
+      avsnitt "6. Found during this MVP", ligger i en egen commit och är inte
+      inblandad i en feature-commit. Idéer som kommit upp under MVP:n finns i
+      roadmapens backlog, daterade och märkta med MVP:n.
 
     **Kod**
     - Koden följer coding.md och är enkel att förstå.

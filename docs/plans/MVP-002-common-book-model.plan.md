@@ -617,3 +617,22 @@ Commit: `docs(mvp-002): compare Aktivitet Förebygger's format and close MVP-002
 | **I**nformation disclosure | Names and personal identity numbers reaching the terminal, logs, CI output or AI context | No voucher text in findings; all output masked; synthetic fixtures only; pilot output reduced to counts; `docs/reference/` git-ignored |
 | **D**enial of service | Very large or malformed files | Local, owner-controlled input; per-file errors instead of crashes (tested) |
 | **E**levation of privilege | `books.path` pointing outside the organisation folder | Local and owner-controlled; accepted. Revisit if the core ever runs on untrusted configuration |
+
+## 6. Found during this MVP
+
+Changes on this branch that were not TODOs in this plan.
+
+- **Guide for organisation projects** (`8362545`) —
+  `docs/development/organisation-projects.md`: what each organisation can use today, the
+  setup, daily `validate` use, and a Swedish `CLAUDE.md` section for organisation
+  projects. Requested by the owner after the pilot.
+- **Claude prompts find the MVP themselves** (`8362545`) — `complete-mvp.md` and
+  `create-plan-prompt.md` identify the MVP from the message, the branch, or the plan
+  status / roadmap. Requested by the owner.
+- **Process: "Found during an MVP"** (this commit) —
+  - fixes found during an MVP go on its branch as separate commits and are recorded in
+    this section;
+  - ideas go to the roadmap backlog.
+
+  Written into `AGENTS.md`, `docs/development/methodology.md`, `docs/plans/TEMPLATE.md`,
+  both prompts, interpretations §8 and the roadmap. Owner decision 2026-09-26.

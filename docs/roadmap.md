@@ -82,6 +82,10 @@ documentation, payments and stricter approval rules as general capabilities.
 
 ## Backlog of ideas to be implemented / fixed
 
+Ideas that come up while working on an MVP land here, not in the MVP. Format:
+`* (YYYY-MM-DD, MVP-NNN) the idea`. Fixes found during an MVP are made on its branch
+instead — see `docs/development/methodology.md` "Found during an MVP".
+
 * Remove the remaining template leftovers — `.github/workflows/dast.yml` and the example
   section in `docs/methodology-compliance/interpretations.md`. The owner does this together
   with MVP-002. `_LÄS-MIG-FÖRST.md` and the EXAMPLE MVP and plan were removed in `947b599`.
