@@ -21,3 +21,5 @@ mellan dem. Se [`docs/standards/documentation.md`](../../standards/documentation
 | [ADR-004](ADR-004-csv-and-markdown-storage.md) | Books are stored as CSV and Markdown files — no database |
 | [ADR-005](ADR-005-noncommercial-licence.md) | License the code under the PolyForm Noncommercial License 1.0.0 |
 | [ADR-006](ADR-006-core-book-model.md) | The core models books as double-entry vouchers with posting lines; each file format has its own reader |
+| [ADR-007](ADR-007-supplementary-book-files.md) | Supplementary book files get core models and core-owned formats; accounts get an optional group |
+| [ADR-008](ADR-008-core-writes-derived-files.md) | The core writes derived files — bank statements and reports — never vouchers |

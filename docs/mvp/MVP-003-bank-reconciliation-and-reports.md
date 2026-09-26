@@ -3,6 +3,27 @@
 Roadmap: [R2 – Helsingborgs Judoklubb pilot via core](../roadmap.md#r2--helsingborgs-judoklubb-pilot-via-core-ongoing) ·
 Plan: [MVP-003 plan](../plans/MVP-003-bank-reconciliation-and-reports.plan.md)
 
+> **Corrected 2026-09-26 (plan §0.2 and §0.4, approved by the owner):**
+>
+> - The book model is extended: an account gets an optional group and reference
+>   description, and the bank statement, fund value, budget, closing comments, to-do list
+>   and reference chart get models of their own (ADR-007). The core owns these file
+>   formats, including their allowed values; configuration gives paths and
+>   organisation-specific values only.
+> - Files the core writes — the bank statement and the reports — mask personal identity
+>   numbers as `[personnummer]`, as the organisation's scripts do, so that the statement
+>   can be byte-identical. Terminal output keeps `[personal number]`.
+> - Findings and the `--unbooked` list show dates, amounts, statement rows and voucher
+>   numbers — never a counterparty's name or a message, unlike `kontroll.py`. "The same
+>   unbooked transactions" is compared on date and amount.
+> - Organisation conventions come from configuration: accounts that need no supporting
+>   document, the guessed-posting marker, the outlay text prefix and the parking accounts.
+>   The monthly overview's fixed note about one stock account is dropped.
+> - The reports are in Swedish; code, findings and terminal output stay in English
+>   (ADR-008).
+> - Duplicates use `kontroll.py`'s key: date, text and the amount as the bank shows it.
+> - The MVP stays one MVP, although it is large.
+
 ## Purpose
 
 After MVP-002 the core can read and check an organisation's books, but everything else in
@@ -94,8 +115,9 @@ are built for the core's general model, not for one organisation.
 - **Configuration** in `organisation.yaml`: all organisation-specific values come from
   configuration, not code. That covers the bank export format and the statement files,
   the fund account, the parking accounts, the BAS reference chart, the documents folder,
-  the budget / comments / to-do files, the report output folder, and the organisation's
-  name and number for report headers.
+  the budget / comments / to-do files, the report output folder, the organisation's
+  name and number for report headers, and the conventions: accounts that need no
+  supporting document, the guessed-posting marker and the outlay text prefix.
 - **Pilot on Helsingborgs Judoklubb's 2026 books:** same outcome as `kontroll.py` for
   every check in scope, and the same figures as `generera_redovisning.py` in every report
   in scope. It is verified with counts and comparisons only, as in MVP-002.

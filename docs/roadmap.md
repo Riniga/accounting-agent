@@ -11,7 +11,13 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-**MVP-002 is implemented and pending its pull request.**
+**MVP-003 is in progress.**
+[MVP-003 – Bank import, reconciliation, remaining checks and reports via core](mvp/MVP-003-bank-reconciliation-and-reports.md)
+has an approved [plan](plans/MVP-003-bank-reconciliation-and-reports.plan.md) and is
+being implemented on its branch. Its decisions are ADR-007 (supplementary book files) and
+ADR-008 (the core writes derived files, never vouchers).
+
+*Earlier:* **MVP-002 is merged** (PR #7).
 [MVP-002 – Common book model and validation via core](mvp/MVP-002-common-book-model.md)
 delivered:
 - a general double-entry book model (ADR-006);
@@ -20,8 +26,7 @@ delivered:
 - `accounting-agent validate`, with masked output.
 
 Helsingborgs Judoklubb's real 2026 books validate through the core with the same outcome
-as its own tool, and identical balances. Next: [MVP-003](mvp/MVP-003-bank-reconciliation-and-reports.md) — bank import,
-reconciliation, the remaining checks and the reports (owner decision 2026-09-26).
+as its own tool, and identical balances.
 
 *Earlier:* **R1 – Foundation is done** (MVP-001, merged in PR #5).
 [MVP-001 – Walking skeleton & baseline analysis](mvp/MVP-001-walking-skeleton.md) delivered:
@@ -31,11 +36,9 @@ reconciliation, the remaining checks and the reports (owner decision 2026-09-26)
 - the licence;
 - the first methodology assessment.
 
-The next focus is R2, through
-[MVP-002 – Common book model and validation via core](mvp/MVP-002-common-book-model.md),
-which is defined but has no plan yet. The largest open methodology items are no second
-reviewer (EX-001), and the AI-data gaps `GAP-F2-CONFIDENTIAL` and `GAP-F2-DPA`. Apply the
-reading rule for `docs/reference/` (interpretations §9) when the MVP-002 analysis starts.
+The largest open methodology items are no second reviewer (EX-001), and the AI-data gaps
+`GAP-F2-CONFIDENTIAL` and `GAP-F2-DPA`. The reading rule for `docs/reference/`
+(interpretations §9) applies to all extraction work.
 
 ---
 

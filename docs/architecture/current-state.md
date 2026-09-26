@@ -8,7 +8,7 @@ in the same PR as any change to an app's status, test count, or key capabilities
 
 | App | Status | Tests | Key capabilities |
 |-----|--------|-------|-------------------|
-| `accounting-agent` (`src/accounting_agent/`, v0.1.0) | Implemented — MVP-001 walking skeleton, MVP-002 book model and validation (pending PR) | 162 | organisation profile loading/validation (incl. `books` section), `run` and `validate` commands, book model (vouchers with posting lines and series), balances, findings, personal-number masking, `front-matter` format reader, general book checks |
+| `accounting-agent` (`src/accounting_agent/`, v0.1.0) | Implemented — MVP-001 walking skeleton, MVP-002 book model and validation (merged, PR #7); MVP-003 in progress | 162 | organisation profile loading/validation (incl. `books` section), `run` and `validate` commands, book model (vouchers with posting lines and series), balances, findings, personal-number masking, `front-matter` format reader, general book checks |
 
 Organisation projects (JudoSyd, Helsingborgs Judoklubb, Aktivitet Förebygger) are separate
 private repositories and are not tracked here (ADR-002, ADR-003).

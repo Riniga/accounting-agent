@@ -16,7 +16,7 @@ public repository holds the general functionality they share. See
 Swedish bookkeeping terms and their English names in the code are in the
 [glossary](glossary.md).
 
-**Current state (MVP-002 in progress):** one installable package, behind the CI quality
+**Current state (MVP-002 merged in PR #7; MVP-003 in progress):** one installable package, behind the CI quality
 gates from MVP-001, containing:
 - an organisation-profile loader;
 - a general double-entry book model (ADR-006);
@@ -24,8 +24,10 @@ gates from MVP-001, containing:
 - the general book checks;
 - `accounting-agent run` and `accounting-agent validate`.
 
-The Helsingborgs Judoklubb pilot ([MVP-002](../mvp/MVP-002-common-book-model.md), phase 7)
-is next.
+Helsingborgs Judoklubb's 2026 books validate through it (the MVP-002 pilot).
+[MVP-003](../mvp/MVP-003-bank-reconciliation-and-reports.md) adds bank import,
+reconciliation, the remaining checks and the reports; its decisions are ADR-007 and
+ADR-008.
 
 ## Current Workspace Structure
 
@@ -223,12 +225,13 @@ series, and the core's general checks already cover both.
 
 *Everything in this section is planned, not existing.*
 
-- **MVP-002 (remaining):** the Helsingborgs Judoklubb pilot, and a written comparison
-  with Aktivitet Förebygger's table format (a "Book formats" section here).
+- **MVP-003 (in progress):** bank import and reconciliation, the remaining checks from
+  Helsingborgs Judoklubb's `kontroll.py` except members, and the reports — supplementary
+  file models (ADR-007) and the first write paths (ADR-008).
 - **Aktivitet Förebygger reader:** a second reader for the table format (multi-line
   vouchers, series) into the same model.
 - **Later module areas** (from the initial idea, added only as extraction justifies them):
-  bank import and reconciliation (MVP-003), reports (MVP-004), agent tools, confidence
+  member management (backlog), agent tools, confidence
   and approval policies, and the audit trail (R3), integrations (R4), payroll (R5).
 - **Consumption by organisation projects (undecided, R3):** Claude Code acts as the agent
   in each organisation project, locally and on a schedule. JudoSyd already does this with
@@ -239,7 +242,8 @@ series, and the core's general checks already cover both.
 
 - How organisation projects consume the core (package / scripts / MCP) — Unknown – to be
   decided (R3).
-- The data model's file schemas beyond the book model — MVP-002 onward.
+- The data model's file schemas beyond the book model — MVP-003 adds the supplementary
+  files (ADR-007).
 - Confidence thresholds and approval levels per operation — Unknown – to be decided (R3).
 - Local scheduler mechanism — Unknown – to be decided.
 - Relation to the Swedish Bookkeeping Act (archiving, verification) — backlog.

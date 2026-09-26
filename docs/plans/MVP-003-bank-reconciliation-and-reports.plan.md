@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-003-bank-reconciliation-and-reports.md`](../mvp/MVP-003-bank-reconciliation-and-reports.md)
 
-**Status:** Not started – awaiting plan review
+**Status:** In progress – phase 1 done (plan approved 2026-09-26)
 
 ## 0. Investigation
 
@@ -252,7 +252,7 @@ the same phase.
 
 ### Phase 1 — Decisions and corrections
 
-- [ ] 1.1 Update `docs/mvp/MVP-003-bank-reconciliation-and-reports.md` with a dated
+- [x] 1.1 Update `docs/mvp/MVP-003-bank-reconciliation-and-reports.md` with a dated
   correction note per §0.2 and §0.4:
   - the model extension;
   - `[personnummer]` in written files;
@@ -262,7 +262,10 @@ the same phase.
   - the dropped 1410 note.
 
   *Verify:* every change traces to §0; the acceptance criteria are unchanged in meaning.
-- [ ] 1.2 Write **ADR-007 — supplementary book files and account groups**:
+  Result: a dated correction note at the top with seven points, each tracing to §0.2 or
+  §0.4. The scope's configuration bullet also lists the conventions. The acceptance
+  criteria are unchanged.
+- [x] 1.2 Write **ADR-007 — supplementary book files and account groups**:
   - `Account` gets an optional group and reference description;
   - bank transactions, fund values, budget, closing comments, to-do items and the
     reference chart get domain models;
@@ -271,7 +274,9 @@ the same phase.
 
   It references ADR-006, which is not edited. Add the index row. *Verify:* Nygard
   sections present; index row added.
-- [ ] 1.3 Write **ADR-008 — the core writes derived files, never vouchers**:
+  Result: `ADR-007-supplementary-book-files.md`, accepted; Context, Decision,
+  Consequences and Alternatives considered; index row added.
+- [x] 1.3 Write **ADR-008 — the core writes derived files, never vouchers**:
   - the first write paths: the bank statement and fund-value files, and the reports;
   - only to configured paths; an atomic replace; the export is never changed;
   - a partial export is refused;
@@ -279,11 +284,21 @@ the same phase.
   - no reports from books with errors unless forced.
 
   *Verify:* Nygard sections present; index row added.
-- [ ] 1.4 Fix the stale status in `overview.md`, `current-state.md` and `roadmap.md`
+  Result: `ADR-008-core-writes-derived-files.md`, accepted; all Nygard sections; index
+  row added.
+- [x] 1.4 Fix the stale status in `overview.md`, `current-state.md` and `roadmap.md`
   (MVP-002 merged in PR #7; MVP-003 in planning). Extend `glossary.md`: kontoutdrag,
   avstämning, fondvärde, budget, bokslutskommentar, att-göra, parkeringskonto,
   kontogrupp, BAS-kontoplan, resultatrapport, balansrapport, huvudbok, saldobalans,
   verifikationslista. *Verify:* every new model name in §1 is in the glossary.
+  Result:
+  - `overview.md` (current state, planned evolution, open questions), `current-state.md`
+    and the roadmap's "Current Status" now say MVP-002 is merged and MVP-003 in
+    progress. The roadmap's stale "MVP-002 has no plan yet" paragraph was removed.
+  - 21 glossary rows added, also bank export, bank transaction, unbooked, outlay, budget
+    follow-up and monthly overview. Every model named in §1 (bank transaction, fund
+    value, budget item, closing comment, to-do item, reference chart, account group) is
+    covered; checked by reading §1 against the table.
 
 Commit: `docs(mvp-003): correct the MVP and record ADR-007 and ADR-008`
 
