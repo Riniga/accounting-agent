@@ -13,8 +13,12 @@ from accounting_agent.books import (
     Finding,
     Severity,
     check_books,
+    check_budget,
+    check_comments,
     check_details,
+    check_fund,
     check_reference,
+    check_todo,
     compute_balances,
     mask_personal_numbers,
     reconcile,
@@ -24,6 +28,7 @@ from accounting_agent.formats import (
     front_matter,
     nordea_csv,
     reference_chart,
+    supplements,
 )
 from accounting_agent.profile import (
     BankConfig,
@@ -212,21 +217,48 @@ def _check_details(
         findings += read_findings
         if reference is not None:
             findings += check_reference(books.accounts, reference)
+    findings += _check_supplements(checks, books)
+    return findings
+
+
+def _check_supplements(checks: ChecksConfig, books: Books) -> list[Finding]:
+    """Budget, closing comments and to-do list; a missing file skips its check."""
+    findings: list[Finding] = []
+    if checks.budget_file is not None:
+        budget, read_findings = supplements.read_budget(checks.budget_file)
+        findings += read_findings
+        if budget is not None:
+            findings += check_budget(budget, books)
+    if checks.comments_file is not None:
+        comments, read_findings = supplements.read_comments(checks.comments_file)
+        findings += read_findings
+        if comments is not None:
+            findings += check_comments(comments, books)
+    if checks.todo_file is not None:
+        todo, read_findings = supplements.read_todo(checks.todo_file)
+        findings += read_findings
+        if todo is not None:
+            findings += check_todo(todo)
     return findings
 
 
 def _reconcile(
     bank: BankConfig, config: BooksConfig, books: Books, unbooked: bool
 ) -> list[Finding]:
-    """Read the statement file and reconcile the books against it."""
+    """Reconcile the books against the statement file, and check the fund value."""
     transactions, findings = bank_statement.read_statement(
         bank.statement_file, config.fiscal_year
     )
-    if transactions is None:
-        return findings
-    return findings + reconcile(
-        books, transactions, config.bank_account, list_unbooked=unbooked
-    )
+    if transactions is not None:
+        findings += reconcile(
+            books, transactions, config.bank_account, list_unbooked=unbooked
+        )
+    if bank.fund_account is not None and bank.fund_value_file is not None:
+        values, read_findings = bank_statement.read_fund_values(bank.fund_value_file)
+        findings += read_findings
+        if values is not None:
+            findings += check_fund(values, books, bank.fund_account)
+    return findings
 
 
 def _import_bank(args: argparse.Namespace) -> int:

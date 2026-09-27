@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from accounting_agent.books import BankTransaction, Finding, Severity
+from accounting_agent.books import BankTransaction, Finding, FundValue, Severity
 from accounting_agent.formats.common import Findings, parse_amount, read_csv
 from accounting_agent.formats.nordea_csv import StatementRow
 
@@ -131,6 +131,35 @@ def read_statement(
             )
         transactions.append(transaction)
     return tuple(transactions), findings.items
+
+
+def read_fund_values(
+    path: Path,
+) -> tuple[tuple[FundValue, ...] | None, list[Finding]]:
+    """Read the fund-value file; ``(None, [])`` if there is none (nothing to check)."""
+    findings = Findings()
+    if not path.is_file():
+        return None, findings.items
+    rows = read_csv(path, FUND_HEADER, findings)
+    if rows is None:
+        return None, findings.items
+    values: list[FundValue] = []
+    for row in rows:
+        value = parse_amount(row["värde"])
+        try:
+            day = date.fromisoformat(row["datum"])
+        except ValueError:
+            value = None
+        if value is None:
+            findings.add(
+                Severity.ERROR,
+                "fund-value-invalid",
+                f"{path.name}:{row['_line']}",
+                "datum or värde is not valid (YYYY-MM-DD; decimal point, no spaces)",
+            )
+            continue
+        values.append(FundValue(date=day, value=value))
+    return tuple(values), findings.items
 
 
 def _transaction(

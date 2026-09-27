@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-003-bank-reconciliation-and-reports.md`](../mvp/MVP-003-bank-reconciliation-and-reports.md)
 
-**Status:** In progress – phase 6 done (plan approved 2026-09-26)
+**Status:** In progress – phase 7 done (plan approved 2026-09-26)
 
 ## 0. Investigation
 
@@ -605,7 +605,7 @@ Commit: `feat(books): check the chart of accounts against a reference chart`
 
 ### Phase 7 — Fund value, budget, closing comments and to-do list
 
-- [ ] 7.1 **Tests first**, with fixtures in `tests/fixtures/example-full/`:
+- [x] 7.1 **Tests first**, with fixtures in `tests/fixtures/example-full/`:
   - fund value: latest market value vs booked balance → info; invalid value → error;
   - budget: every rule in §0.3 and the totals;
   - closing comments: every rule, including a personal number → warning;
@@ -614,9 +614,45 @@ Commit: `feat(books): check the chart of accounts against a reference chart`
   - no message quotes a comment's or task's text.
 
   *Verify:* the tests fail for the right reason.
-- [ ] 7.2 **STOP — the owner reviews the tests from 7.1.**
-- [ ] 7.3 Implement the models, `formats/supplements.py`, the checks and the wiring.
+  Result: 36 new tests, all failing for the right reason:
+  - `tests/test_supplements.py` (22) and `tests/test_supplement_readers.py` (13) fail
+    at collection: `ImportError: cannot import name 'BudgetItem'`;
+  - `tests/test_cli_validate_details.py`: one new test for the four summaries on
+    `example-full`; the three CLI tests that count info findings expect 4 more.
+
+  `example-full` gets `budget.csv`, `comments.csv`, `todo.csv` and `fund-value.csv`,
+  with `bank.fund_account` 1350 (not in the chart, so booked at 0) and the three
+  `checks` files.
+
+  Locked by the tests:
+  - models `FundValue(date, value)`, `BudgetItem(kind, name, accounts, amount | None,
+    note, row)`, `ClosingComment(id, date | None, kind, accounts, vouchers, text,
+    row)`, `TodoItem(id, owner, when, area, task, done_when, status, depends_on, row)`;
+  - readers `bank_statement.read_fund_values()` and `supplements.read_budget()`,
+    `read_comments()`, `read_todo()` → `(items | None, findings)`; a missing file is
+    `(None, [])`; an invalid value, amount or date is an error at `<file>:<row>` — the
+    fund row is skipped, a budget item or comment is kept with `None`;
+  - `check_fund(values, books, fund_account)`, `check_budget(items, books)`,
+    `check_comments(comments, books)`, `check_todo(items)` with the rules of §0.3;
+    locations `account <n>`, `budget row <n>`, `closing comment <id>`, `to-do <id>`;
+    the other budget row is named by its row, not its name; allowed values are listed
+    in the message, the value found is not;
+  - as in `kontroll.py`: a budget item of unknown type counts as a cost in the totals;
+    a duplicate to-do id is reported on each of its rows.
+- [x] 7.2 **STOP — the owner reviews the tests from 7.1.** Result: approved 2026-09-27.
+- [x] 7.3 Implement the models, `formats/supplements.py`, the checks and the wiring.
   *Verify:* tests pass; Ruff clean.
+  Result:
+  - `books/supplements.py` (models and `check_fund`, `check_budget`,
+    `check_comments`, `check_todo`), `formats/supplements.py` (budget, comments,
+    to-do) and `read_fund_values()` in `formats/bank_statement.py`. `validate` runs
+    the three file checks with a `checks` section and the fund check with
+    `bank.fund_account`.
+  - All 368 tests pass on the first run; coverage 99.01 %; Ruff clean; no new
+    function reaches the advisory complexity 10.
+  - README, `overview.md` and `current-state.md` updated.
+  - Found while running it: terminal output that is piped is written as cp1252 on
+    Windows, so `kassör` arrives garbled; see §6.
 
 Commit: `feat(books): check fund value, budget, closing comments and to-do list`
 
@@ -754,4 +790,11 @@ books + supplementary files → report → Swedish Markdown reports (configured 
 
 ## 6. Found during this MVP
 
-- *(none yet)*
+- **Piped terminal output is not UTF-8 on Windows** (found in phase 7, 2026-09-27) —
+  `validate` writes to stdout in the locale's code page (cp1252) when stdout is a pipe,
+  so `kassör` arrives garbled in a script or an AI tool reading it, and a character
+  outside cp1252 would crash the write. Until phase 7 the output was ASCII, so it did
+  not show. Fix: reconfigure stdout to UTF-8 in `main()`, as `kontroll.py` does.
+  Regression test `tests/test_cli_encoding.py` (fails on Windows without the fix).
+  Status: test written, awaiting the owner's review; fix and commit
+  (`fix(cli): write the report as UTF-8 when stdout is a pipe`) after.

@@ -17,10 +17,15 @@ books:
 bank:
   export_format: nordea-csv
   statement_file: statement.csv
+  fund_account: "1350"
+  fund_value_file: fund-value.csv
 
 checks:
   documents: documents
   reference_chart: ../reference
+  budget_file: budget.csv
+  comments_file: comments.csv
+  todo_file: todo.csv
 
 conventions:
   # 2890 stands in for a parking account in this synthetic organisation.

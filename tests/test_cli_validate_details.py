@@ -48,7 +48,7 @@ def test_detail_checks_run_with_a_checks_section(
         "INFO [parking-summary] account 2890: 1 postings, net -50.00 to distribute "
         "(should be 0 at closing)"
     ) in out
-    assert "RESULT: OK (errors: 0, warnings: 1, info: 4)" in out
+    assert "RESULT: OK (errors: 0, warnings: 1, info: 8)" in out
 
 
 def test_chart_is_checked_against_the_reference_chart(
@@ -63,6 +63,25 @@ def test_chart_is_checked_against_the_reference_chart(
         "the reference chart means something else"
     ) in out
     assert "Medlemsavgifter" not in out  # the account's local name
+
+
+def test_supplementary_files_are_checked(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    validate(FULL)
+
+    out = capsys.readouterr().out
+    for line in (
+        "INFO [fund-value] account 1350: market value 12500.00 (2026-09-19), "
+        "booked 0, difference 12500.00 (change in value not booked)",
+        "INFO [budget-summary] budget: budgeted revenue 3000, costs 6200, result -3200",
+        "INFO [comments-summary] closing comments: 2 closing comments",
+        "INFO [todo-summary] to-do list: 2 of 3 tasks are not done (kassör 1, vi 1)",
+    ):
+        assert line in out
+    # Budget item names, comments and tasks are never printed.
+    for text in ("Lokal", "Swish", "kvitton"):
+        assert text not in out
 
 
 def test_missing_document_is_an_error_without_its_file_name(

@@ -44,6 +44,7 @@ src/accounting_agent/   The core package (ADR-002)
         checks.py       check_books() — the general checks
         details.py      check_details() — the detail checks from kontroll.py
         reference.py    check_reference() — the chart against a reference chart (BAS)
+        supplements.py  FundValue, BudgetItem, ClosingComment, TodoItem and their checks
         reconciliation.py  reconcile() — the books against the bank statement
         findings.py     Finding, Severity
         masking.py      Personal identity number masking
@@ -51,8 +52,9 @@ src/accounting_agent/   The core package (ADR-002)
         common.py       Shared CSV rules (encoding, header, columns, amounts)
         front_matter.py read_books() for the `front-matter` format
         reference_chart.py  read_reference_chart() — the four-file BAS reference
+        supplements.py  read_budget(), read_comments(), read_todo()
         nordea_csv.py   read_export() for the `nordea-csv` bank export
-        bank_statement.py  read_statement(); write_statement(), write_fund_values() — atomic writes
+        bank_statement.py  read_statement(), read_fund_values(); write_statement(), write_fund_values() — atomic writes
 tests/                  pytest suite; fixtures/ holds synthetic organisations only (ADR-003)
 docs/                   Vision, roadmap, architecture + ADRs, MVPs, plans, standards,
                         development setup, methodology + compliance, Claude prompts
@@ -101,6 +103,9 @@ LICENSE                 PolyForm Noncommercial 1.0.0 (ADR-005)
   `kontroll.py` does, using the chart's own group and BAS description, which the
   `front-matter` reader now keeps on `Account` (ADR-007). A format without those
   columns leaves them `None`, and the text comparisons are skipped.
+- **`books/supplements.py`** models the supplementary files (fund value, budget,
+  closing comments, to-do list) and checks them as `kontroll.py` does. Their formats,
+  including the allowed values, are the core's own (ADR-007).
 - **`books/reconciliation.py`** reconciles the books against the bank statement as
   `kontroll.py` does: the bank's balance arithmetic, the opening balance, and matching on
   (date, amount), where a voucher's amount is the net of its bank lines. A

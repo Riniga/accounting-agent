@@ -1,0 +1,4 @@
+id;ägare;när;område;uppgift;klart_när;status;beroende
+T1;kassör;nu;underlag;Lämna kvitton för februari;Alla kvitton finns i underlag;öppen;
+T2;vi;nu;bank;Importera kontoutdraget;Kontoutdraget är importerat;klar;
+T3;vi;bokslut;fond;Bokför fondens värdeförändring;Värdeförändringen är bokförd;väntar;T1
