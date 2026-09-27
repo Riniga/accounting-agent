@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-003-bank-reconciliation-and-reports.md`](../mvp/MVP-003-bank-reconciliation-and-reports.md)
 
-**Status:** In progress – phase 5 done (plan approved 2026-09-26)
+**Status:** In progress – phase 6 done (plan approved 2026-09-26)
 
 ## 0. Investigation
 
@@ -539,19 +539,67 @@ Commit: `feat(books): add duplicate, date-order, account-side and document check
 
 ### Phase 6 — Chart of accounts against the BAS reference
 
-- [ ] 6.1 **Synthetic fixture:** `tests/fixtures/reference/` — a tiny invented reference
+- [x] 6.1 **Synthetic fixture:** `tests/fixtures/reference/` — a tiny invented reference
   chart in the four-file format (main accounts, sub-accounts, groups, do-not-use), not a
   copy of BAS. *Verify:* it covers every reference rule in §0.3.
-- [ ] 6.2 **Tests first:**
+  Result: `tests/fixtures/reference/` — 6 main accounts, 2 sub-accounts (one invented),
+  7 groups and one do-not-use account, in the organisation's `nummer;beskrivning`
+  format. One description has a double space, to prove whitespace normalisation. The
+  rules that need other data (a missing file, a wrong header) are built by the tests.
+
+  **Changed approved fixture:** the `valid/` chart's `kontogrupp` values lost their
+  number prefix (`19 Kassa och bank` → `Kassa och bank`). `kontroll.py` compares the
+  group as the start of the reference group name, so the old invented values would
+  all have been warnings. MVP-002 reads only `konto` and `lokal_benämning`; all its
+  tests pass unchanged.
+- [x] 6.2 **Tests first:**
   - the `front-matter` reader keeps `kontogrupp` and `bas_beskrivning` on `Account`, and
     reports a `kontoklass` that does not match the first digit;
   - the reference reader; missing files → one warning and the check skipped;
   - the reference checks, one test per rule; messages never quote the local name.
 
   *Verify:* the tests fail for the right reason.
-- [ ] 6.3 **STOP — the owner reviews the fixture and tests from 6.1–6.2.**
-- [ ] 6.4 Implement the model extension, `formats/reference_chart.py`, the checks and the
+  Result: 20 new tests, all failing for the right reason:
+  - `tests/test_reference_chart.py` (19) fails at collection:
+    `ImportError: cannot import name 'ReferenceChart'`;
+  - `tests/test_cli_validate_details.py`: one new test (`reference-other-meaning` for
+    3002 on `example-full`, which now has `checks.reference_chart`); the three CLI
+    tests that count info findings expect one more.
+
+  Locked by the tests:
+  - `Account(number, name, group=None, reference_description=None)`; the
+    `front-matter` reader fills both, with `""` for an empty BAS description (own
+    meaning) and `None` only for a format without the columns;
+  - `ReferenceChart(accounts, excluded, groups)`;
+    `read_reference_chart(folder) -> (ReferenceChart | None, findings)`: a missing
+    file → warning `reference-missing` naming the file; a wrong header → the shared
+    `header` error; either skips the check;
+  - `check_reference(accounts, reference)`: `reference-excluded`,
+    `reference-unknown-group` (errors); `reference-description`, `reference-group`
+    (warnings); `reference-other-meaning`, `reference-own-accounts` (info). Descriptions
+    compare with whitespace normalised; the group compares case-insensitively as the
+    start of the reference group. With `None` group or description those two rules
+    are skipped; accounts that are not four digits are left to `check_books()`;
+  - the reader's `account-class` error names the expected class only, not the value
+    found.
+- [x] 6.3 **STOP — the owner reviews the fixture and tests from 6.1–6.2.** Result:
+  approved 2026-09-27, including the changed `valid/` groups and the new counts.
+- [x] 6.4 Implement the model extension, `formats/reference_chart.py`, the checks and the
   wiring. *Verify:* tests pass; Ruff clean; the MVP-002 tests unchanged.
+  Result:
+  - `Account.group` / `reference_description`, `ReferenceChart`, `books/reference.py`
+    (`check_reference()`), `formats/reference_chart.py` and the `account-class` rule in
+    the `front-matter` reader. `validate` runs the reference check when
+    `checks.reference_chart` is set.
+  - All 332 tests pass; coverage 98.92 %; Ruff clean; the MVP-002 tests are
+    unchanged. No new function reaches the advisory complexity 10.
+  - **One approved test was wrong and was corrected:** the own-accounts test used
+    account 3990, whose group 39 is not in the test's reference, so it also gave
+    `reference-unknown-group` — the right behaviour, as in `kontroll.py`. The account
+    became 3099 (group 30). The implementation was not changed to fit the test.
+  - One untested branch: the reader skips the class check for account numbers that
+    are not four digits (they are errors in `check_books()` already).
+  - README, `overview.md` and `current-state.md` updated.
 
 Commit: `feat(books): check the chart of accounts against a reference chart`
 

@@ -109,6 +109,7 @@ bank:                       # needed by `import-bank` (ADR-008)
   fund_value_file: Bokföring/fondvärde.csv
 checks:                     # turns on the detail checks in `validate`
   documents: underlag       # the supporting-documents folder
+  reference_chart: kontobas # the BAS reference chart, in four CSV files
 conventions:                # organisation conventions (optional)
   parking_accounts: ["3008"]
 ```
@@ -122,6 +123,9 @@ them:
   revenue and cost accounts on the unexpected side, supporting documents that do not
   exist, and summaries of vouchers without documents, parking accounts and unused
   accounts. A missing document is named by its position, never by its file name.
+  With `reference_chart` it also checks the chart of accounts against the reference
+  chart (BAS): accounts not to use, unknown groups, and differing descriptions and
+  groups.
 - With a `bank` section it also reconciles the books against the statement file: the
   bank's own balances, the opening balance, and every bank voucher against a bank
   transaction and the reverse. `--unbooked` lists the transactions after the last voucher

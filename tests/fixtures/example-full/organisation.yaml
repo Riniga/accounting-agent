@@ -20,6 +20,7 @@ bank:
 
 checks:
   documents: documents
+  reference_chart: ../reference
 
 conventions:
   # 2890 stands in for a parking account in this synthetic organisation.

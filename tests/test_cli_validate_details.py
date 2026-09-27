@@ -48,7 +48,21 @@ def test_detail_checks_run_with_a_checks_section(
         "INFO [parking-summary] account 2890: 1 postings, net -50.00 to distribute "
         "(should be 0 at closing)"
     ) in out
-    assert "RESULT: OK (errors: 0, warnings: 1, info: 3)" in out
+    assert "RESULT: OK (errors: 0, warnings: 1, info: 4)" in out
+
+
+def test_chart_is_checked_against_the_reference_chart(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    validate(FULL)
+
+    out = capsys.readouterr().out
+    # 3002 has an empty BAS description in the chart: an own meaning.
+    assert (
+        "INFO [reference-other-meaning] account 3002: used with its own meaning; "
+        "the reference chart means something else"
+    ) in out
+    assert "Medlemsavgifter" not in out  # the account's local name
 
 
 def test_missing_document_is_an_error_without_its_file_name(

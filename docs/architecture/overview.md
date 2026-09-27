@@ -38,16 +38,19 @@ src/accounting_agent/   The core package (ADR-002)
     cli.py              `accounting-agent` command line: run, validate (argparse)
     profile.py          Organisation profile: organisation.yaml → OrganisationProfile (+ books)
     books/              The book domain — no file I/O (ADR-006; Ruff TID251)
-        model.py        Account, OpeningBalance, PostingLine, Voucher, Books, BankTransaction
+        model.py        Account, OpeningBalance, PostingLine, Voucher, Books, BankTransaction,
+                        ReferenceChart
         balances.py     compute_balances()
         checks.py       check_books() — the general checks
         details.py      check_details() — the detail checks from kontroll.py
+        reference.py    check_reference() — the chart against a reference chart (BAS)
         reconciliation.py  reconcile() — the books against the bank statement
         findings.py     Finding, Severity
         masking.py      Personal identity number masking
     formats/            One reader per file format (ADR-006, ADR-007); the only writers (ADR-008)
         common.py       Shared CSV rules (encoding, header, columns, amounts)
         front_matter.py read_books() for the `front-matter` format
+        reference_chart.py  read_reference_chart() — the four-file BAS reference
         nordea_csv.py   read_export() for the `nordea-csv` bank export
         bank_statement.py  read_statement(); write_statement(), write_fund_values() — atomic writes
 tests/                  pytest suite; fixtures/ holds synthetic organisations only (ADR-003)
@@ -94,6 +97,10 @@ LICENSE                 PolyForm Noncommercial 1.0.0 (ADR-005)
   order, account sides, supporting documents, parking and unused accounts, the chart's
   own rules). `validate` runs them when the profile has a `checks` section; the CLI
   lists the documents folder, so the domain stays free of I/O.
+- **`books/reference.py`** checks the chart against a reference chart (BAS) as
+  `kontroll.py` does, using the chart's own group and BAS description, which the
+  `front-matter` reader now keeps on `Account` (ADR-007). A format without those
+  columns leaves them `None`, and the text comparisons are skipped.
 - **`books/reconciliation.py`** reconciles the books against the bank statement as
   `kontroll.py` does: the bank's balance arithmetic, the opening balance, and matching on
   (date, amount), where a voucher's amount is the net of its bank lines. A

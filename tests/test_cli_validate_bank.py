@@ -54,7 +54,7 @@ def test_validate_reconciles_against_the_bank(
         "INFO [bank-summary] bank statement: 5 transactions 2026-01-07 to 2026-03-10, "
         "the bank's latest balance 816.50 (2026-03-10)"
     ) in out
-    assert "RESULT: OK (errors: 0, warnings: 1, info: 3)" in out
+    assert "RESULT: OK (errors: 0, warnings: 1, info: 4)" in out
 
 
 def test_unbooked_lists_date_amount_and_row_only(
@@ -65,7 +65,7 @@ def test_unbooked_lists_date_amount_and_row_only(
     out = capsys.readouterr().out
     assert exit_code == 0
     assert "INFO [unbooked] bank statement row 6: 2026-03-10, -45.50" in out
-    assert "RESULT: OK (errors: 0, warnings: 1, info: 4)" in out
+    assert "RESULT: OK (errors: 0, warnings: 1, info: 5)" in out
 
 
 def test_no_name_or_message_from_the_statement_is_printed(

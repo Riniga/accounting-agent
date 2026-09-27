@@ -13,10 +13,17 @@ ZERO = Decimal(0)
 
 @dataclass(frozen=True)
 class Account:
-    """An account in the chart of accounts (kontoplan)."""
+    """An account in the chart of accounts (kontoplan).
+
+    ``group`` and ``reference_description`` are the chart's own copy of the account
+    group and the reference-chart description (ADR-007). ``None`` means the file format
+    has no such column; ``""`` means the column is empty.
+    """
 
     number: str
     name: str
+    group: str | None = None
+    reference_description: str | None = None
 
 
 @dataclass(frozen=True)
@@ -101,3 +108,16 @@ class BankTransaction:
     amount: Decimal
     balance: Decimal | None
     row: int
+
+
+@dataclass(frozen=True)
+class ReferenceChart:
+    """A reference chart of accounts, such as BAS (ADR-007).
+
+    ``accounts`` maps account numbers to descriptions, ``excluded`` holds the accounts
+    not to use, and ``groups`` maps two-digit group numbers to group names.
+    """
+
+    accounts: dict[str, str]
+    excluded: frozenset[str]
+    groups: dict[str, str]

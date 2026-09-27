@@ -14,11 +14,17 @@ from accounting_agent.books import (
     Severity,
     check_books,
     check_details,
+    check_reference,
     compute_balances,
     mask_personal_numbers,
     reconcile,
 )
-from accounting_agent.formats import bank_statement, front_matter, nordea_csv
+from accounting_agent.formats import (
+    bank_statement,
+    front_matter,
+    nordea_csv,
+    reference_chart,
+)
 from accounting_agent.profile import (
     BankConfig,
     BooksConfig,
@@ -182,7 +188,10 @@ def _check_details(
     config: BooksConfig,
     books: Books,
 ) -> list[Finding]:
-    """Run the detail checks, with the documents folder listed here (ADR-007)."""
+    """Run the detail checks and the reference-chart check (ADR-007).
+
+    The documents folder is listed here, so the domain stays free of I/O.
+    """
     documents = None
     if checks.documents is not None:
         documents = frozenset(
@@ -190,12 +199,20 @@ def _check_details(
             for path in checks.documents.rglob("*")
             if path.is_file()
         )
-    return check_details(
+    findings = check_details(
         books,
         config.bank_account,
         parking_accounts=profile.conventions.parking_accounts,
         documents=documents,
     )
+    if checks.reference_chart is not None:
+        reference, read_findings = reference_chart.read_reference_chart(
+            checks.reference_chart
+        )
+        findings += read_findings
+        if reference is not None:
+            findings += check_reference(books.accounts, reference)
+    return findings
 
 
 def _reconcile(

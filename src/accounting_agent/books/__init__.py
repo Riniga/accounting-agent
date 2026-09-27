@@ -15,9 +15,11 @@ from accounting_agent.books.model import (
     Books,
     OpeningBalance,
     PostingLine,
+    ReferenceChart,
     Voucher,
 )
 from accounting_agent.books.reconciliation import reconcile
+from accounting_agent.books.reference import check_reference
 
 __all__ = [
     "Account",
@@ -26,10 +28,12 @@ __all__ = [
     "Finding",
     "OpeningBalance",
     "PostingLine",
+    "ReferenceChart",
     "Severity",
     "Voucher",
     "check_books",
     "check_details",
+    "check_reference",
     "compute_balances",
     "contains_personal_number",
     "mask_personal_numbers",

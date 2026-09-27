@@ -45,6 +45,14 @@ OPENING_HEADER = ["konto", "lokal_benämning", "ingående_balans"]
 REQUIRED_FIELDS = ("verifikation", "datum", "text", "belopp", "debet", "kredit")
 OPTIONAL_FIELDS = ("underlag",)
 VOUCHER_FILE_NAME = re.compile(r"(\d{4})_(\d{4}-\d{2}-\d{2})\.md")
+ACCOUNT_NUMBER = re.compile(r"\d{4}")
+# The chart's `kontoklass` column must name the BAS class of the account's first digit.
+CLASS_BY_FIRST_DIGIT = {
+    "1": "Tillgångar",
+    "2": "Eget kapital och skulder",
+    "3": "Intäkter",
+}
+OTHER_CLASS = "Kostnader och resultat"
 
 
 def read_books(path: Path, bank_account: str) -> tuple[Books | None, list[Finding]]:
@@ -61,11 +69,37 @@ def read_books(path: Path, bank_account: str) -> tuple[Books | None, list[Findin
         return None, findings.items
 
     books = Books(
-        accounts=tuple(Account(r["konto"], r["lokal_benämning"]) for r in chart_rows),
+        accounts=_accounts(chart_rows, findings),
         opening_balances=_opening_balances(opening_rows, findings),
         vouchers=vouchers,
     )
     return books, findings.items
+
+
+def _accounts(rows: list[Row], findings: Findings) -> tuple[Account, ...]:
+    for row in rows:
+        number = row["konto"]
+        # Malformed numbers are already errors in check_books().
+        if not ACCOUNT_NUMBER.fullmatch(number):
+            continue
+        expected = CLASS_BY_FIRST_DIGIT.get(number[0], OTHER_CLASS)
+        if row["kontoklass"] != expected:
+            # The value found is not quoted; only the expected class is.
+            findings.add(
+                Severity.ERROR,
+                "account-class",
+                f"{CHART_FILE}:{row['_line']}",
+                f"account {number} has the wrong kontoklass; expected '{expected}'",
+            )
+    return tuple(
+        Account(
+            r["konto"],
+            r["lokal_benämning"],
+            group=r["kontogrupp"],
+            reference_description=r["bas_beskrivning"],
+        )
+        for r in rows
+    )
 
 
 def _opening_balances(
