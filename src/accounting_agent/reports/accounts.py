@@ -33,20 +33,6 @@ MONTHS = [
 NOTE_LENGTH = 170
 
 
-def render_reports(books: Books, context: ReportContext) -> dict[str, str]:
-    """Every accounts report, by file name; each text ends with exactly one newline."""
-    reports = {
-        "resultatrapport.md": render_income_statement(books, context),
-        "balansrapport.md": render_balance_sheet(books, context),
-        "huvudbok.md": render_general_ledger(books, context),
-        "verifikationslista.md": render_voucher_list(books, context),
-        "månadsöversikt.md": render_monthly_overview(books, context),
-    }
-    # Voucher texts appear only in table cells, which table() masks. The rest is not
-    # masked: an organisation number has the same shape as a personal number.
-    return {name: text.rstrip("\n") + "\n" for name, text in reports.items()}
-
-
 def render_income_statement(books: Books, context: ReportContext) -> str:
     """Revenue, costs and financial items per account group, and the result so far."""
     ledger = Ledger(books, context.fiscal_year)
@@ -104,7 +90,7 @@ def render_income_statement(books: Books, context: ReportContext) -> str:
                 "ännu inte fördelats på rätt intäktskonto, så fördelningen mellan "
                 "intäktsslagen är preliminär.\n"
             )
-    fund = _latest_fund_value(context)
+    fund = latest_fund_value(context)
     if fund is not None and context.fund_account is not None:
         booked = ledger.closing(context.fund_account)
         out.append(
@@ -190,7 +176,7 @@ def render_balance_sheet(books: Books, context: ReportContext) -> str:
         if difference == ZERO
         else f"> **Balansen stämmer inte.** Skillnad {format_amount(difference)} kr.\n"
     )
-    fund = _latest_fund_value(context)
+    fund = latest_fund_value(context)
     if fund is not None and context.fund_account is not None:
         out.append(
             f"> Fonden ({context.fund_account}) är bokförd till "
@@ -245,7 +231,7 @@ def render_general_ledger(books: Books, context: ReportContext) -> str:
             rows.append(
                 [
                     str(posting.voucher.date),
-                    _voucher_link(posting.voucher, context),
+                    voucher_link(posting.voucher, context),
                     posting.voucher.text,
                     format_amount(posting.debit) if posting.debit else "",
                     format_amount(posting.credit) if posting.credit else "",
@@ -295,7 +281,7 @@ def render_voucher_list(books: Books, context: ReportContext) -> str:
             note = note[: NOTE_LENGTH - 3].rstrip() + "…"
         rows.append(
             [
-                _voucher_link(voucher, context),
+                voucher_link(voucher, context),
                 str(voucher.date),
                 voucher.text,
                 format_amount(voucher.total_debit),
@@ -377,14 +363,16 @@ def render_monthly_overview(books: Books, context: ReportContext) -> str:
     return "\n".join(out)
 
 
-def _voucher_link(voucher: Voucher, context: ReportContext) -> str:
+def voucher_link(voucher: Voucher, context: ReportContext) -> str:
+    """The voucher id, linked to its file when the context has a voucher folder."""
     label = f"{voucher.number:04d}" if voucher.series is None else voucher.id
     if context.voucher_folder and voucher.source:
         return f"[{label}]({context.voucher_folder}/{voucher.source})"
     return label
 
 
-def _latest_fund_value(context: ReportContext) -> FundValue | None:
+def latest_fund_value(context: ReportContext) -> FundValue | None:
+    """The fund value with the latest date, if any."""
     if not context.fund_values:
         return None
     return max(context.fund_values, key=lambda v: v.date)

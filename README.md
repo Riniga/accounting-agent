@@ -150,8 +150,9 @@ downloaded from the bank into the organisation's statement file or fund-value fi
   terminal shows only file names, dates and counts.
 
 `accounting-agent report <organisation> --config-dir <path> [--force]` writes the
-accounts as Swedish Markdown to the `reports.output` folder: income statement, balance
-sheet, general ledger, voucher list and monthly overview.
+accounts as Swedish Markdown to the `reports.output` folder: a summary, a to-do report,
+the income statement, balance sheet, budget follow-up (with a budget), monthly overview,
+general ledger, voucher list and closing comments.
 - It runs the same checks as `validate` first, and writes nothing if the books have
   errors, unless `--force` is given.
 - The reports contain voucher texts — they are the accounts — so they belong in the

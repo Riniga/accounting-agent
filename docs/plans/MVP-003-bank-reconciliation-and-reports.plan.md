@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-003-bank-reconciliation-and-reports.md`](../mvp/MVP-003-bank-reconciliation-and-reports.md)
 
-**Status:** In progress – phase 8 done (plan approved 2026-09-26)
+**Status:** In progress – phase 9 done (plan approved 2026-09-26)
 
 ## 0. Investigation
 
@@ -730,7 +730,7 @@ Commit: `feat(reports): render the income statement, balance sheet, ledger and l
 
 ### Phase 9 — Reports II: budget, comments, to-do and summary
 
-- [ ] 9.1 **Tests first:**
+- [x] 9.1 **Tests first:**
   - budget follow-up: share of the year, per item, unbudgeted accounts, totals;
   - closing comments: grouped by type with the Swedish headings;
   - to-do: the measures without member measures (errors, unbooked, bank matches,
@@ -741,8 +741,48 @@ Commit: `feat(reports): render the income statement, balance sheet, ledger and l
     without the member section.
 
   *Verify:* the tests fail for the right reason.
-- [ ] 9.2 **STOP — the owner reviews the tests from 9.1.**
-- [ ] 9.3 Implement. *Verify:* tests pass; Ruff clean.
+  Result: 19 new tests and 2 changed, all failing for the right reason:
+  - `tests/test_reports_summary.py` (18) fails at collection:
+    `ImportError: cannot import name 'render_budget_follow_up'`;
+  - `tests/test_cli_report.py`: one new test (the written summary and to-do report on
+    `example-full`); `Wrote 5 reports` became `Wrote 9 reports`;
+  - `tests/test_reports_accounts.py`: the approved `render_reports` test now expects
+    eight reports without a budget (the five, plus summary, to-do and closing
+    comments).
+
+  Locked by the tests:
+  - `ReportContext` gains `no_document_accounts`, `outlay_prefix`, `budget`,
+    `comments`, `todo`, `findings` and `statement_read`; new renderers
+    `render_budget_follow_up` (None without a budget), `render_closing_comments`,
+    `render_todo`, `render_summary`; `render_reports` returns all nine in
+    `generera_redovisning.py`'s order;
+  - the measures are the script's, without the three member measures; parking,
+    guessed postings and the outlay count only appear when their convention is
+    configured; "(utom bankavgifter)" becomes "(utom konto <accounts>)" from
+    `no_document_accounts`; the unbooked count is the number of `unbooked` findings
+    (the transactions after the last voucher), so `report` reconciles with
+    `--unbooked`'s listing on;
+  - the bank balance "Stämmer mot bankens kontoutdrag" only when the statement file
+    was read and no `bank-*` finding is an error;
+  - equity is the accounts whose group is "Eget kapital" (case-insensitive), as in the
+    script, or BAS group 20 when the chart has no groups;
+  - comment and task texts outside tables are masked too; file paths of the
+    organisation (`Bokföring/budget.csv`) are not named in the texts.
+- [x] 9.2 **STOP — the owner reviews the tests from 9.1.** Result: approved 2026-10-02.
+- [x] 9.3 Implement. *Verify:* tests pass; Ruff clean.
+  Result:
+  - `reports/overview.py`: `render_budget_follow_up`, `render_closing_comments`,
+    `render_todo`, `render_summary` and `render_reports` (moved from `accounts.py`,
+    whose link and fund helpers became public for it). `ReportContext` gained the
+    fields of 9.1. The `report` command reads the budget, comments and to-do list for
+    the reports, passes the findings, and reconciles with the unbooked listing on.
+  - All 423 tests pass on the first run; coverage 98.82 %; Ruff clean; no new
+    function reaches the advisory complexity 10.
+  - Run on a copy of `example-full`: nine reports; the summary shows the bank as
+    reconciled, the budget, 2 of 5 measures and T1.
+  - The findings listed in the summary are in English, as the core's findings are;
+    the script listed its own Swedish ones.
+  - README, `overview.md` and `current-state.md` updated.
 
 Commit: `feat(reports): render budget follow-up, closing comments, to-do and summary`
 
@@ -847,10 +887,12 @@ books + supplementary files → report → Swedish Markdown reports (configured 
   Regression test `tests/test_cli_encoding.py` (fails on Windows without the fix).
   The test was approved by the owner on 2026-09-27 and committed with phase 7 in
   `384bd22` (whose message names the fix). The fix itself — `main()` reconfigures a
-  `TextIOWrapper` stdout to UTF-8 — is its own commit. All 369 tests pass.
+  `TextIOWrapper` stdout to UTF-8 — was committed with phase 8 in `6448fdf`.
 - **`.gitignore` hid the `reports` package** (found in phase 8, 2026-10-02) — the
   template's output rules `output/`, `exports/` and `reports/` matched folders of that
   name anywhere, so `src/accounting_agent/reports/` would never have been committed.
   They are now anchored at the root (`/output/`, `/exports/`, `/reports/`). Checked:
-  no other file became untracked-visible. Commit: `chore: anchor the output ignore
-  rules at the repository root`.
+  no other file became untracked-visible. Committed with phase 8 in `6448fdf`.
+- **Commit boundaries:** `384bd22` (named `fix(cli)`) holds phase 7, and `6448fdf`
+  holds phase 8 with the UTF-8 fix and the `.gitignore` change. Named in the pull
+  request's notes for the reviewer; the history is not rewritten.

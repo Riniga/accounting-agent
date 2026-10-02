@@ -294,15 +294,22 @@ def test_monthly_overview_has_one_row_per_month_to_the_last_voucher(
 # --- All reports ------------------------------------------------------------------------
 
 
-def test_render_reports_gives_the_five_accounts_reports(books: Books) -> None:
+def test_render_reports_gives_every_report_but_the_budget_without_one(
+    books: Books,
+) -> None:
+    # Phase 9 added the summary, the to-do report and the closing comments; the budget
+    # follow-up only comes with a budget.
     reports = render_reports(books, CONTEXT)
 
     assert set(reports) == {
+        "sammanfattning.md",
+        "att-göra.md",
         "resultatrapport.md",
         "balansrapport.md",
         "huvudbok.md",
         "verifikationslista.md",
         "månadsöversikt.md",
+        "bokslutskommentarer.md",
     }
     for text in reports.values():
         assert text.endswith("\n")

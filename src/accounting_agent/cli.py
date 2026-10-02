@@ -13,9 +13,12 @@ from pathlib import Path
 from accounting_agent import __version__
 from accounting_agent.books import (
     Books,
+    BudgetItem,
+    ClosingComment,
     Finding,
     FundValue,
     Severity,
+    TodoItem,
     check_books,
     check_budget,
     check_comments,
@@ -238,7 +241,8 @@ def _report(args: argparse.Namespace) -> int:
             "details."
         )
         return EXIT_ERROR
-    findings = findings + _check_all(profile, config, books, unbooked=False)
+    # The unbooked transactions are listed so that the to-do report can count them.
+    findings = findings + _check_all(profile, config, books, unbooked=True)
     errors = sum(1 for f in findings if f.severity is Severity.ERROR)
     # Reports from broken books mislead (ADR-008).
     if errors and not args.force:
@@ -254,7 +258,7 @@ def _report(args: argparse.Namespace) -> int:
         )
 
     output = profile.reports.output
-    context = _report_context(profile, config, profile.reports)
+    context = _report_context(profile, config, profile.reports, findings)
     reports = render_reports(books, context)
     output.mkdir(exist_ok=True)
     for name, text in reports.items():
@@ -266,7 +270,10 @@ def _report(args: argparse.Namespace) -> int:
 
 
 def _report_context(
-    profile: OrganisationProfile, config: BooksConfig, reports: ReportsConfig
+    profile: OrganisationProfile,
+    config: BooksConfig,
+    reports: ReportsConfig,
+    findings: list[Finding],
 ) -> ReportContext:
     """The reports' context: names, conventions, fund values and voucher links."""
     fund_values: tuple[FundValue, ...] = ()
@@ -274,6 +281,7 @@ def _report_context(
     if bank is not None and bank.fund_value_file is not None:
         values, _ = bank_statement.read_fund_values(bank.fund_value_file)
         fund_values = values or ()
+    budget, comments, todo = _supplements_for_reports(profile.checks)
     voucher_folder = None
     if config.format == "front-matter":
         try:
@@ -295,7 +303,32 @@ def _report_context(
         fund_values=fund_values,
         voucher_folder=voucher_folder,
         guessed_posting_marker=profile.conventions.guessed_posting_marker,
+        no_document_accounts=profile.conventions.no_document_accounts,
+        outlay_prefix=profile.conventions.outlay_prefix,
+        budget=budget,
+        comments=comments,
+        todo=todo,
+        findings=tuple(findings),
+        # The summary appears only when transactions were read and reconciled.
+        statement_read=any(f.rule == "bank-summary" for f in findings),
     )
+
+
+def _supplements_for_reports(
+    checks: ChecksConfig | None,
+) -> tuple[tuple[BudgetItem, ...], tuple[ClosingComment, ...], tuple[TodoItem, ...]]:
+    """The budget, comments and to-do list for the reports (their findings are the
+    checks'); a file that is not configured or not readable gives an empty tuple."""
+    if checks is None:
+        return (), (), ()
+    budget = comments = todo = None
+    if checks.budget_file is not None:
+        budget, _ = supplements.read_budget(checks.budget_file)
+    if checks.comments_file is not None:
+        comments, _ = supplements.read_comments(checks.comments_file)
+    if checks.todo_file is not None:
+        todo, _ = supplements.read_todo(checks.todo_file)
+    return budget or (), comments or (), todo or ()
 
 
 def _check_details(

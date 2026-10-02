@@ -8,7 +8,7 @@ in the same PR as any change to an app's status, test count, or key capabilities
 
 | App | Status | Tests | Key capabilities |
 |-----|--------|-------|-------------------|
-| `accounting-agent` (`src/accounting_agent/`, v0.1.0) | Implemented — MVP-001 walking skeleton, MVP-002 book model and validation (merged, PR #7); MVP-003 in progress | 404 | organisation profile loading/validation (incl. `books`, `bank`, `checks`, `conventions` and `reports` sections), `run`, `validate`, `import-bank` and `report` commands, Swedish Markdown reports (income statement, balance sheet, general ledger, voucher list, monthly overview), `nordea-csv` bank import into masked statement and fund-value files, reconciliation against the bank statement (`validate --unbooked`), detail checks (duplicates, date order, account sides, supporting documents, parking and unused accounts), the chart against a BAS reference chart, fund value, budget, closing comments and to-do list, book model (vouchers with posting lines and series), balances, findings, personal-number masking, `front-matter` format reader, general book checks |
+| `accounting-agent` (`src/accounting_agent/`, v0.1.0) | Implemented — MVP-001 walking skeleton, MVP-002 book model and validation (merged, PR #7); MVP-003 in progress | 423 | organisation profile loading/validation (incl. `books`, `bank`, `checks`, `conventions` and `reports` sections), `run`, `validate`, `import-bank` and `report` commands, Swedish Markdown reports (summary, to-do, income statement, balance sheet, budget follow-up, monthly overview, general ledger, voucher list, closing comments), `nordea-csv` bank import into masked statement and fund-value files, reconciliation against the bank statement (`validate --unbooked`), detail checks (duplicates, date order, account sides, supporting documents, parking and unused accounts), the chart against a BAS reference chart, fund value, budget, closing comments and to-do list, book model (vouchers with posting lines and series), balances, findings, personal-number masking, `front-matter` format reader, general book checks |
 
 Organisation projects (JudoSyd, Helsingborgs Judoklubb, Aktivitet Förebygger) are separate
 private repositories and are not tracked here (ADR-002, ADR-003).
@@ -40,7 +40,7 @@ See [`docs/standards/`](../standards/). Project-specific:
 
 | Package | Tests | Coverage |
 |---|---|---|
-| `accounting_agent` | 404 (profile 20, profile books 21, profile sections 66, bank import 27, bank statement reader 13, reconciliation 15, CLI validate bank 6, detail checks 18, CLI validate details 5, reference chart 19, supplements 22, supplement readers 13, reports format 9, reports 17, CLI report 9, CLI encoding 1, CLI run 9, CLI validate 12, book model 12, balances 5, findings 4, masking 14, front-matter reader 42, checks 25) | 98.82% (floor 95 %) |
+| `accounting_agent` | 423 (profile 20, profile books 21, profile sections 66, bank import 27, bank statement reader 13, reconciliation 15, CLI validate bank 6, detail checks 18, CLI validate details 5, reference chart 19, supplements 22, supplement readers 13, reports format 9, reports 17, reports overview 18, CLI report 10, CLI encoding 1, CLI run 9, CLI validate 12, book model 12, balances 5, findings 4, masking 14, front-matter reader 42, checks 25) | 98.82% (floor 95 %) |
 
 ## Methodology compliance
 

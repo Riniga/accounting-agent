@@ -50,7 +50,25 @@ def test_report_writes_the_accounts_reports(
     for name in ACCOUNTS_REPORTS:
         assert (output / name).is_file()
         assert f"  {name}" in out.splitlines()
-    assert "Wrote 5 reports to reports, up to 2026-03-01." in out
+    # example-full has a budget, so all nine reports are written.
+    assert "Wrote 9 reports to reports, up to 2026-03-01." in out
+
+
+def test_summary_uses_the_checks_budget_and_to_do_list(fixtures: Path) -> None:
+    report(fixtures / "example-full")
+
+    summary = (fixtures / "example-full" / "reports" / "sammanfattning.md").read_text(
+        encoding="utf-8"
+    )
+    assert "| Banksaldo (1930) | 862,00 | Stämmer mot bankens kontoutdrag |" in summary
+    assert "## Mot budget" in summary
+    assert "- **T1** (underlag): Lämna kvitton för februari" in summary
+    assert "Kontrollen ger **OK** (0 fel, 1 varningar)." in summary
+    todo = (fixtures / "example-full" / "reports" / "att-göra.md").read_text(
+        encoding="utf-8"
+    )
+    # The unbooked transaction after the last voucher is counted.
+    assert "| Alla banktransaktioner är bokförda | 1 obokförda |" in todo
 
 
 def test_report_prints_no_voucher_text(

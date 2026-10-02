@@ -59,6 +59,7 @@ src/accounting_agent/   The core package (ADR-002)
         format.py       ReportContext, amounts, tables (masked cells), the report header
         ledger.py       The books worked out per account for the reports
         accounts.py     Income statement, balance sheet, general ledger, voucher list, monthly overview
+        overview.py     Budget follow-up, closing comments, to-do report, summary; render_reports()
 tests/                  pytest suite; fixtures/ holds synthetic organisations only (ADR-003)
 docs/                   Vision, roadmap, architecture + ADRs, MVPs, plans, standards,
                         development setup, methodology + compliance, Claude prompts

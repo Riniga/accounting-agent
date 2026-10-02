@@ -10,7 +10,13 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 
-from accounting_agent.books import FundValue
+from accounting_agent.books import (
+    BudgetItem,
+    ClosingComment,
+    Finding,
+    FundValue,
+    TodoItem,
+)
 from accounting_agent.books.masking import FILE_MASK, mask_personal_numbers
 
 NBSP = " "
@@ -32,6 +38,15 @@ class ReportContext:
     # The voucher folder relative to the output folder, for links; None: no links.
     voucher_folder: str | None = None
     guessed_posting_marker: str | None = None
+    no_document_accounts: tuple[str, ...] = ()
+    outlay_prefix: str | None = None
+    budget: tuple[BudgetItem, ...] = ()
+    comments: tuple[ClosingComment, ...] = ()
+    todo: tuple[TodoItem, ...] = ()
+    # The findings of the checks, for the summary and the to-do measures.
+    findings: tuple[Finding, ...] = ()
+    # Whether the bank statement file was read, so the bank could be reconciled.
+    statement_read: bool = False
 
 
 def format_amount(value: Decimal, decimals: int = 2) -> str:
