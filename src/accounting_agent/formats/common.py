@@ -97,6 +97,20 @@ def read_csv(path: Path, header: list[str], findings: Findings) -> list[Row] | N
     return result
 
 
+def write_text_atomically(path: Path, text: str) -> None:
+    """Write UTF-8 text with LF line endings through a temporary file (ADR-008).
+
+    An interrupted run never leaves half a file: the temporary file replaces the target
+    only when it is complete, and is removed if the replace fails.
+    """
+    temporary = path.with_name(path.name + ".tmp")
+    try:
+        temporary.write_bytes(text.encode("utf-8"))
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def parse_amount(text: str) -> Decimal | None:
     """A plain decimal amount (decimal point, no spaces), or ``None``."""
     # The pattern only admits plain decimal numbers, so Decimal() cannot fail here.

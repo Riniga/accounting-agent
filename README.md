@@ -115,6 +115,10 @@ checks:                     # turns on the detail checks in `validate`
   todo_file: Bokföring/att-göra.csv
 conventions:                # organisation conventions (optional)
   parking_accounts: ["3008"]
+reports:                    # needed by `report` (ADR-008)
+  output: Redovisning       # created if missing
+  organisation_name: Exempelklubben
+  organisation_number: 000000-0000
 ```
 
 `accounting-agent validate <organisation> --config-dir <path>` reads the books and checks
@@ -144,6 +148,16 @@ downloaded from the bank into the organisation's statement file or fund-value fi
 - Fund values are merged by date.
 - Personal identity numbers are masked as `[personnummer]` in the written file. The
   terminal shows only file names, dates and counts.
+
+`accounting-agent report <organisation> --config-dir <path> [--force]` writes the
+accounts as Swedish Markdown to the `reports.output` folder: income statement, balance
+sheet, general ledger, voucher list and monthly overview.
+- It runs the same checks as `validate` first, and writes nothing if the books have
+  errors, unless `--force` is given.
+- The reports contain voucher texts — they are the accounts — so they belong in the
+  organisation's own project. Personal identity numbers in them are masked as
+  `[personnummer]`; the terminal shows only file names and counts.
+- Existing reports are replaced; other files in the folder are left alone.
 
 ## Required GitHub Actions secrets
 

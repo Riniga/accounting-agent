@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-003-bank-reconciliation-and-reports.md`](../mvp/MVP-003-bank-reconciliation-and-reports.md)
 
-**Status:** In progress – phase 7 done (plan approved 2026-09-26)
+**Status:** In progress – phase 8 done (plan approved 2026-09-26)
 
 ## 0. Investigation
 
@@ -658,7 +658,7 @@ Commit: `feat(books): check fund value, budget, closing comments and to-do list`
 
 ### Phase 8 — Reports I: framework and the accounts
 
-- [ ] 8.1 **Tests first** (`tests/test_reports_*.py`), on `example-full`:
+- [x] 8.1 **Tests first** (`tests/test_reports_*.py`), on `example-full`:
   - amount formatting (`1 234,50`, negative, whole kronor);
   - the header (name, number, fiscal year, period to the last voucher, preliminary) with
     an injected clock;
@@ -671,11 +671,60 @@ Commit: `feat(books): check fund value, budget, closing comments and to-do list`
     no files written); `--force`; organisation mismatch; missing `reports` section.
 
   *Verify:* the tests fail for the right reason.
-- [ ] 8.2 **STOP — the owner reviews the tests from 8.1.**
-- [ ] 8.3 Implement `accounting_agent/reports/` (pure rendering) and the `report` command.
+  Result: 34 new tests, all failing for the right reason:
+  - `tests/test_reports_format.py` (9) and `tests/test_reports_accounts.py` (16) fail
+    at collection: `ModuleNotFoundError: No module named 'accounting_agent.reports'`;
+  - `tests/test_cli_report.py` (9): `invalid choice: 'report'`.
+
+  `example-full` gets a `reports` section (output `reports`, an invented name and a
+  zero organisation number). The CLI tests work on a copy, since `report` writes.
+
+  Locked by the tests:
+  - `accounting_agent.reports`: `ReportContext(organisation_name, organisation_number,
+    fiscal_year, generated_at, bank_account, parking_accounts=(), fund_account=None,
+    fund_values=(), voucher_folder=None, guessed_posting_marker=None)`;
+    `format_amount(value, decimals=2)`, `table(headers, rows, right=())`,
+    `render_header(title, context, period_end)`, one `render_*` per report and
+    `render_reports(books, context) -> {file name: text}`;
+  - the Swedish texts, headings and table columns of `generera_redovisning.py`; the
+    header says "av Accounting Agent ur bokföringen" instead of the script's path;
+  - `format_amount`: non-breaking space for thousands, decimal comma, `-` first;
+  - voucher links `[NNNN](<voucher_folder>/<file>)`, relative from the output folder;
+    without a folder (or a file name) the voucher id is plain text; a voucher with a
+    series shows its id (`B7`); several lines list every account, `; `-separated;
+  - accounts without a group are grouped as `Kontogrupp NN`;
+  - the monthly overview drops the script's fixed stock-account note (§0.4);
+  - `report <org> --config-dir <dir> [--force]`: prints each file name and
+    `Wrote N reports to <folder>, up to <date>.`; refuses on any error (logged, exit 1,
+    no folder created); `--force` writes and logs a warning; other files in the
+    output folder are kept.
+- [x] 8.2 **STOP — the owner reviews the tests from 8.1.** Result: approved 2026-10-02.
+- [x] 8.3 Implement `accounting_agent/reports/` (pure rendering) and the `report` command.
   *Verify:* tests pass; Ruff clean; `ruff check` shows `reports/` under the `TID251`
   ban (a temporary `import pathlib` there is reported, then removed). README, AGENTS and
   `overview.md` updated.
+  Result:
+  - `reports/format.py` (`ReportContext`, `format_amount`, `table`, `render_header`),
+    `reports/ledger.py` (postings and movements per account) and
+    `reports/accounts.py` (the five reports, `render_reports`); the `report` command
+    in `cli.py`. `validate` and `report` now share `_check_all()`, and the atomic write
+    moved to `formats/common.write_text_atomically()` for the statement, fund-value
+    and report files alike.
+  - All 25 approved report tests and the 9 CLI tests passed on the first run.
+  - **Found by running it on a copy of `example-full`:** the organisation number
+    `000000-0000` came out as `[personnummer]`. `render_reports()` masked the whole
+    text, and an organisation number has the shape of a personal identity number, so
+    a real one would have been hidden too. The whole-text mask was removed — voucher
+    texts only appear in table cells, which `table()` masks, as in
+    `generera_redovisning.py` — and a regression test was added
+    (`test_the_organisation_number_is_not_masked`).
+  - Proven: a temporary `import pathlib` in `reports/ledger.py` gave `TID251`; the file
+    was restored.
+  - 404 tests pass; coverage 98.82 %; Ruff clean; no new function reaches the advisory
+    complexity 10. Untested defensive branches: `report` on unreadable books, a
+    relative voucher link across Windows drives, and a voucher month after the period
+    end (only reachable with `--force`).
+  - README, AGENTS, `overview.md` and `current-state.md` updated.
 
 Commit: `feat(reports): render the income statement, balance sheet, ledger and lists`
 
@@ -796,5 +845,12 @@ books + supplementary files → report → Swedish Markdown reports (configured 
   outside cp1252 would crash the write. Until phase 7 the output was ASCII, so it did
   not show. Fix: reconfigure stdout to UTF-8 in `main()`, as `kontroll.py` does.
   Regression test `tests/test_cli_encoding.py` (fails on Windows without the fix).
-  Status: test written, awaiting the owner's review; fix and commit
-  (`fix(cli): write the report as UTF-8 when stdout is a pipe`) after.
+  The test was approved by the owner on 2026-09-27 and committed with phase 7 in
+  `384bd22` (whose message names the fix). The fix itself — `main()` reconfigures a
+  `TextIOWrapper` stdout to UTF-8 — is its own commit. All 369 tests pass.
+- **`.gitignore` hid the `reports` package** (found in phase 8, 2026-10-02) — the
+  template's output rules `output/`, `exports/` and `reports/` matched folders of that
+  name anywhere, so `src/accounting_agent/reports/` would never have been committed.
+  They are now anchored at the root (`/output/`, `/exports/`, `/reports/`). Checked:
+  no other file became untracked-visible. Commit: `chore: anchor the output ignore
+  rules at the repository root`.

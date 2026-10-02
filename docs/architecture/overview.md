@@ -55,6 +55,10 @@ src/accounting_agent/   The core package (ADR-002)
         supplements.py  read_budget(), read_comments(), read_todo()
         nordea_csv.py   read_export() for the `nordea-csv` bank export
         bank_statement.py  read_statement(), read_fund_values(); write_statement(), write_fund_values() — atomic writes
+    reports/            Swedish Markdown reports, rendered from the model — no file I/O (ADR-008)
+        format.py       ReportContext, amounts, tables (masked cells), the report header
+        ledger.py       The books worked out per account for the reports
+        accounts.py     Income statement, balance sheet, general ledger, voucher list, monthly overview
 tests/                  pytest suite; fixtures/ holds synthetic organisations only (ADR-003)
 docs/                   Vision, roadmap, architecture + ADRs, MVPs, plans, standards,
                         development setup, methodology + compliance, Claude prompts
@@ -124,6 +128,13 @@ LICENSE                 PolyForm Noncommercial 1.0.0 (ADR-005)
     reconciles against the statement file.
   - `import-bank <organisation> --config-dir <path> <export>` writes the statement or
     fund-value file and prints only file names, dates and counts.
+  - `report <organisation> --config-dir <path> [--force]` runs the checks, then writes
+    the reports to the configured folder; it refuses on errors unless forced.
+- **`reports/`** renders the reports as Swedish Markdown strings, with the texts and
+  figures of Helsingborgs Judoklubb's `generera_redovisning.py`. It does no I/O — the
+  `TID251` ban covers it — and the CLI writes the files atomically. Table cells are
+  masked as `[personnummer]`; the header is not, since an organisation number has the
+  same shape as a personal number.
 
 The first consumer is Helsingborgs Judoklubb's 2026 books, in the MVP-002 pilot.
 

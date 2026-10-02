@@ -1,9 +1,12 @@
 """Command line entry point: ``accounting-agent``."""
 
 import argparse
+import io
 import logging
+import os
 import sys
 from collections.abc import Callable, Sequence
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -11,6 +14,7 @@ from accounting_agent import __version__
 from accounting_agent.books import (
     Books,
     Finding,
+    FundValue,
     Severity,
     check_books,
     check_budget,
@@ -30,14 +34,17 @@ from accounting_agent.formats import (
     reference_chart,
     supplements,
 )
+from accounting_agent.formats.common import write_text_atomically
 from accounting_agent.profile import (
     BankConfig,
     BooksConfig,
     ChecksConfig,
     OrganisationProfile,
     ProfileError,
+    ReportsConfig,
     load_profile,
 )
+from accounting_agent.reports import ReportContext, render_reports
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +58,10 @@ READERS: dict[str, BookReader] = {"front-matter": front_matter.read_books}
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Parse ``argv`` and run the selected command. Returns the process exit code."""
+    # A pipe on Windows defaults to the locale's code page; the report has Swedish
+    # letters and is read by scripts and AI tools, so it is always UTF-8.
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8")
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     args = _build_parser().parse_args(argv)
     return args.handler(args)
@@ -95,6 +106,17 @@ def _build_parser() -> argparse.ArgumentParser:
         "export", type=Path, help="The file downloaded from the bank; never changed."
     )
     import_bank.set_defaults(handler=_import_bank)
+
+    report = commands.add_parser(
+        "report", help="Write the reports (Swedish Markdown) to the configured folder."
+    )
+    _add_organisation_arguments(report)
+    report.add_argument(
+        "--force",
+        action="store_true",
+        help="Write the reports even if the books have errors.",
+    )
+    report.set_defaults(handler=_report)
     return parser
 
 
@@ -164,11 +186,7 @@ def _validate(args: argparse.Namespace) -> int:
             f"{len(books.opening_balances)} opening balances, "
             f"{len(books.vouchers)} vouchers"
         )
-        findings = findings + check_books(books, config.fiscal_year)
-        if profile.checks is not None:
-            findings = findings + _check_details(profile, profile.checks, config, books)
-        if profile.bank is not None:
-            findings = findings + _reconcile(profile.bank, config, books, args.unbooked)
+        findings = findings + _check_all(profile, config, books, args.unbooked)
 
     _emit_findings(findings)
     if books is not None and args.balances:
@@ -185,6 +203,99 @@ def _validate(args: argparse.Namespace) -> int:
         f"warnings: {counts[Severity.WARNING]}, info: {counts[Severity.INFO]})"
     )
     return EXIT_ERROR if counts[Severity.ERROR] else EXIT_OK
+
+
+def _check_all(
+    profile: OrganisationProfile, config: BooksConfig, books: Books, unbooked: bool
+) -> list[Finding]:
+    """Every check that applies to the profile, after the books have been read."""
+    findings = check_books(books, config.fiscal_year)
+    if profile.checks is not None:
+        findings += _check_details(profile, profile.checks, config, books)
+    if profile.bank is not None:
+        findings += _reconcile(profile.bank, config, books, unbooked)
+    return findings
+
+
+def _report(args: argparse.Namespace) -> int:
+    profile = _load_matching_profile(args)
+    if profile is None:
+        return EXIT_ERROR
+    if profile.reports is None or profile.books is None:
+        missing = "reports" if profile.reports is None else "books"
+        logger.error(
+            "%s has no '%s' section in organisation.yaml; report needs one.",
+            args.config_dir,
+            missing,
+        )
+        return EXIT_ERROR
+
+    config = profile.books
+    books, findings = READERS[config.format](config.path, config.bank_account)
+    if books is None:
+        logger.error(
+            "The books could not be read; no reports were written. Run validate for "
+            "details."
+        )
+        return EXIT_ERROR
+    findings = findings + _check_all(profile, config, books, unbooked=False)
+    errors = sum(1 for f in findings if f.severity is Severity.ERROR)
+    # Reports from broken books mislead (ADR-008).
+    if errors and not args.force:
+        logger.error(
+            "The books have %d errors; no reports were written. Run validate for "
+            "details, or use --force.",
+            errors,
+        )
+        return EXIT_ERROR
+    if errors:
+        logger.warning(
+            "Writing reports although the books have %d errors (--force).", errors
+        )
+
+    output = profile.reports.output
+    context = _report_context(profile, config, profile.reports)
+    reports = render_reports(books, context)
+    output.mkdir(exist_ok=True)
+    for name, text in reports.items():
+        write_text_atomically(output / name, text)
+        _emit(f"  {name}")
+    period_end = max((v.date for v in books.vouchers), default=None)
+    _emit(f"Wrote {len(reports)} reports to {output.name}, up to {period_end}.")
+    return EXIT_OK
+
+
+def _report_context(
+    profile: OrganisationProfile, config: BooksConfig, reports: ReportsConfig
+) -> ReportContext:
+    """The reports' context: names, conventions, fund values and voucher links."""
+    fund_values: tuple[FundValue, ...] = ()
+    bank = profile.bank
+    if bank is not None and bank.fund_value_file is not None:
+        values, _ = bank_statement.read_fund_values(bank.fund_value_file)
+        fund_values = values or ()
+    voucher_folder = None
+    if config.format == "front-matter":
+        try:
+            relative = os.path.relpath(
+                config.path / front_matter.VOUCHER_DIR, reports.output
+            )
+            voucher_folder = Path(relative).as_posix()
+        except ValueError:
+            # Different drives on Windows: no relative link is possible.
+            voucher_folder = None
+    return ReportContext(
+        organisation_name=reports.organisation_name,
+        organisation_number=reports.organisation_number,
+        fiscal_year=config.fiscal_year,
+        generated_at=datetime.now(),
+        bank_account=config.bank_account,
+        parking_accounts=profile.conventions.parking_accounts,
+        fund_account=bank.fund_account if bank is not None else None,
+        fund_values=fund_values,
+        voucher_folder=voucher_folder,
+        guessed_posting_marker=profile.conventions.guessed_posting_marker,
+    )
 
 
 def _check_details(

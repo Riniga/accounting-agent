@@ -182,4 +182,6 @@ accounting-agent run <org> --config-dir <path-to-organisation-config>
 accounting-agent validate <org> --config-dir <path-to-organisation-config> [--balances] [--unbooked]
 # turn a bank export into the organisation's statement or fund-value file (ADR-008)
 accounting-agent import-bank <org> --config-dir <path-to-organisation-config> <export>
+# write the reports (Swedish Markdown) to the configured folder (ADR-008)
+accounting-agent report <org> --config-dir <path-to-organisation-config> [--force]
 ```

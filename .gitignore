@@ -8,10 +8,11 @@ htmlcov/
 .venv/
 .env
 
-# Output
-output/
-exports/
-reports/
+# Output — anchored at the root, so that the `accounting_agent.reports` package is
+# not ignored (MVP-003 plan §6).
+/output/
+/exports/
+/reports/
 
 # Local copies of the private organisation projects, used as reference material when
 # extracting functionality into the core. They contain real financial data and must never

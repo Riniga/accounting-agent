@@ -19,7 +19,12 @@ from datetime import date
 from pathlib import Path
 
 from accounting_agent.books import BankTransaction, Finding, FundValue, Severity
-from accounting_agent.formats.common import Findings, parse_amount, read_csv
+from accounting_agent.formats.common import (
+    Findings,
+    parse_amount,
+    read_csv,
+    write_text_atomically,
+)
 from accounting_agent.formats.nordea_csv import StatementRow
 
 STATEMENT_HEADER = ["datum", "belopp", "namn", "meddelande", "anteckning", "saldo"]
@@ -203,10 +208,4 @@ def _read_rows(path: Path) -> list[list[str]] | None:
 def _write_atomically(path: Path, rows: Iterable[list[str]]) -> None:
     buffer = io.StringIO(newline="")
     csv.writer(buffer, delimiter=";", lineterminator="\n").writerows(rows)
-    temporary = path.with_name(path.name + ".tmp")
-    try:
-        temporary.write_bytes(buffer.getvalue().encode("utf-8"))
-        temporary.replace(path)
-    finally:
-        # Only left behind if the replace failed.
-        temporary.unlink(missing_ok=True)
+    write_text_atomically(path, buffer.getvalue())

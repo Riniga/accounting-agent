@@ -30,3 +30,8 @@ checks:
 conventions:
   # 2890 stands in for a parking account in this synthetic organisation.
   parking_accounts: ["2890"]
+
+reports:
+  output: reports
+  organisation_name: Exempelklubben
+  organisation_number: 000000-0000
