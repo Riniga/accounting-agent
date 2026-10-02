@@ -1,5 +1,5 @@
 """The accounts reports (ADR-008): income statement, balance sheet, general ledger,
-voucher list and monthly overview — Swedish Markdown, as Helsingborgs Judoklubb's
+voucher list and monthly overview — Swedish Markdown, as the first organisation's
 `generera_redovisning.py` renders them, from the general book model.
 """
 

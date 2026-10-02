@@ -1,6 +1,6 @@
 """Reconciliation of the books against the bank statement (MVP-003).
 
-The rules follow Helsingborgs Judoklubb's `kontroll.py`: the bank's own balance
+The rules follow the first organisation's `kontroll.py`: the bank's own balance
 arithmetic, the opening balance against the bank, and every bank voucher matched with a
 bank transaction and the reverse, on (date, amount). A voucher's bank amount is the net of
 its lines on the bank account, debit positive, which is what the bank shows. Messages give

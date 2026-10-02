@@ -67,8 +67,19 @@ first natural review point).
 - **New floor:** `fail_under = 95`. It is raised, never lowered, and keeps a few points of
   margin for the same reason as before: the codebase is still small (482 statements).
 
+**Raised 2026-10-02 (MVP-003):**
+- **Measured baseline:** 98.82 % (1765 of 1786 statements), locally with the CI command.
+  The 21 uncovered statements are `__main__.py` (3), defensive branches without a
+  reviewed test (an empty or malformed bank export, unreadable books in `report`, a
+  voucher link across Windows drives, a voucher month after the period end), and the
+  MVP-002 leftovers.
+- **New floor:** `fail_under = 97`. The codebase has grown almost fourfold (482 → 1786
+  statements), so one percentage point is now about 18 statements; two points of margin
+  are enough for normal growth without hiding a regression.
+
 **Follow-up:** [MVP-001 plan](../plans/MVP-001-walking-skeleton.plan.md), step 4.4;
-[MVP-002 plan](../plans/MVP-002-common-book-model.plan.md), step 8.2.
+[MVP-002 plan](../plans/MVP-002-common-book-model.plan.md), step 8.2;
+[MVP-003 plan](../plans/MVP-003-bank-reconciliation-and-reports.plan.md), step 11.2.
 
 ---
 

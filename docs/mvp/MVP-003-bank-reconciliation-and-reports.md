@@ -155,6 +155,38 @@ are built for the core's general model, not for one organisation.
   and personal identity numbers are masked in them.
 - MVP-001's gates still hold, and the coverage floor is kept or raised.
 
-## Outcome at close (YYYY-MM-DD)
+## Outcome at close (2026-10-02)
 
-<!-- Fill in when the MVP is actually closed. -->
+Implemented on `feature/mvp-003-bank-reconciliation-and-reports`, pending the pull
+request. Each criterion was checked against the real system
+([plan](../plans/MVP-003-bank-reconciliation-and-reports.plan.md), phases 10–11):
+
+- **Fixtures per rule:** synthetic fixtures (bank exports, statement, BAS excerpt,
+  budget, comments, to-do list, documents, the `example-full` organisation) cover every
+  new rule with a passing and a broken case; 423 tests pass.
+- **Bank statement:** Helsingborgs Judoklubb's real export through the core gives a
+  statement file byte-identical to `importera_kontoutdrag.py`'s (163 rows) and to the
+  existing file.
+- **Checks:** on the real 2026 books, `validate` gives the same outcome per rule in scope
+  as `kontroll.py` — `OK`, 0 errors, 3 duplicates, 4 personal numbers, 1 duplicate
+  account, and the same info — and 0 unbooked transactions on both sides.
+- **Reports:** every report in scope shows the same figures as `generera_redovisning.py`
+  — every table row with amounts is equal (402 of 402 in the general ledger, 163 of 163
+  in the voucher list, …); the one difference is a row in the member section, out of
+  scope.
+- **No organisation-specific value in `src/`:** `git grep` for the organisations' names,
+  accounts, year, folder and marker finds none; the organisation's name was also
+  removed from nine docstrings.
+- **Findings** never quote a voucher text, a name or a bank message: the bank
+  transaction has no field for them, and tests assert it for every new reader and check.
+- **Reports** contain voucher texts, are written only to the configured folder, and mask
+  personal identity numbers in every table cell (the header's organisation number is not
+  masked — it has the same shape).
+- **MVP-001 gates:** Ruff, the pre-commit hooks, detect-secrets, the instruction-file scan
+  and the tests run green locally; the coverage floor was raised from 95 to 97 %
+  (98.82 %). Semgrep and the dependency checks run in the pull request (no dependency
+  changed).
+
+Not proven on the real books, because they have none: bank errors, unbooked
+transactions and parked postings — those rules are proven on fixtures only. Member
+management stays in the organisation's own scripts (backlog).

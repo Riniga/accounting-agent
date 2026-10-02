@@ -9,10 +9,16 @@ point it here instead of duplicating — this file is the one source of truth.
 A living document (methodology D3 BÖR 2): rows are added when a gap is found, updated as
 follow-up plans progress, and struck through (`~~GAP-ID~~`) when closed.
 
-**Last updated:** 2026-09-25
+**Last updated:** 2026-10-02
 
 **Changelog**
 
+- 2026-10-02 — MVP-003 closed no row. The core's first write paths (bank statement,
+  fund value, reports — ADR-008) got a STRIDE pass in the plan. Coverage floor raised to
+  97 %. `GAP-F2-CONFIDENTIAL`: the pilot followed the reading rule (counts and
+  equal/not equal only; outputs deleted). One Internal file read for extraction — a code
+  comment in the organisation's import script — contained a first name; it was not
+  copied.
 - 2026-09-26 — MVP-002 closed `GAP-E4-MASKING` (all `validate` output masked; findings
   never quote voucher text) and `GAP-B3-BOUNDARIES` (a declared public API in
   `accounting_agent.books`, and a domain boundary enforced by Ruff `TID251`). Coverage
@@ -52,7 +58,7 @@ follow-up plans progress, and struck through (`~~GAP-ID~~`) when closed.
 |----|---------|-----|-------|-----------|--------|
 | GAP-D2-REVIEW | D2 SKA 2–3, D3 SKA 3 | No non-author review; the ruleset requires 0 approvals | owner | Second reviewer → approvals 1 + `CODEOWNERS` (EX-001) | open — exception EX-001 |
 | GAP-F1-SELFMERGE | F1 SKA 1, 6 | Claude Code acts through the owner's credentials, and with 0 approvals nothing in GitHub stops it merging a green PR | owner | Partly mitigated: `gh pr merge` requires in-the-moment approval in `.claude/settings.json`. Closes with GAP-D2-REVIEW | open |
-| GAP-F2-CONFIDENTIAL | F2 SKA 2 | Personal data from an organisation project's rules file entered the AI tool's context during the baseline analysis (2026-09-25) | owner | Reading rule in interpretations §9. The HJK project should move its decision log out of the rules file. 2026-09-26: the pilot followed the rule (counts only); listing Aktivitet Förebygger's voucher file names exposed counterparty names (not copied). Rule: never list file names inside a voucher or book folder | open |
+| GAP-F2-CONFIDENTIAL | F2 SKA 2 | Personal data from an organisation project's rules file entered the AI tool's context during the baseline analysis (2026-09-25) | owner | Reading rule in interpretations §9. The HJK project should move its decision log out of the rules file. 2026-09-26: the pilot followed the rule (counts only); listing Aktivitet Förebygger's voucher file names exposed counterparty names (not copied). Rule: never list file names inside a voucher or book folder. 2026-10-02 (MVP-003): the pilot kept to counts; a code comment in an organisation script held a first name (not copied) | open |
 
 ### Severity M
 
@@ -96,3 +102,4 @@ follow-up plans progress, and struck through (`~~GAP-ID~~`) when closed.
 |------|--------|
 | [MVP-001](../plans/MVP-001-walking-skeleton.plan.md) | Baseline; GAP-B5-README, GAP-E1-AITRAILER in progress |
 | [MVP-002](../plans/MVP-002-common-book-model.plan.md) | ~~GAP-E4-MASKING~~, ~~GAP-B3-BOUNDARIES~~ |
+| [MVP-003](../plans/MVP-003-bank-reconciliation-and-reports.plan.md) | — (note on GAP-F2-CONFIDENTIAL; coverage floor 97 %) |

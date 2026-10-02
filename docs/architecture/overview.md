@@ -16,18 +16,21 @@ public repository holds the general functionality they share. See
 Swedish bookkeeping terms and their English names in the code are in the
 [glossary](glossary.md).
 
-**Current state (MVP-002 merged in PR #7; MVP-003 in progress):** one installable package, behind the CI quality
-gates from MVP-001, containing:
+**Current state (MVP-003 implemented, pending its pull request):** one installable
+package, behind the CI quality gates from MVP-001, containing:
 - an organisation-profile loader;
-- a general double-entry book model (ADR-006);
-- a reader for the `front-matter` book format;
-- the general book checks;
-- `accounting-agent run` and `accounting-agent validate`.
+- a general double-entry book model (ADR-006), with supplementary-file models (ADR-007);
+- readers for the `front-matter` book format, the `nordea-csv` bank export, the bank
+  statement, the BAS reference chart and the supplementary files;
+- the general checks, the detail checks, the reference-chart check and reconciliation
+  against the bank;
+- Swedish Markdown reports;
+- `accounting-agent run`, `validate`, `import-bank` and `report` — the last two are the
+  core's only writes (ADR-008).
 
-Helsingborgs Judoklubb's 2026 books validate through it (the MVP-002 pilot).
-[MVP-003](../mvp/MVP-003-bank-reconciliation-and-reports.md) adds bank import,
-reconciliation, the remaining checks and the reports; its decisions are ADR-007 and
-ADR-008.
+Helsingborgs Judoklubb runs its bookkeeping tooling through it, except member
+management: verified on its 2026 books in the
+[MVP-003](../mvp/MVP-003-bank-reconciliation-and-reports.md) pilot.
 
 ## Current Workspace Structure
 
@@ -173,8 +176,8 @@ a fresh clone in MVP-001.
 
 ### Running Tests
 
-`pytest -q` from the repository root. The coverage floor is 95 % (`pyproject.toml`,
-raised at the close of MVP-002); coverage is currently 98.76 %.
+`pytest -q` from the repository root. The coverage floor is 97 % (`pyproject.toml`,
+raised at the close of MVP-003); coverage is currently 98.82 %.
 
 ### Development Workflow
 
@@ -271,9 +274,8 @@ series, and the core's general checks already cover both.
 
 *Everything in this section is planned, not existing.*
 
-- **MVP-003 (in progress):** bank import and reconciliation, the remaining checks from
-  Helsingborgs Judoklubb's `kontroll.py` except members, and the reports — supplementary
-  file models (ADR-007) and the first write paths (ADR-008).
+- **Member management via core (backlog, high priority):** the member register, member
+  payments and the member-fee report, with their own STRIDE pass.
 - **Aktivitet Förebygger reader:** a second reader for the table format (multi-line
   vouchers, series) into the same model.
 - **Later module areas** (from the initial idea, added only as extraction justifies them):

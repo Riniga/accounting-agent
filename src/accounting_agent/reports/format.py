@@ -1,5 +1,5 @@
 """Building blocks for the Swedish Markdown reports (ADR-008): amounts, tables and the
-report header, formatted as Helsingborgs Judoklubb's `generera_redovisning.py` does.
+report header, formatted as the first organisation's `generera_redovisning.py` does.
 
 Every table cell is masked: the reports hold voucher texts by design, but never a
 personal identity number.

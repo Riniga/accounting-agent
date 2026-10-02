@@ -1,6 +1,6 @@
 """Reader for a reference chart of accounts (BAS) in four CSV files (ADR-007).
 
-The format is the one Helsingborgs Judoklubb keeps in its `kontobas/` folder: main
+The format is the one the first organisation keeps in its `kontobas/` folder: main
 accounts, sub-accounts and account groups as ``nummer;beskrivning``, and the accounts not
 to use as a list whose first column is the number. The files follow the shared CSV rules
 (`formats.common`). Descriptions are whitespace-normalised, as `kontroll.py` does.

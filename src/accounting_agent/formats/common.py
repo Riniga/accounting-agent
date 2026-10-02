@@ -1,6 +1,6 @@
 """Shared rules for the semicolon-separated CSV files the formats read.
 
-The rules are those of Helsingborgs Judoklubb's own tool, which every CSV file in its
+The rules are those of the first organisation's own tool, which every CSV file in its
 books follows: UTF-8 without BOM, LF line endings, an exact header row, the same number of
 columns on every row. Problems are reported as findings, never raised, and no message
 quotes a cell's content.

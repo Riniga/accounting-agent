@@ -1,5 +1,5 @@
 """The supplementary files and their checks (ADR-007): fund value, budget, closing
-comments and to-do list, as Helsingborgs Judoklubb's `kontroll.py` checks them.
+comments and to-do list, as the first organisation's `kontroll.py` checks them.
 
 The allowed values are the core's own format (owner decision 2026-09-26). No message
 quotes a budget item's name, a comment or a task; allowed values are listed, the value

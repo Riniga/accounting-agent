@@ -1,5 +1,5 @@
 """Readers for the supplementary CSV files (ADR-007): budget, closing comments and
-to-do list, in the core-owned formats Helsingborgs Judoklubb uses.
+to-do list, in the core-owned formats the first organisation uses.
 
 A missing file is not a finding — its check is skipped, as in `kontroll.py`. The files
 follow the shared CSV rules (`formats.common`). A cell that cannot be parsed is an error

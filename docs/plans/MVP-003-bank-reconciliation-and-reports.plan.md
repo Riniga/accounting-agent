@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-003-bank-reconciliation-and-reports.md`](../mvp/MVP-003-bank-reconciliation-and-reports.md)
 
-**Status:** In progress – phase 10 done (plan approved 2026-09-26)
+**Status:** Implemented – pending PR (plan approved 2026-09-26)
 
 ## 0. Investigation
 
@@ -855,16 +855,27 @@ Commit: `docs(mvp-003): record the Helsingborgs Judoklubb pilot result`
 
 ### Phase 11 — Close
 
-- [ ] 11.1 Update `docs/development/organisation-projects.md`: what Helsingborgs Judoklubb
+- [x] 11.1 Update `docs/development/organisation-projects.md`: what Helsingborgs Judoklubb
   now runs through the core (import, validate, report), the new configuration sections,
   and the Swedish `CLAUDE.md` section. *Verify:* the documented commands run as written
   on `example-full`.
-- [ ] 11.2 Re-measure coverage; keep or raise `fail_under`; update interpretations §1.
+  Result: rewritten for MVP-003 — Helsingborgs Judoklubb's row (only members left in
+  its own scripts), the full `organisation.yaml` with every section (the organisation's
+  name and number as placeholders), daily use with `import-bank`, `validate
+  --unbooked` and `report`, and the Swedish `CLAUDE.md` section. All five documented
+  commands ran on a copy of `example-full` with exit 0.
+- [x] 11.2 Re-measure coverage; keep or raise `fail_under`; update interpretations §1.
   *Verify:* `pytest --cov` passes at the floor.
-- [ ] 11.3 Gap register: note the pilot and the §0.2 (10) observation under
+  Result: baseline 98.82 % (1765 of 1786 statements); `fail_under` raised from 95 to
+  **97**; interpretations §1, `overview.md` and `current-state.md` updated; `pytest
+  --cov` passes at 97.
+- [x] 11.3 Gap register: note the pilot and the §0.2 (10) observation under
   `GAP-F2-CONFIDENTIAL`; add a changelog entry and the follow-up plan index row.
   *Verify:* the rows reference this plan.
-- [ ] 11.4 Verify each acceptance criterion against the real system:
+  Result: changelog entry (no row closed; the first write paths have a STRIDE pass;
+  floor 97 %); the 2026-10-02 note on `GAP-F2-CONFIDENTIAL`; an MVP-003 row in the
+  follow-up plan index.
+- [x] 11.4 Verify each acceptance criterion against the real system:
   - fixtures pass and fail per rule (test run);
   - the statement byte comparison (10.2);
   - `validate` against `kontroll.py` per rule, and the unbooked transactions (10.3);
@@ -877,6 +888,28 @@ Commit: `docs(mvp-003): record the Helsingborgs Judoklubb pilot result`
   - `git ls-files docs/reference` is empty.
 
   Fill in "Outcome at close" in the MVP.
+
+  Result (2026-10-02, run for real):
+  - Tests: 423 passed; every new rule has a passing and a broken fixture case.
+  - Pilot (10.2–10.4): byte-identical statement; the same outcome per rule; every
+    report row with amounts equal, except one in the member section.
+  - `git grep` in `src/` for the organisations' names, ids, `1930`, `1350`, `3008`,
+    `6570`, `2026`, `Bokföring`, `Gissad`, the organisation number and the statement
+    file name: no value found. The organisation's name was in nine provenance
+    docstrings added in this MVP; they now say "the first organisation", and the grep
+    is empty. The remaining Swedish words (`utlägg`, `gissade konteringar`,
+    `bokföringen`) are the reports' own text, not configuration values.
+  - Findings never quote data: the tests from 4.1, 5.1, 6.2, 7.1 pass.
+  - Reports only in the configured folder, masked: the tests from 8.1 and 9.1 pass.
+  - MVP-001 gates, locally: Ruff format and lint, all 7 pre-commit hooks (including
+    detect-secrets), the instruction-file scan, and the tests at the 97 % floor — all
+    green. Semgrep, `pip-audit`, the licence scan and the lock-drift check are not
+    installed locally; no dependency changed in this MVP, so they run unchanged in the
+    pull request.
+  - `git ls-files docs/reference` → 0.
+
+  "Outcome at close" is filled in in the MVP; the roadmap, `overview.md` and
+  `current-state.md` say MVP-003 is implemented and pending its pull request.
 
 Commit: `docs(mvp-003): close MVP-003`
 

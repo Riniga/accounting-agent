@@ -11,11 +11,18 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-**MVP-003 is in progress.**
+**MVP-003 is implemented and pending its pull request.**
 [MVP-003 – Bank import, reconciliation, remaining checks and reports via core](mvp/MVP-003-bank-reconciliation-and-reports.md)
-has an approved [plan](plans/MVP-003-bank-reconciliation-and-reports.plan.md) and is
-being implemented on its branch. Its decisions are ADR-007 (supplementary book files) and
-ADR-008 (the core writes derived files, never vouchers).
+delivered:
+- bank import (`import-bank`, the `nordea-csv` format) into masked statement and
+  fund-value files — the core's first writes (ADR-008);
+- reconciliation against the bank, and every other check in `kontroll.py` except members;
+- the reports as Swedish Markdown (`report`);
+- models and core-owned formats for the supplementary files (ADR-007).
+
+Helsingborgs Judoklubb's 2026 books give the same statement file, the same check
+outcome and the same report figures as its own scripts. Next: member management via core
+(backlog, high priority).
 
 *Earlier:* **MVP-002 is merged** (PR #7).
 [MVP-002 – Common book model and validation via core](mvp/MVP-002-common-book-model.md)

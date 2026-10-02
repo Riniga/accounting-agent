@@ -1,5 +1,5 @@
 """The overview reports (ADR-008): budget follow-up, closing comments, the to-do report
-and the summary — Swedish Markdown, as Helsingborgs Judoklubb's
+and the summary — Swedish Markdown, as the first organisation's
 `generera_redovisning.py` renders them, without its member parts (MVP-003, out of scope).
 
 Comment and task texts outside tables are masked here; tables mask their own cells.

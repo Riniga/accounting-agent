@@ -98,5 +98,5 @@ line-ending = "lf"
 source = ["accounting_agent"]
 
 [tool.coverage.report]
-fail_under = 95 # measured baseline 98.76 % (2026-09-26, MVP-002) — see interpretations.md §1
+fail_under = 97 # measured baseline 98.82 % (2026-10-02, MVP-003) — see interpretations.md §1
 skip_covered = true

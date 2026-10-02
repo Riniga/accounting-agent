@@ -1,4 +1,4 @@
-"""Detail checks from Helsingborgs Judoklubb's `kontroll.py` that go beyond the general
+"""Detail checks from the first organisation's `kontroll.py` that go beyond the general
 checks (MVP-003): duplicates, date order, revenue and cost accounts on the unexpected
 side, supporting documents, parking accounts, unused accounts and the chart's own rules.
 
