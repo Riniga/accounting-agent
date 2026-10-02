@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-003-bank-reconciliation-and-reports.md`](../mvp/MVP-003-bank-reconciliation-and-reports.md)
 
-**Status:** In progress – phase 9 done (plan approved 2026-09-26)
+**Status:** In progress – phase 10 done (plan approved 2026-09-26)
 
 ## 0. Investigation
 
@@ -788,23 +788,68 @@ Commit: `feat(reports): render budget follow-up, closing comments, to-do and sum
 
 ### Phase 10 — Pilot: Helsingborgs Judoklubb through the core
 
-- [ ] 10.1 Add the new sections to `HJK - Ekonomi/2026/organisation.yaml` (configuration
+- [x] 10.1 Add the new sections to `HJK - Ekonomi/2026/organisation.yaml` (configuration
   only). *Verify:* `validate` loads it; the owner commits it in the HJK repository.
-- [ ] 10.2 **Bank statement:** a throwaway scratchpad script picks the latest statement
+  Result (2026-10-02): `bank`, `checks`, `conventions` (parking 3008, no documents
+  needed on 6570, `Gissad kontering`, `Utlägg`) and `reports` (output `Redovisning`,
+  the organisation's name and number) added after checking that every folder exists;
+  the profile loads with all sections. **Pending: the owner commits
+  `2026/organisation.yaml` in the HJK repository** — the MVP-002 version of it is not
+  committed there yet either. Note: `report` writes to `Redovisning/`, replacing the
+  files `generera_redovisning.py` writes there (except `medlemsavgifter.md`).
+- [x] 10.2 **Bank statement:** a throwaway scratchpad script picks the latest statement
   export by header without printing file names. It runs the organisation's import and the
   core's `import-bank`, both with output redirected to the scratchpad, and prints only
   equal / not equal plus row counts. It also compares with the existing
   `kontoutdrag-1930.csv`. *Verify:* equal; any difference is investigated by row number
   and column only.
-- [ ] 10.3 **Checks:** run `validate` and `kontroll.py`, reduce both to counts per
+  Result (2026-10-02): one statement export found in `Bankpapper/`; **163 rows from
+  both tools, byte-identical**, and identical to the existing `kontoutdrag-1930.csv`.
+  The outputs were deleted.
+- [x] 10.3 **Checks:** run `validate` and `kontroll.py`, reduce both to counts per
   severity and rule, map the rules per §0.3, and compare. Compare the unbooked
   transactions on (date, amount) with `--unbooked` and `--obokförda`. *Verify:* the same
   counts per rule in scope (§0.1: 3 duplicates, 4 personal numbers, 1 chart warning, the
   corresponding info), and 0 unbooked on both sides.
-- [ ] 10.4 **Reports:** run `generera_redovisning.py` (output redirected) and `report`
+  Result (2026-10-02, counts only; the outputs were deleted). Both `RESULT: OK`, 0
+  errors, 8 warnings:
+
+  | `kontroll.py` | Core | Count |
+  |---|---|---|
+  | `dubblett` (warning) | `voucher-duplicate` | 3 = 3 |
+  | `personuppgift` (warning) | `personal-number` | 4 = 4 |
+  | `kontoplan` (warning, "finns flera gånger") | `account-duplicate` | 1 = 1 |
+  | `kontoplan` (info: 4 other meaning, 1 own accounts, 1 unused) | `reference-other-meaning`, `reference-own-accounts`, `unused-accounts` | 6 = 4 + 1 + 1 |
+  | `bank`, `fond`, `budget`, `kommentarer`, `att-göra`, `underlag` (info) | `bank-summary`, `fund-value`, `budget-summary`, `comments-summary`, `todo-summary`, `documents-summary` | 1 = 1 each |
+  | `medlemmar` (info) | — out of scope | 3 / — |
+
+  The `kontoplan` findings were split by fixed message fragments only. Unbooked
+  transactions: 0 on both sides (`--obokförda`, `--unbooked`). No parked postings and
+  no bank errors, as the baseline (§0.1) said, so those rules are proven on fixtures
+  only (§0.2 (7)).
+- [x] 10.4 **Reports:** run `generera_redovisning.py` (output redirected) and `report`
   to the scratchpad. A throwaway script parses both sets of Markdown tables and prints
   only "N of M amounts equal" per report, plus the account numbers that differ. Delete
   the outputs. *Verify:* all equal for the nine reports in scope.
+  Result (2026-10-02): the script ran with its output folder redirected; the core ran
+  on a scratch copy of the configuration with absolute paths. Every table row with
+  amounts, keyed by its first cell, compared:
+
+  | Report | Rows with amounts equal |
+  |---|---|
+  | `huvudbok.md` | 402 of 402 |
+  | `verifikationslista.md` | 163 of 163 |
+  | `resultatrapport.md` | 29 of 29 |
+  | `budgetuppföljning.md` | 20 of 20 |
+  | `balansrapport.md` | 16 of 16 |
+  | `månadsöversikt.md` | 10 of 10 |
+  | `sammanfattning.md` | 10 of 10 |
+  | `att-göra.md` | 28 of 29 — the one row is under "Betalningar som inte är kopplade till en medlem", the member section (out of scope) |
+  | `bokslutskommentarer.md` | no amounts; written by both |
+
+  `medlemsavgifter.md` is only written by the script (out of scope). The outputs and
+  the scratch configuration were deleted; the HJK repository shows no change besides
+  `organisation.yaml`.
 
 Commit: `docs(mvp-003): record the Helsingborgs Judoklubb pilot result`
 
