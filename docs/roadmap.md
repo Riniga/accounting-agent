@@ -11,7 +11,8 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-**MVP-003 is merged** (PR #13). **MVP-004 is in progress.**
+**MVP-003 is merged** (PR #13). **MVP-004 is implemented; the owner's pilot batch and
+the pull request remain.**
 [MVP-003 – Bank import, reconciliation, remaining checks and reports via core](mvp/MVP-003-bank-reconciliation-and-reports.md)
 delivered:
 - bank import (`import-bank`, the `nordea-csv` format) into masked statement and

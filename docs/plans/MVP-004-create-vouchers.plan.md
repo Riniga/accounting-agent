@@ -411,29 +411,78 @@ Commit: `feat(books): name payments without documents and count unused documents
 
 ### Phase 7 — Pilot
 
-- [ ] 7.1 On the reference copy of the real books, with a scratchpad script that prints
+- [x] 7.1 On the reference copy of the real books, with a scratchpad script that prints
   counts only: for each of the 163 vouchers, build the voucher from its statement row
   and its own account, and compare the fields with the existing ones. Report equal and
   unequal, and the number per kind of difference. *Expected:* 147 equal on the text;
   date, amount, debit and credit equal on all 163.
-- [ ] 7.2 `validate` on the reference copy: the same result as before this MVP, plus the
+  Result (2026-10-05), each voucher built from the vouchers before it:
+
+  | Compared | Equal | Of |
+  |---|---|---|
+  | Could be built | 163 | 163 |
+  | Number | 163 | 163 |
+  | Date | 163 | 163 |
+  | Debit and credit account, amount | 163 | 163 |
+  | Could be rendered as a file | 163 | 163 |
+  | Text | 147 | 163 |
+
+  The 16 texts that differ:
+  - 4 hold a personal identity number in the existing voucher; the core masks it;
+  - 1 is the name without the message;
+  - 11 were edited by hand: 6 contain the note the treasurer wrote in the internet
+    bank, and 5 start with the name but end differently.
+
+  No second systematic rule was found, so the text rule stays. The outlay convention
+  still works: 15 statement rows have a name that starts with the outlay prefix, and 13
+  existing vouchers do. The scripts were deleted.
+- [x] 7.2 `validate` on the reference copy: the same result as before this MVP, plus the
   new findings (expected: 22 vouchers in `documents-expected`, 24 unused documents).
+  Result (2026-10-05): `RESULT: OK (errors: 0, warnings: 32, info: 13)`.
+  - Unchanged from MVP-003: 0 errors; 3 duplicates, 4 personal numbers and 1 duplicate
+    account; the same info findings.
+  - New: 24 `documents-expected` — not 22, because the rule is now "money out of the
+    bank" (TODO 6.1), which also counts two payments that are not on cost accounts;
+    and 1 `documents-unused`, "24 of 87 files".
+  - No `generated-*` finding: no existing voucher has generated lines.
 - [ ] 7.3 The owner, as treasurer, creates a real batch of vouchers with the command in
   the organisation's own folder, and reports the counts. *Verify:* `RESULT: OK`, and no
   unbooked transaction before the last voucher.
+  Changed 2026-10-05 (owner): the books have no unbooked transaction, and the owner
+  wants the AI agent in the organisation project to do the test. A rehearsal comes
+  first: [`docs/claude-prompts/test-new-voucher.md`](../claude-prompts/test-new-voucher.md)
+  lets Claude Code remove the five last vouchers in a copy, create them again with the
+  command and compare them with the originals. The real batch follows the next bank
+  import.
+  Result of the rehearsal (2026-10-05, run by Claude Code in the organisation's project;
+  the owner passed on the report's result and deviation sections):
+  - `validate` gave the same result in the real folder before, in the copy after the
+    test and in the real folder afterwards: `RESULT: OK`, 0 errors, 163 vouchers. The
+    real folder was untouched.
+  - The five removed vouchers were listed as unbooked (statement rows 160–164) with the
+    right dates and amounts, and were created again. The command refused no account
+    and no document that the originals used.
+  - No unbooked transaction and no `generated-*` finding in the copy afterwards.
+  - One difference in the files: an empty `underlag:` is written without a trailing
+    space, and the originals have one. The value is empty in both, and the reader gives
+    the same voucher. Accepted: trailing whitespace is not kept.
+  - Still open: the real batch, after the next bank import.
 
 Commit: `docs(mvp-004): record the pilot result`
 
 ### Phase 8 — Documentation and close
 
-- [ ] 8.1 `organisation-projects.md`: the command in "Daily use", the table of what each
+- [x] 8.1 `organisation-projects.md`: the command in "Daily use", the table of what each
   organisation can use, and the `CLAUDE.md` snippet ("create vouchers with the command,
   never by hand").
-- [ ] 8.2 `README.md`, `AGENTS.md` (local commands), `overview.md`, `current-state.md`,
+- [x] 8.2 `README.md`, `AGENTS.md` (local commands), `overview.md`, `current-state.md`,
   `roadmap.md` (status; member management is next).
 - [ ] 8.3 The MVP's "Outcome at close", checked against each acceptance criterion.
-- [ ] 8.4 Methodology compliance: the note under `GAP-F2-CONFIDENTIAL` (§0.3).
-- [ ] 8.5 `git grep` for organisation-specific values in `src/`: none.
+- [x] 8.4 Methodology compliance: the note under `GAP-F2-CONFIDENTIAL` (§0.3).
+  Result: a changelog entry, the row's note and the plan table in `gap-register.md`.
+- [x] 8.5 `git grep` for organisation-specific values in `src/`: none.
+  Result: no organisation name, id, account number or marker in `src/`. The only hits
+  are the Swedish word for outlay in two report sentences from MVP-003.
 
 Commit: `docs(mvp-004): document the command and close the MVP`
 

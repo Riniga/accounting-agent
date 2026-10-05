@@ -160,6 +160,20 @@ general ledger, voucher list and closing comments.
   `[personnummer]`; the terminal shows only file names and counts.
 - Existing reports are replaced; other files in the folder are left alone.
 
+`accounting-agent new-voucher <organisation> --config-dir <path> --date <YYYY-MM-DD>
+--amount <amount> --account <account> [--row <n>] [--document <name>]... [--note <text>]
+[--guess]` creates the voucher for one bank transaction
+([ADR-009](docs/architecture/decisions/ADR-009-core-creates-vouchers.md)).
+- The caller gives the decisions only: which transaction, the account to post against,
+  the supporting documents, a note, and whether the posting is a guess. The date, the
+  amount, the text and the number come from the bank statement and the books.
+- It writes nothing when the request cannot give a right voucher, when the books have
+  errors, or when the voucher would add one. It never changes or removes a voucher.
+- Below the fields it writes the accounts with their names and a link to each document,
+  so that a voucher can be reviewed without knowing account numbers by heart.
+- The terminal shows the number, the date, the amount and the accounts — never the
+  text, the note or a document's file name.
+
 ## Required GitHub Actions secrets
 
 None currently. CI runs on pull requests only and needs no secrets; there is no CD.

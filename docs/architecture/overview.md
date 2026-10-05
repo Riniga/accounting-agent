@@ -16,7 +16,8 @@ public repository holds the general functionality they share. See
 Swedish bookkeeping terms and their English names in the code are in the
 [glossary](glossary.md).
 
-**Current state (MVP-003 implemented, pending its pull request):** one installable
+**Current state (MVP-003 merged; MVP-004 implemented, pending its pilot and pull
+request):** one installable
 package, behind the CI quality gates from MVP-001, containing:
 - an organisation-profile loader;
 - a general double-entry book model (ADR-006), with supplementary-file models (ADR-007);
@@ -25,8 +26,9 @@ package, behind the CI quality gates from MVP-001, containing:
 - the general checks, the detail checks, the reference-chart check and reconciliation
   against the bank;
 - Swedish Markdown reports;
-- `accounting-agent run`, `validate`, `import-bank` and `report` — the last two are the
-  core's only writes (ADR-008).
+- `accounting-agent run`, `validate`, `import-bank`, `report` and `new-voucher`. The
+  core writes derived files (`import-bank`, `report` — ADR-008) and new vouchers
+  (`new-voucher` — ADR-009); it never changes a voucher.
 
 Helsingborgs Judoklubb runs its bookkeeping tooling through it, except member
 management: verified on its 2026 books in the
@@ -45,19 +47,20 @@ src/accounting_agent/   The core package (ADR-002)
                         ReferenceChart
         balances.py     compute_balances()
         checks.py       check_books() — the general checks
-        details.py      check_details() — the detail checks from kontroll.py
+        details.py      check_details() — the detail checks from kontroll.py, and the document checks
+        posting.py      build_voucher() — a new voucher from a bank transaction, or a refusal (ADR-009)
         reference.py    check_reference() — the chart against a reference chart (BAS)
         supplements.py  FundValue, BudgetItem, ClosingComment, TodoItem and their checks
         reconciliation.py  reconcile() — the books against the bank statement
         findings.py     Finding, Severity
         masking.py      Personal identity number masking
-    formats/            One reader per file format (ADR-006, ADR-007); the only writers (ADR-008)
+    formats/            One reader per file format (ADR-006, ADR-007); the only writers (ADR-008, ADR-009)
         common.py       Shared CSV rules (encoding, header, columns, amounts)
-        front_matter.py read_books() for the `front-matter` format
+        front_matter.py read_books() for the `front-matter` format; render_voucher(), write_voucher()
         reference_chart.py  read_reference_chart() — the four-file BAS reference
         supplements.py  read_budget(), read_comments(), read_todo()
         nordea_csv.py   read_export() for the `nordea-csv` bank export
-        bank_statement.py  read_statement(), read_fund_values(); write_statement(), write_fund_values() — atomic writes
+        bank_statement.py  read_statement(), read_fund_values(), read_voucher_texts(); write_statement(), write_fund_values() — atomic writes
     reports/            Swedish Markdown reports, rendered from the model — no file I/O (ADR-008)
         format.py       ReportContext, amounts, tables (masked cells), the report header
         ledger.py       The books worked out per account for the reports
@@ -121,10 +124,21 @@ LICENSE                 PolyForm Noncommercial 1.0.0 (ADR-005)
 - **`formats/nordea_csv.py`** reads a `nordea-csv` bank export — a statement or fund
   values, told apart by the header — into rows that are normalised, masked with
   `[personnummer]` and oldest first. **`formats/bank_statement.py`** writes the
-  organisation's statement and fund-value files. These are the core's only write paths
-  (ADR-008): configured paths only, through a temporary file that replaces the target,
-  and never vouchers.
-- **`cli.py`** provides three commands. All load the profile, and all refuse if
+  organisation's statement and fund-value files. These are the core's write paths for
+  derived files (ADR-008): configured paths only, through a temporary file that replaces
+  the target.
+- **Creating a voucher (ADR-009)** is split over three layers.
+  - `books/posting.py` builds the voucher from the caller's decisions and the bank
+    transaction, or refuses with a rule. It does no I/O.
+  - `formats/bank_statement.py` composes the voucher's text from a statement row, since
+    the domain's bank transaction holds no name or message. `formats/front_matter.py`
+    renders the file — the fields, then the generated lines with account names and
+    document links — and writes it with exclusive creation, so an existing voucher is
+    never replaced. The reader keeps the generated lines out of the note and checks them
+    against the fields.
+  - The CLI checks the books before, checks them again with the new voucher added, and
+    writes only if no error was added.
+- **`cli.py`** provides five commands. All load the profile, and all refuse if
   `<organisation>` doesn't match it.
   - `run <organisation> --config-dir <path>` logs the enabled features.
   - `validate <organisation> --config-dir <path> [--balances] [--unbooked]` prints a
@@ -134,6 +148,9 @@ LICENSE                 PolyForm Noncommercial 1.0.0 (ADR-005)
     fund-value file and prints only file names, dates and counts.
   - `report <organisation> --config-dir <path> [--force]` runs the checks, then writes
     the reports to the configured folder; it refuses on errors unless forced.
+  - `new-voucher <organisation> --config-dir <path> --date … --amount … --account …`
+    creates the voucher for one bank transaction and prints its number, date, amount
+    and accounts.
 - **`reports/`** renders the reports as Swedish Markdown strings, with the texts and
   figures of Helsingborgs Judoklubb's `generera_redovisning.py`. It does no I/O — the
   `TID251` ban covers it — and the CLI writes the files atomically. Table cells are
