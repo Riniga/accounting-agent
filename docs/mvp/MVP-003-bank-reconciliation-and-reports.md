@@ -1,7 +1,28 @@
 # MVP-003 – Bank import, reconciliation, remaining checks and reports via core
 
 Roadmap: [R2 – Helsingborgs Judoklubb pilot via core](../roadmap.md#r2--helsingborgs-judoklubb-pilot-via-core-ongoing) ·
-Plan: not yet written (created with `docs/claude-prompts/create-plan-prompt.md`)
+Plan: [MVP-003 plan](../plans/MVP-003-bank-reconciliation-and-reports.plan.md)
+
+> **Corrected 2026-09-26 (plan §0.2 and §0.4, approved by the owner):**
+>
+> - The book model is extended: an account gets an optional group and reference
+>   description, and the bank statement, fund value, budget, closing comments, to-do list
+>   and reference chart get models of their own (ADR-007). The core owns these file
+>   formats, including their allowed values; configuration gives paths and
+>   organisation-specific values only.
+> - Files the core writes — the bank statement and the reports — mask personal identity
+>   numbers as `[personnummer]`, as the organisation's scripts do, so that the statement
+>   can be byte-identical. Terminal output keeps `[personal number]`.
+> - Findings and the `--unbooked` list show dates, amounts, statement rows and voucher
+>   numbers — never a counterparty's name or a message, unlike `kontroll.py`. "The same
+>   unbooked transactions" is compared on date and amount.
+> - Organisation conventions come from configuration: accounts that need no supporting
+>   document, the guessed-posting marker, the outlay text prefix and the parking accounts.
+>   The monthly overview's fixed note about one stock account is dropped.
+> - The reports are in Swedish; code, findings and terminal output stay in English
+>   (ADR-008).
+> - Duplicates use `kontroll.py`'s key: date, text and the amount as the bank shows it.
+> - The MVP stays one MVP, although it is large.
 
 ## Purpose
 
@@ -94,8 +115,9 @@ are built for the core's general model, not for one organisation.
 - **Configuration** in `organisation.yaml`: all organisation-specific values come from
   configuration, not code. That covers the bank export format and the statement files,
   the fund account, the parking accounts, the BAS reference chart, the documents folder,
-  the budget / comments / to-do files, the report output folder, and the organisation's
-  name and number for report headers.
+  the budget / comments / to-do files, the report output folder, the organisation's
+  name and number for report headers, and the conventions: accounts that need no
+  supporting document, the guessed-posting marker and the outlay text prefix.
 - **Pilot on Helsingborgs Judoklubb's 2026 books:** same outcome as `kontroll.py` for
   every check in scope, and the same figures as `generera_redovisning.py` in every report
   in scope. It is verified with counts and comparisons only, as in MVP-002.
@@ -133,6 +155,38 @@ are built for the core's general model, not for one organisation.
   and personal identity numbers are masked in them.
 - MVP-001's gates still hold, and the coverage floor is kept or raised.
 
-## Outcome at close (YYYY-MM-DD)
+## Outcome at close (2026-10-02)
 
-<!-- Fill in when the MVP is actually closed. -->
+Implemented on `feature/mvp-003-bank-reconciliation-and-reports`, pending the pull
+request. Each criterion was checked against the real system
+([plan](../plans/MVP-003-bank-reconciliation-and-reports.plan.md), phases 10–11):
+
+- **Fixtures per rule:** synthetic fixtures (bank exports, statement, BAS excerpt,
+  budget, comments, to-do list, documents, the `example-full` organisation) cover every
+  new rule with a passing and a broken case; 423 tests pass.
+- **Bank statement:** Helsingborgs Judoklubb's real export through the core gives a
+  statement file byte-identical to `importera_kontoutdrag.py`'s (163 rows) and to the
+  existing file.
+- **Checks:** on the real 2026 books, `validate` gives the same outcome per rule in scope
+  as `kontroll.py` — `OK`, 0 errors, 3 duplicates, 4 personal numbers, 1 duplicate
+  account, and the same info — and 0 unbooked transactions on both sides.
+- **Reports:** every report in scope shows the same figures as `generera_redovisning.py`
+  — every table row with amounts is equal (402 of 402 in the general ledger, 163 of 163
+  in the voucher list, …); the one difference is a row in the member section, out of
+  scope.
+- **No organisation-specific value in `src/`:** `git grep` for the organisations' names,
+  accounts, year, folder and marker finds none; the organisation's name was also
+  removed from nine docstrings.
+- **Findings** never quote a voucher text, a name or a bank message: the bank
+  transaction has no field for them, and tests assert it for every new reader and check.
+- **Reports** contain voucher texts, are written only to the configured folder, and mask
+  personal identity numbers in every table cell (the header's organisation number is not
+  masked — it has the same shape).
+- **MVP-001 gates:** Ruff, the pre-commit hooks, detect-secrets, the instruction-file scan
+  and the tests run green locally; the coverage floor was raised from 95 to 97 %
+  (98.82 %). Semgrep and the dependency checks run in the pull request (no dependency
+  changed).
+
+Not proven on the real books, because they have none: bank errors, unbooked
+transactions and parked postings — those rules are proven on fixtures only. Member
+management stays in the organisation's own scripts (backlog).

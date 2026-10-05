@@ -1,23 +1,53 @@
 """Command line entry point: ``accounting-agent``."""
 
 import argparse
+import io
 import logging
+import os
 import sys
 from collections.abc import Callable, Sequence
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
 from accounting_agent import __version__
 from accounting_agent.books import (
     Books,
+    BudgetItem,
+    ClosingComment,
     Finding,
+    FundValue,
     Severity,
+    TodoItem,
     check_books,
+    check_budget,
+    check_comments,
+    check_details,
+    check_fund,
+    check_reference,
+    check_todo,
     compute_balances,
     mask_personal_numbers,
+    reconcile,
 )
-from accounting_agent.formats import front_matter
-from accounting_agent.profile import OrganisationProfile, ProfileError, load_profile
+from accounting_agent.formats import (
+    bank_statement,
+    front_matter,
+    nordea_csv,
+    reference_chart,
+    supplements,
+)
+from accounting_agent.formats.common import write_text_atomically
+from accounting_agent.profile import (
+    BankConfig,
+    BooksConfig,
+    ChecksConfig,
+    OrganisationProfile,
+    ProfileError,
+    ReportsConfig,
+    load_profile,
+)
+from accounting_agent.reports import ReportContext, render_reports
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +61,10 @@ READERS: dict[str, BookReader] = {"front-matter": front_matter.read_books}
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Parse ``argv`` and run the selected command. Returns the process exit code."""
+    # A pipe on Windows defaults to the locale's code page; the report has Swedish
+    # letters and is read by scripts and AI tools, so it is always UTF-8.
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8")
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     args = _build_parser().parse_args(argv)
     return args.handler(args)
@@ -59,7 +93,33 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Also list the balance per account (debit +, credit -).",
     )
+    validate.add_argument(
+        "--unbooked",
+        action="store_true",
+        help="Also list the bank transactions after the last voucher (date, amount).",
+    )
     validate.set_defaults(handler=_validate)
+
+    import_bank = commands.add_parser(
+        "import-bank",
+        help="Turn a bank export into the organisation's statement or fund-value file.",
+    )
+    _add_organisation_arguments(import_bank)
+    import_bank.add_argument(
+        "export", type=Path, help="The file downloaded from the bank; never changed."
+    )
+    import_bank.set_defaults(handler=_import_bank)
+
+    report = commands.add_parser(
+        "report", help="Write the reports (Swedish Markdown) to the configured folder."
+    )
+    _add_organisation_arguments(report)
+    report.add_argument(
+        "--force",
+        action="store_true",
+        help="Write the reports even if the books have errors.",
+    )
+    report.set_defaults(handler=_report)
     return parser
 
 
@@ -129,7 +189,7 @@ def _validate(args: argparse.Namespace) -> int:
             f"{len(books.opening_balances)} opening balances, "
             f"{len(books.vouchers)} vouchers"
         )
-        findings = findings + check_books(books, config.fiscal_year)
+        findings = findings + _check_all(profile, config, books, args.unbooked)
 
     _emit_findings(findings)
     if books is not None and args.balances:
@@ -146,6 +206,256 @@ def _validate(args: argparse.Namespace) -> int:
         f"warnings: {counts[Severity.WARNING]}, info: {counts[Severity.INFO]})"
     )
     return EXIT_ERROR if counts[Severity.ERROR] else EXIT_OK
+
+
+def _check_all(
+    profile: OrganisationProfile, config: BooksConfig, books: Books, unbooked: bool
+) -> list[Finding]:
+    """Every check that applies to the profile, after the books have been read."""
+    findings = check_books(books, config.fiscal_year)
+    if profile.checks is not None:
+        findings += _check_details(profile, profile.checks, config, books)
+    if profile.bank is not None:
+        findings += _reconcile(profile.bank, config, books, unbooked)
+    return findings
+
+
+def _report(args: argparse.Namespace) -> int:
+    profile = _load_matching_profile(args)
+    if profile is None:
+        return EXIT_ERROR
+    if profile.reports is None or profile.books is None:
+        missing = "reports" if profile.reports is None else "books"
+        logger.error(
+            "%s has no '%s' section in organisation.yaml; report needs one.",
+            args.config_dir,
+            missing,
+        )
+        return EXIT_ERROR
+
+    config = profile.books
+    books, findings = READERS[config.format](config.path, config.bank_account)
+    if books is None:
+        logger.error(
+            "The books could not be read; no reports were written. Run validate for "
+            "details."
+        )
+        return EXIT_ERROR
+    # The unbooked transactions are listed so that the to-do report can count them.
+    findings = findings + _check_all(profile, config, books, unbooked=True)
+    errors = sum(1 for f in findings if f.severity is Severity.ERROR)
+    # Reports from broken books mislead (ADR-008).
+    if errors and not args.force:
+        logger.error(
+            "The books have %d errors; no reports were written. Run validate for "
+            "details, or use --force.",
+            errors,
+        )
+        return EXIT_ERROR
+    if errors:
+        logger.warning(
+            "Writing reports although the books have %d errors (--force).", errors
+        )
+
+    output = profile.reports.output
+    context = _report_context(profile, config, profile.reports, findings)
+    reports = render_reports(books, context)
+    output.mkdir(exist_ok=True)
+    for name, text in reports.items():
+        write_text_atomically(output / name, text)
+        _emit(f"  {name}")
+    period_end = max((v.date for v in books.vouchers), default=None)
+    _emit(f"Wrote {len(reports)} reports to {output.name}, up to {period_end}.")
+    return EXIT_OK
+
+
+def _report_context(
+    profile: OrganisationProfile,
+    config: BooksConfig,
+    reports: ReportsConfig,
+    findings: list[Finding],
+) -> ReportContext:
+    """The reports' context: names, conventions, fund values and voucher links."""
+    fund_values: tuple[FundValue, ...] = ()
+    bank = profile.bank
+    if bank is not None and bank.fund_value_file is not None:
+        values, _ = bank_statement.read_fund_values(bank.fund_value_file)
+        fund_values = values or ()
+    budget, comments, todo = _supplements_for_reports(profile.checks)
+    voucher_folder = None
+    if config.format == "front-matter":
+        try:
+            relative = os.path.relpath(
+                config.path / front_matter.VOUCHER_DIR, reports.output
+            )
+            voucher_folder = Path(relative).as_posix()
+        except ValueError:
+            # Different drives on Windows: no relative link is possible.
+            voucher_folder = None
+    return ReportContext(
+        organisation_name=reports.organisation_name,
+        organisation_number=reports.organisation_number,
+        fiscal_year=config.fiscal_year,
+        generated_at=datetime.now(),
+        bank_account=config.bank_account,
+        parking_accounts=profile.conventions.parking_accounts,
+        fund_account=bank.fund_account if bank is not None else None,
+        fund_values=fund_values,
+        voucher_folder=voucher_folder,
+        guessed_posting_marker=profile.conventions.guessed_posting_marker,
+        no_document_accounts=profile.conventions.no_document_accounts,
+        outlay_prefix=profile.conventions.outlay_prefix,
+        budget=budget,
+        comments=comments,
+        todo=todo,
+        findings=tuple(findings),
+        # The summary appears only when transactions were read and reconciled.
+        statement_read=any(f.rule == "bank-summary" for f in findings),
+    )
+
+
+def _supplements_for_reports(
+    checks: ChecksConfig | None,
+) -> tuple[tuple[BudgetItem, ...], tuple[ClosingComment, ...], tuple[TodoItem, ...]]:
+    """The budget, comments and to-do list for the reports (their findings are the
+    checks'); a file that is not configured or not readable gives an empty tuple."""
+    if checks is None:
+        return (), (), ()
+    budget = comments = todo = None
+    if checks.budget_file is not None:
+        budget, _ = supplements.read_budget(checks.budget_file)
+    if checks.comments_file is not None:
+        comments, _ = supplements.read_comments(checks.comments_file)
+    if checks.todo_file is not None:
+        todo, _ = supplements.read_todo(checks.todo_file)
+    return budget or (), comments or (), todo or ()
+
+
+def _check_details(
+    profile: OrganisationProfile,
+    checks: ChecksConfig,
+    config: BooksConfig,
+    books: Books,
+) -> list[Finding]:
+    """Run the detail checks and the reference-chart check (ADR-007).
+
+    The documents folder is listed here, so the domain stays free of I/O.
+    """
+    documents = None
+    if checks.documents is not None:
+        documents = frozenset(
+            path.relative_to(checks.documents).as_posix()
+            for path in checks.documents.rglob("*")
+            if path.is_file()
+        )
+    findings = check_details(
+        books,
+        config.bank_account,
+        parking_accounts=profile.conventions.parking_accounts,
+        documents=documents,
+    )
+    if checks.reference_chart is not None:
+        reference, read_findings = reference_chart.read_reference_chart(
+            checks.reference_chart
+        )
+        findings += read_findings
+        if reference is not None:
+            findings += check_reference(books.accounts, reference)
+    findings += _check_supplements(checks, books)
+    return findings
+
+
+def _check_supplements(checks: ChecksConfig, books: Books) -> list[Finding]:
+    """Budget, closing comments and to-do list; a missing file skips its check."""
+    findings: list[Finding] = []
+    if checks.budget_file is not None:
+        budget, read_findings = supplements.read_budget(checks.budget_file)
+        findings += read_findings
+        if budget is not None:
+            findings += check_budget(budget, books)
+    if checks.comments_file is not None:
+        comments, read_findings = supplements.read_comments(checks.comments_file)
+        findings += read_findings
+        if comments is not None:
+            findings += check_comments(comments, books)
+    if checks.todo_file is not None:
+        todo, read_findings = supplements.read_todo(checks.todo_file)
+        findings += read_findings
+        if todo is not None:
+            findings += check_todo(todo)
+    return findings
+
+
+def _reconcile(
+    bank: BankConfig, config: BooksConfig, books: Books, unbooked: bool
+) -> list[Finding]:
+    """Reconcile the books against the statement file, and check the fund value."""
+    transactions, findings = bank_statement.read_statement(
+        bank.statement_file, config.fiscal_year
+    )
+    if transactions is not None:
+        findings += reconcile(
+            books, transactions, config.bank_account, list_unbooked=unbooked
+        )
+    if bank.fund_account is not None and bank.fund_value_file is not None:
+        values, read_findings = bank_statement.read_fund_values(bank.fund_value_file)
+        findings += read_findings
+        if values is not None:
+            findings += check_fund(values, books, bank.fund_account)
+    return findings
+
+
+def _import_bank(args: argparse.Namespace) -> int:
+    profile = _load_matching_profile(args)
+    if profile is None:
+        return EXIT_ERROR
+    if profile.bank is None:
+        logger.error(
+            "%s has no 'bank' section in organisation.yaml; import-bank needs one.",
+            args.config_dir,
+        )
+        return EXIT_ERROR
+    if not args.export.is_file():
+        logger.error("The export %s does not exist.", args.export)
+        return EXIT_ERROR
+
+    # Messages name files, dates and counts only — never a row's name or message.
+    try:
+        export = nordea_csv.read_export(args.export)
+        if isinstance(export, nordea_csv.StatementExport):
+            _write_statement(profile.bank.statement_file, export)
+        elif profile.bank.fund_value_file is None:
+            logger.error(
+                "%s is a fund-value export, but 'bank.fund_value_file' is not "
+                "configured.",
+                args.export.name,
+            )
+            return EXIT_ERROR
+        else:
+            written = bank_statement.write_fund_values(
+                profile.bank.fund_value_file, export.values
+            )
+            _emit(
+                f"Wrote {profile.bank.fund_value_file.name}: {written.values} values, "
+                f"latest {written.latest_date}."
+            )
+    except (
+        nordea_csv.ExportFormatError,
+        bank_statement.StatementRefusedError,
+    ) as error:
+        logger.error("%s", error)
+        return EXIT_ERROR
+    return EXIT_OK
+
+
+def _write_statement(path: Path, export: nordea_csv.StatementExport) -> None:
+    written = bank_statement.write_statement(path, export.rows)
+    if written.replaced_rows is not None:
+        _emit(f"Replaced {written.replaced_rows} rows with {written.rows}.")
+    _emit(
+        f"Wrote {path.name}: {written.rows} rows, "
+        f"{written.first_date} to {written.last_date}."
+    )
 
 
 def _emit_findings(findings: list[Finding]) -> None:

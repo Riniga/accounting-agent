@@ -1,0 +1,976 @@
+# Plan: MVP-003 – Bank import, reconciliation, remaining checks and reports via core
+
+Reference: [`docs/mvp/MVP-003-bank-reconciliation-and-reports.md`](../mvp/MVP-003-bank-reconciliation-and-reports.md)
+
+**Status:** Implemented – pending PR (plan approved 2026-09-26)
+
+## 0. Investigation
+
+Carried out 2026-09-26 with read-only commands. In Helsingborgs Judoklubb's project only
+**code**, `organisation.yaml` and the header rows of the BAS reference chart were read,
+per the reading rule in
+[`interpretations.md` §9](../methodology-compliance/interpretations.md#9-data-classification-for-ai-use-f2).
+No book, bank, supporting-document or member file was opened, and no file names inside a
+book folder were listed.
+
+### 0.1 Baseline
+
+| Measure | Value |
+|---|---|
+| Core | 162 tests, coverage 98.76 %, floor 95 %, Ruff clean |
+| `kontroll.py` on the 2026 books | `OK` — 0 errors, 8 warnings, 15 info |
+| Warnings | 3 × `dubblett`, 4 × `personuppgift`, 1 × `kontoplan` |
+| Info | 6 × `kontoplan`, 3 × `medlemmar` (out of scope), 1 each × `bank`, `fond`, `budget`, `kommentarer`, `att-göra`, `underlag` |
+| Organisation files (row counts only) | bank statement 163, fund value 1, budget 13, closing comments 8, to-do 34; BAS reference 4 files; 87 supporting documents; 10 reports |
+
+`kontroll.py` was run with its output redirected to the scratchpad. Only counts per level
+and rule were extracted, and the file was deleted.
+
+**Expected core result on the same books, for the rules in scope:** 0 errors; 3
+duplicate, 4 personal-number and 1 chart warning; the corresponding info findings; no
+unbooked transactions.
+
+### 0.2 Where the MVP needs correcting or completing
+
+1. **The model cannot carry the reports or the BAS check.** `Account` has a number and
+   a name only. The organisation's reports group accounts by the chart's `kontogrupp`
+   column, and the summary finds equity by the group name "EGET KAPITAL". The BAS check
+   compares `kontoklass`, `kontogrupp` and `bas_beskrivning`. **The plan:** `Account`
+   gets an optional group and reference description (ADR-007; ADR-006 is accepted and is
+   not edited). Aktivitet Förebygger's chart has no group column, so the reports fall
+   back to the two-digit BAS group when the group is missing.
+2. **A byte-identical bank statement needs the Swedish mask.** The organisation's import
+   writes `[personnummer]`; the core's `mask_personal_numbers()` writes
+   `[personal number]`. **The plan:** the mask text becomes a parameter. Files the core
+   writes (the bank statement file, the reports) use `[personnummer]`; terminal output
+   keeps `[personal number]`.
+3. **Several `kontroll.py` findings quote data.** The duplicate warning quotes the
+   voucher text; the unbooked list and "bank transaction without a voucher" quote the
+   counterparty's name; chart warnings quote local names. **The plan:** core findings show
+   the date, amount, statement row and voucher number only. The domain's bank-transaction
+   model does not even hold the name or the message. "The same unbooked transactions" is
+   compared on (date, amount).
+4. **Some rules are organisation conventions, not BAS.** Bank fees (6570) need no
+   supporting document; the note marker `Gissad kontering`; the text prefix "utlägg";
+   the parking account 3008; a note about stock account 1410 in the monthly overview.
+   **The plan (owner decision 2026-09-26):** the first four come from configuration; the
+   1410 note is dropped.
+5. **The supporting-documents folder is not inside the books folder** (`2026/underlag`,
+   next to `Bokföring/`). All new paths are configured relative to the configuration
+   directory, like `books.path`.
+6. **Supporting-document existence needs file I/O,** which the domain may not do
+   (ADR-006, Ruff `TID251`). The CLI lists the documents folder and passes the set of
+   names to the check.
+7. **Some rules can only be proven on fixtures.** The real books have 0 unbooked
+   transactions, no bank errors and no parked postings, so for those rules the pilot only
+   proves the OK case.
+8. **The reports embed a generation timestamp,** so they are compared by figures, as the
+   MVP already says, never byte for byte. The core takes the clock as a parameter so that
+   its own tests are deterministic.
+9. **Stale status documents:** `overview.md`, `current-state.md` and `roadmap.md` still
+   say MVP-002 is in progress or pending its pull request; PR #7 is merged. Fixed in
+   TODO 1.4.
+10. **Reading rule:** a code comment in the organisation's import script contains a first
+    name. It was not copied. It is noted under `GAP-F2-CONFIDENTIAL` in TODO 11.3.
+
+### 0.3 The semantics to reproduce (from the organisation's scripts)
+
+**Bank import (`importera_kontoutdrag.py`):**
+- The export is detected by its header: `Datum`, `Belopp` and `Saldo` → statement;
+  exactly `Datum;Belopp` → fund value; anything else is refused.
+- Read as `utf-8-sig`, `;`-separated; rows with only blank cells are skipped.
+- Statement: the bank lists newest first; the file is written oldest first. Columns
+  `datum;belopp;namn;meddelande;anteckning;saldo`:
+  - `datum`: `/` replaced by `-`;
+  - `belopp`, `saldo`: spaces and non-breaking spaces removed, `,` → `.`, normalised by
+    `Decimal`; empty stays empty;
+  - `namn`: `Ytterligare detaljer`, or `Namn` when that is empty;
+  - `meddelande`: leading zeros stripped when it is all digits;
+  - `anteckning`: `Egna anteckningar`;
+  - `namn`, `meddelande` and `anteckning` masked.
+- Refused when the export's first date is later than the existing file's first date
+  ("fetch the whole year from 1 January"). Otherwise the whole file is replaced.
+- Fund value: merged with the existing file by date, written sorted, `datum;värde`.
+- Written as UTF-8 without BOM, LF, `;`. The export itself is never changed.
+
+**Reconciliation (`kontroll.py`, `kontrollera_bank`):**
+- The statement file: exact header; valid dates and amounts; dates within the fiscal
+  year; oldest first. A missing file is info, not an error.
+- Bank arithmetic: every end-of-day balance implies an opening balance; they must all be
+  equal.
+- The opening balance of the bank account must equal the implied balance before the
+  first transaction.
+- Matching on (date, signed amount), as multisets. The core's signed amount is the
+  voucher's net on the bank account (debit − credit), which equals `belopp` under the
+  bank-sign rule.
+  - booked but not in the statement → error;
+  - in the statement, not booked, dated on or before the last voucher → error;
+  - after the last voucher → one warning with the count and net; listed as info with
+    `--unbooked`.
+- A summary info: number of transactions, period and the bank's latest balance.
+
+**Remaining checks (`kontroll.py`):**
+
+| `kontroll.py` rule | What | Severity | Core (rule ids settled in the tests) |
+|---|---|---|---|
+| `kontoplan` | Account twice | warning | general check |
+| `kontoplan` | Local name missing | error | general check |
+| `kontoplan` | `kontoklass` ≠ class by first digit | error | `front-matter` reader (format column) |
+| `kontoplan` + `kontobas` | On the BAS "do not use" list; reference description differs (warning) or is missing (info: own meaning); unknown group (error); group differs (warning); own accounts not in BAS (info); reference files missing (warning) | as listed | reference-chart checks |
+| `verifikation` | Date earlier than the previous voucher | warning | general check |
+| `verifikation` | Revenue account (class 3) debited; cost account (classes 4–8) credited | warning | general check |
+| `dubblett` | Same date, signed amount and text | warning | general check; no text in the message |
+| `underlag` | Supporting document does not exist | error | check with the document set from the CLI |
+| `underlag` | N of M vouchers without documents (of which costs) | info | summary |
+| `parkering` | Postings on the parking account, net to distribute | info | summary, accounts from configuration |
+| `kontoplan` | Unused accounts | info | summary |
+| `fond` | Market value vs booked value; invalid value (error) | info | fund check |
+| `budget` | Unknown type, invalid amount, unknown account, account on two items, account class not matching the type (errors); totals (info) | as listed | budget check |
+| `kommentarer` | id sequence, date, type, accounts and vouchers exist, text present (errors); personal number (warning); count (info) | as listed | closing-comments check |
+| `att-göra` | Duplicate id, owner, when, status, dependency, required fields (errors); waiting without a dependency (warning); open count (info) | as listed | to-do check |
+
+**Reports (`generera_redovisning.py`), all to one output folder, overwritten each run:**
+- summary; income statement; balance sheet; budget follow-up; monthly overview; general
+  ledger with trial balance; voucher list; to-do list; closing comments;
+- refused when the checks give errors, unless forced;
+- amounts formatted `1 234,50` (non-breaking space, decimal comma); every table cell
+  masked; a header with the organisation's name and number, the fiscal year, the period
+  up to the last voucher date, and "preliminary";
+- the member-fee report, the member section of the summary, and the member rows and
+  sections of the to-do report are **not** moved (MVP out of scope).
+
+### 0.4 Owner decisions (2026-09-26)
+
+1. **Reports are in Swedish.** Code, findings and terminal output stay in English
+   (documentation.md). Recorded in ADR-008.
+2. **The core owns the supplementary file formats** — headers and allowed values (comment
+   types, to-do owners `kassör`/`vi`, when, status), as the `front-matter` reader owns
+   its files. Configuration gives paths and truly organisation-specific values only.
+3. **Conventions in configuration:** the accounts that need no supporting document, the
+   guessed-posting marker, the outlay text prefix, and the parking accounts. The 1410 note
+   is dropped.
+4. **Duplicate key** as `kontroll.py`: date, text and the amount signed as the bank shows
+   it. The pilot must show 3 duplicates.
+5. **One MVP,** not split into two, although it is large (≈ 11 phases). It is internal
+   for now.
+6. **The AI tool may run the organisation's scripts for the pilot comparisons,** with
+   output redirected to the scratchpad and only counts or equal/not equal reported.
+
+### 0.5 Other findings
+
+- **No new dependencies:** `csv`, `decimal`, `datetime`, `os` (atomic replace) are
+  standard library. Markdown is written by hand, as the organisation's script does.
+- **Module boundary:** a new `accounting_agent.reports` package renders Markdown strings
+  and does no I/O. It falls under the existing global `TID251` ban automatically; the
+  CLI writes the files.
+- **The existing `example` fixture stays as it is,** so the MVP-002 CLI tests keep their
+  exact output. The new sections go into a second synthetic organisation,
+  `tests/fixtures/example-full/`.
+- **The organisation's name and number** are hard-coded in its report script; in the
+  core they come from configuration.
+- **The organisation scripts write to fixed paths** (`Bokföring/`, `Redovisning/`). For
+  the pilot they are run from a throwaway scratchpad script that redirects those paths to
+  the scratchpad.
+
+## 1. Goal
+
+When this plan is done:
+
+- `accounting_agent.books` also holds, without file I/O:
+  - `Account` with an optional group and reference description (ADR-007);
+  - models for bank transactions (date, amount, balance, row — no name or message), fund
+    values, budget items, closing comments, to-do items and the reference chart;
+  - reconciliation against the bank;
+  - the remaining checks from `kontroll.py` except members.
+- `accounting_agent.formats` has a `nordea-csv` export reader, a reader and writer for
+  the bank statement and fund-value files, and readers for the reference chart, budget,
+  closing comments and to-do list.
+- `accounting_agent.reports` renders the nine reports as Swedish Markdown strings.
+- `organisation.yaml` has validated optional sections for the bank, the checks, the
+  conventions and the reports.
+- Commands:
+  - `accounting-agent import-bank <org> --config-dir <dir> <export-file>` writes the bank
+    statement or fund-value file (never vouchers);
+  - `accounting-agent validate … [--balances] [--unbooked]` runs every check in scope
+    that is configured;
+  - `accounting-agent report <org> --config-dir <dir> [--force]` writes the reports to
+    the configured folder, and refuses on errors unless forced.
+- Helsingborgs Judoklubb's 2026 books give the same statement file, the same outcome per
+  rule and the same report figures as its own scripts.
+- ADR-007, ADR-008, the glossary, the architecture documents and
+  `organisation-projects.md` describe it.
+
+## 2. Scope boundary
+
+- **In:**
+  - `src/accounting_agent/books/` — model extension, new models, reconciliation, checks;
+  - `src/accounting_agent/formats/` — `nordea_csv.py`, `bank_statement.py`,
+    `reference_chart.py`, `supplements.py` (budget, closing comments, to-do list), and
+    the chart columns in `front_matter.py`;
+  - `src/accounting_agent/reports/` — new package;
+  - `profile.py`, `cli.py`;
+  - tests and synthetic fixtures under `tests/`;
+  - ADR-007, ADR-008, glossary, `overview.md`, `current-state.md`, `README.md`,
+    `AGENTS.md`, `roadmap.md`, `organisation-projects.md`, the MVP-003 document;
+  - methodology-compliance updates;
+  - **in the Helsingborgs Judoklubb project:** only the new sections in
+    `2026/organisation.yaml`, which the owner commits there.
+- **Out:**
+  - member checks, `medlemmar.csv`, `medlemsbetalningar.csv`, `medlemskontroll.py` and
+    the member-fee report, including member measures in the summary and to-do reports;
+  - creating or changing vouchers, or suggesting postings for unbooked transactions;
+  - bank transaction pages in PDF;
+  - other banks' export formats;
+  - an Aktivitet Förebygger reader and JudoSyd;
+  - scheduling and unattended runs; agent tools (R3);
+  - changing or removing the organisation's own scripts;
+  - the 1410 stock note;
+  - new dependencies.
+
+## 3. Chapters addressed
+
+- **B3** Architecture principles — the reports package stays free of I/O under the
+  existing `TID251` boundary; the first write paths are confined to the CLI and
+  `formats/`.
+- **B5** Documentation — ADR-007, ADR-008, glossary, README, the organisation guide.
+- **C1** SKA 4 — STRIDE pass (§5), for the first write and for reports with voucher texts.
+- **D1** — AI-TDD with owner review of the tests before each implementation; coverage
+  floor re-measured.
+- **E4** SKA 3 — masking in written files as well as terminal output.
+- **F2** SKA 2 — the reading rule applied to the pilot (`GAP-F2-CONFIDENTIAL`,
+  continued).
+
+No gap-register row is expected to close; `GAP-F2-CONFIDENTIAL` gets a note.
+
+## 4. TODOs
+
+Every phase that adds production code follows the MVP-002 pattern: tests first, **STOP for
+the owner's review of the tests**, then the implementation. Each test must fail for the
+right reason before the implementation is written. Every phase runs `pytest` and
+`ruff check` before its commit, and updates `current-state.md` (tests, capabilities) in
+the same phase.
+
+### Phase 1 — Decisions and corrections
+
+- [x] 1.1 Update `docs/mvp/MVP-003-bank-reconciliation-and-reports.md` with a dated
+  correction note per §0.2 and §0.4:
+  - the model extension;
+  - `[personnummer]` in written files;
+  - no names in findings and `--unbooked`;
+  - the conventions in configuration;
+  - Swedish reports;
+  - the dropped 1410 note.
+
+  *Verify:* every change traces to §0; the acceptance criteria are unchanged in meaning.
+  Result: a dated correction note at the top with seven points, each tracing to §0.2 or
+  §0.4. The scope's configuration bullet also lists the conventions. The acceptance
+  criteria are unchanged.
+- [x] 1.2 Write **ADR-007 — supplementary book files and account groups**:
+  - `Account` gets an optional group and reference description;
+  - bank transactions, fund values, budget, closing comments, to-do items and the
+    reference chart get domain models;
+  - each file has a core-owned, neutrally named format with its reader in `formats/`;
+  - bank transactions carry no counterparty name or message in the domain.
+
+  It references ADR-006, which is not edited. Add the index row. *Verify:* Nygard
+  sections present; index row added.
+  Result: `ADR-007-supplementary-book-files.md`, accepted; Context, Decision,
+  Consequences and Alternatives considered; index row added.
+- [x] 1.3 Write **ADR-008 — the core writes derived files, never vouchers**:
+  - the first write paths: the bank statement and fund-value files, and the reports;
+  - only to configured paths; an atomic replace; the export is never changed;
+  - a partial export is refused;
+  - reports in Swedish, with `[personnummer]` masking;
+  - no reports from books with errors unless forced.
+
+  *Verify:* Nygard sections present; index row added.
+  Result: `ADR-008-core-writes-derived-files.md`, accepted; all Nygard sections; index
+  row added.
+- [x] 1.4 Fix the stale status in `overview.md`, `current-state.md` and `roadmap.md`
+  (MVP-002 merged in PR #7; MVP-003 in planning). Extend `glossary.md`: kontoutdrag,
+  avstämning, fondvärde, budget, bokslutskommentar, att-göra, parkeringskonto,
+  kontogrupp, BAS-kontoplan, resultatrapport, balansrapport, huvudbok, saldobalans,
+  verifikationslista. *Verify:* every new model name in §1 is in the glossary.
+  Result:
+  - `overview.md` (current state, planned evolution, open questions), `current-state.md`
+    and the roadmap's "Current Status" now say MVP-002 is merged and MVP-003 in
+    progress. The roadmap's stale "MVP-002 has no plan yet" paragraph was removed.
+  - 21 glossary rows added, also bank export, bank transaction, unbooked, outlay, budget
+    follow-up and monthly overview. Every model named in §1 (bank transaction, fund
+    value, budget item, closing comment, to-do item, reference chart, account group) is
+    covered; checked by reading §1 against the table.
+
+Commit: `docs(mvp-003): correct the MVP and record ADR-007 and ADR-008`
+
+### Phase 2 — Profile: the new sections
+
+- [x] 2.1 **Tests first** (`tests/test_profile_sections.py`), all sections optional:
+  - `bank`: `export_format` (`nordea-csv`), `statement_file`, `fund_account`,
+    `fund_value_file`;
+  - `checks`: `reference_chart` (a directory), `documents` (a directory), `budget_file`,
+    `comments_file`, `todo_file`;
+  - `conventions`: `parking_accounts`, `no_document_accounts` (lists of four-digit
+    accounts), `guessed_posting_marker`, `outlay_prefix` (strings);
+  - `reports`: `output` (a directory path; may not exist yet), `organisation_name`,
+    `organisation_number`.
+
+  Paths resolve relative to the configuration directory. Errors: wrong types, unknown
+  export format, non-four-digit accounts, a missing input directory. Unknown sub-keys
+  give a warning. A profile without the sections still loads.
+  *Verify:* the tests fail for the right reason.
+  Result: `tests/test_profile_sections.py`, 66 tests (parametrised). All fail for the
+  right reason:
+  - `AttributeError: 'OrganisationProfile' object has no attribute 'bank'` (and
+    `checks`, `conventions`, `reports`);
+  - `DID NOT RAISE ProfileError` for the error cases;
+  - the four unknown-sub-key tests, because the whole section is still ignored as an
+    unknown top-level key.
+
+  API locked by the tests:
+  - `profile.bank`, `profile.checks`, `profile.reports` are `None` when absent;
+    `profile.conventions` always exists, with empty defaults;
+  - `bank`: `export_format` and `statement_file` required; `fund_account` and
+    `fund_value_file` optional but only together; the statement file's folder must
+    exist, the file need not;
+  - `checks`: every key optional; `reference_chart` and `documents` must be existing
+    folders; the three files may be missing (their checks are skipped);
+  - `conventions`: account lists accept quoted or unquoted four-digit accounts,
+    normalised to strings, stored as tuples;
+  - `reports`: all three keys required, non-empty text; the output folder need not
+    exist.
+- [x] 2.2 **STOP — the owner reviews the tests from 2.1.** Result: approved 2026-09-26.
+- [x] 2.3 Implement the sections in `profile.py` and add them to `KNOWN_KEYS`.
+  *Verify:* all tests pass; Ruff clean; the MVP-002 profile tests unchanged.
+  Result:
+  - All 228 tests pass on the first run; coverage 98.94 %; Ruff clean. The MVP-002
+    profile tests are unchanged.
+  - `BankConfig`, `ChecksConfig`, `ConventionsConfig` and `ReportsConfig`; the
+    `books` parser now shares one `_section()` helper (mapping, required keys, unknown
+    sub-key warning) and one `_parse_account()` with the new sections.
+  - `current-state.md` updated (tests, capability).
+
+Commit: `feat(profile): add bank, checks, conventions and reports sections`
+
+### Phase 3 — Bank import
+
+- [x] 3.1 **Synthetic fixtures:** `tests/fixtures/bank/` with a small `nordea-csv`
+  statement export (newest first, `utf-8-sig`, amounts with spaces and decimal comma, a
+  blank row, a name only in `Namn`, one in `Ytterligare detaljer`, an all-digit message
+  with leading zeros, Skatteverket's public test number in a message) and a fund-value
+  export. Invented names only. *Verify:* each rule in §0.3 "Bank import" is represented.
+  Result: `nordea-statement.csv` (5 transactions and a blank row, newest first, BOM, an
+  extra `Valuta` column and a trailing `;` in the header, a non-breaking space in a
+  balance) and `nordea-fund.csv` (2 values). The transactions match the bank side of the
+  `valid/` books (opening balance 1000.00), plus one after the last voucher, so phase 4
+  can reuse them. Rules not in the file fixtures — spaces as thousands separators,
+  short rows, an unknown header, an export without transactions — are built inline by
+  the tests.
+- [x] 3.2 **Tests first:**
+  - `mask_personal_numbers(text, mask=...)` with the Swedish mask; the default
+    unchanged;
+  - the export reader: header detection (statement, fund value, refused);
+  - the statement writer: exact expected bytes (oldest first, normalised amounts, masked,
+    LF, no BOM);
+  - the refusal rule; replacing an existing file; fund merge by date;
+  - the export file is unchanged afterwards;
+  - `import-bank` CLI end to end on a temporary copy of `example-full`: exit codes,
+    organisation mismatch, missing `bank` section, a summary line with counts only — no
+    names on stdout.
+
+  *Verify:* the tests fail for the right reason.
+  Result: `tests/test_bank_import.py` (27 tests) and 2 new tests in
+  `tests/test_masking.py`. Both files fail at collection for the right reason:
+  `ImportError: cannot import name 'FILE_MASK'` and `ModuleNotFoundError: No module
+  named 'accounting_agent.formats.bank_statement'`.
+
+  API locked by the tests:
+  - `FILE_MASK = "[personnummer]"`; `mask_personal_numbers(text, mask=MASK)`;
+  - `nordea_csv.read_export(path) -> StatementExport | FundExport`, raising
+    `ExportFormatError` for an unknown header or an export without transactions;
+    statement rows are strings, already normalised and masked, oldest first;
+  - `bank_statement.write_statement(path, rows)` → rows, first and last date, replaced
+    rows (or `None`); `StatementRefusedError` when the export starts later;
+    `write_fund_values(path, values)` → number of values, latest date;
+  - `accounting-agent import-bank <org> --config-dir <dir> <export>`: stdout
+    `Wrote <file>: N rows, <first> to <last>.` (and `Replaced N rows with M.`), or
+    `Wrote <file>: N values, latest <date>.`; errors are logged, exit 1; no name or
+    message in stdout, stderr or the log.
+
+  **Deviation:** the CLI tests write a small profile with a `bank` section into a
+  temporary folder instead of copying `example-full`, which only arrives with the
+  checks in phases 4–7. Import needs no books.
+- [x] 3.3 **STOP — the owner reviews the fixtures and tests from 3.1–3.2.** Result:
+  approved 2026-09-26, including the two tolerances (missing columns give empty fields;
+  an export without transactions is refused).
+- [x] 3.4 Implement `formats/nordea_csv.py`, `formats/bank_statement.py` (write path,
+  atomic replace) and the `import-bank` command. *Verify:* tests pass; Ruff clean.
+  Update `README.md` and `AGENTS.md` (commands).
+  Result:
+  - All 257 tests pass on the first run; coverage 98.56 %; Ruff clean.
+  - The atomic write is a `<name>.tmp` next to the target, replaced with
+    `Path.replace()`, and removed if the replace fails.
+  - Three defensive branches in `nordea_csv.py` have no reviewed test yet: an empty
+    file, a fund export with no values, and an amount that is not a number (raised as
+    `ExportFormatError` without quoting the value, which could be a name in a malformed
+    row). They are left for review rather than covered by unreviewed tests.
+  - `README.md` (the `bank` section and `import-bank`), `AGENTS.md` (commands),
+    `overview.md` (structure, components) and `current-state.md` (257 tests) updated.
+    The README example uses neutral file names, not the organisation's (backlog "no
+    links to real consumers").
+
+Commit: `feat(bank): import bank exports into masked statement and fund-value files`
+
+### Phase 4 — Reconciliation
+
+- [x] 4.1 **Tests first:**
+  - the statement-file reader: header, invalid date/amount, outside the fiscal year, not
+    oldest first, missing file (info); the domain objects carry no name or message;
+  - `reconcile(books, transactions, bank_account)`: a clean case; a bank-balance break;
+    an opening-balance mismatch; booked but not in the statement; unbooked before the
+    last voucher (error); unbooked after (one warning with count and net); the summary
+    info; duplicates of the same (date, amount) as multisets;
+  - no message contains a counterparty name or message (a fixture with an invented
+    name);
+  - `validate` runs reconciliation when `bank` is configured; `--unbooked` lists date,
+    amount and statement row only.
+
+  *Verify:* the tests fail for the right reason.
+  Result: 34 tests, all failing for the right reason:
+  - `tests/test_reconciliation.py` (15) and `tests/test_bank_statement_reader.py` (13)
+    fail at collection: `ImportError: cannot import name 'BankTransaction'`;
+  - `tests/test_cli_validate_bank.py` (6): `SystemExit: 2` (no `--unbooked` yet) or the
+    reconciliation lines missing from the report.
+
+  New synthetic fixture `tests/fixtures/example-full/`: the `valid/` books plus a
+  `bank` section and a statement file that matches every bank voucher and has one
+  transaction after the last voucher.
+
+  API and output locked by the tests:
+  - `BankTransaction(date, amount, balance | None, row)` — exactly these fields;
+  - `read_statement(path, fiscal_year) -> (transactions | None, findings)`: `None` for
+    a missing file (info `bank-statement-missing`) or a wrong header; the shared CSV
+    rules (`encoding`, `columns`, …) as in the `front-matter` reader;
+    `bank-statement-date` and `bank-statement-amount` skip the row;
+    `bank-statement-year` and `bank-statement-order` keep it; locations
+    `<file>:<row>`;
+  - `reconcile(books, transactions, bank_account, list_unbooked=False)`, rules
+    `bank-balance`, `bank-opening-balance`, `bank-missing-transaction`, `bank-unbooked`
+    (errors), `bank-unbooked-recent` (warning), `unbooked` and `bank-summary` (info,
+    the summary last); locations `bank statement`, `bank statement <date>`,
+    `bank statement row <n>`, `voucher <id>`, `opening balance <account>`;
+  - `validate --unbooked`; without a `bank` section nothing changes.
+- [x] 4.2 **STOP — the owner reviews the tests from 4.1.** Result: approved 2026-09-26,
+  including `bank statement row N` as the location of reconciliation findings.
+- [x] 4.3 Implement the reader, `books/reconciliation.py` and the CLI wiring.
+  *Verify:* tests pass; Ruff clean; README updated (`--unbooked`).
+  Result:
+  - All 291 tests pass on the first run; coverage 98.80 %; Ruff clean. No new function
+    reaches the advisory complexity 10.
+  - `formats/common.py`: the CSV rules (`Findings`, `read_text`, `read_csv`,
+    `parse_amount`) moved out of `front_matter.py` so that the statement reader applies
+    the same rules. A pure move — the MVP-002 reader tests pass unchanged.
+  - `validate example --config-dir tests/fixtures/example-full --unbooked` gives 1
+    warning and 2 info, as the tests say.
+  - README, AGENTS, `overview.md` and `current-state.md` updated.
+
+Commit: `feat(books): reconcile the books against the bank statement`
+
+### Phase 5 — Remaining voucher checks and summaries
+
+- [x] 5.1 **Tests first**, on model objects:
+  - duplicate (date, text, bank-signed amount) → warning naming the voucher numbers, not
+    the text;
+  - date earlier than the previous voucher → warning;
+  - revenue account debited, cost account credited → warnings;
+  - a missing supporting document, given the set of existing names → error; N of M
+    without documents (of which costs) → info;
+  - parking accounts from configuration → info with count and net;
+  - unused accounts → info;
+  - chart: an account twice → warning; a missing name → error.
+
+  CLI: `validate` lists the configured documents folder and passes the names. The
+  `valid/` fixture still gives no errors. *Verify:* the tests fail for the right reason.
+  Result: 21 new tests, all failing for the right reason:
+  - `tests/test_detail_checks.py` (18) fails at collection:
+    `ImportError: cannot import name 'check_details'`;
+  - `tests/test_cli_validate_details.py` (3): the two `example-full` tests fail because
+    the detail checks are not wired in; the one on `example` passes, since it asserts
+    that nothing changes without a `checks` section.
+
+  **Deviation — a separate function, run only with a `checks` section:** the rules go
+  into `check_details(books, bank_account, parking_accounts=(), documents=None)`, not
+  into `check_books()`. MVP-002's approved `check_books()` tests use two identical
+  vouchers as "clean books", which the duplicate rule would flag, and MVP-002's
+  `example` output must stay unchanged. `validate` runs `check_details()` when the
+  profile has a `checks` section; `documents=None` (no documents folder) skips only the
+  existence check.
+
+  **Changed approved tests:** `example-full` now has `checks` (a `documents` folder with
+  the three documents its vouchers name) and `conventions` (2890 as parking account), so
+  two phase-4 CLI tests expect 3 and 4 info findings instead of 1 and 2.
+
+  Locked by the tests:
+  - rules `voucher-duplicate`, `voucher-date-order`, `revenue-account-debited`,
+    `cost-account-credited`, `account-duplicate` (warnings); `document-missing`,
+    `account-missing-name` (errors); `documents-summary`, `parking-summary`,
+    `unused-accounts` (info);
+  - the duplicate key uses the bank-signed amount, so money in and money out of the
+    same size are not duplicates; the message gives date and amount, not the text;
+  - a missing document is named by its position ("2 of 2"), never by its file name,
+    which can hold a person's name; documents are matched by path relative to the
+    documents folder;
+  - costs in the documents summary are vouchers with a debit on classes 4–7; the
+    parking net is credit − debit on the parking account; an account with only an
+    opening balance is not unused.
+- [x] 5.2 **STOP — the owner reviews the tests from 5.1.** Result: approved 2026-09-26,
+  including the separate `check_details()` and the two changed phase-4 counts.
+- [x] 5.3 Implement in `books/checks.py` (or a sibling module if it passes the advisory
+  complexity 10) and the CLI wiring. *Verify:* tests pass; Ruff, including C90, clean.
+  Result:
+  - `books/details.py` with `check_details()`; all 312 tests pass on the first run;
+    coverage 98.92 %; Ruff clean; no new function reaches the advisory complexity 10.
+  - The CLI lists the documents folder recursively as paths relative to it. The match
+    is exact, so on Windows it is case-sensitive where `kontroll.py`'s `exists()` is
+    not; the pilot (phase 10) will show whether that matters.
+  - `validate` on `example-full` gives 1 warning and 3 info, as the tests say.
+  - README (`checks`, `conventions`), `overview.md` and `current-state.md` updated.
+
+Commit: `feat(books): add duplicate, date-order, account-side and document checks`
+
+### Phase 6 — Chart of accounts against the BAS reference
+
+- [x] 6.1 **Synthetic fixture:** `tests/fixtures/reference/` — a tiny invented reference
+  chart in the four-file format (main accounts, sub-accounts, groups, do-not-use), not a
+  copy of BAS. *Verify:* it covers every reference rule in §0.3.
+  Result: `tests/fixtures/reference/` — 6 main accounts, 2 sub-accounts (one invented),
+  7 groups and one do-not-use account, in the organisation's `nummer;beskrivning`
+  format. One description has a double space, to prove whitespace normalisation. The
+  rules that need other data (a missing file, a wrong header) are built by the tests.
+
+  **Changed approved fixture:** the `valid/` chart's `kontogrupp` values lost their
+  number prefix (`19 Kassa och bank` → `Kassa och bank`). `kontroll.py` compares the
+  group as the start of the reference group name, so the old invented values would
+  all have been warnings. MVP-002 reads only `konto` and `lokal_benämning`; all its
+  tests pass unchanged.
+- [x] 6.2 **Tests first:**
+  - the `front-matter` reader keeps `kontogrupp` and `bas_beskrivning` on `Account`, and
+    reports a `kontoklass` that does not match the first digit;
+  - the reference reader; missing files → one warning and the check skipped;
+  - the reference checks, one test per rule; messages never quote the local name.
+
+  *Verify:* the tests fail for the right reason.
+  Result: 20 new tests, all failing for the right reason:
+  - `tests/test_reference_chart.py` (19) fails at collection:
+    `ImportError: cannot import name 'ReferenceChart'`;
+  - `tests/test_cli_validate_details.py`: one new test (`reference-other-meaning` for
+    3002 on `example-full`, which now has `checks.reference_chart`); the three CLI
+    tests that count info findings expect one more.
+
+  Locked by the tests:
+  - `Account(number, name, group=None, reference_description=None)`; the
+    `front-matter` reader fills both, with `""` for an empty BAS description (own
+    meaning) and `None` only for a format without the columns;
+  - `ReferenceChart(accounts, excluded, groups)`;
+    `read_reference_chart(folder) -> (ReferenceChart | None, findings)`: a missing
+    file → warning `reference-missing` naming the file; a wrong header → the shared
+    `header` error; either skips the check;
+  - `check_reference(accounts, reference)`: `reference-excluded`,
+    `reference-unknown-group` (errors); `reference-description`, `reference-group`
+    (warnings); `reference-other-meaning`, `reference-own-accounts` (info). Descriptions
+    compare with whitespace normalised; the group compares case-insensitively as the
+    start of the reference group. With `None` group or description those two rules
+    are skipped; accounts that are not four digits are left to `check_books()`;
+  - the reader's `account-class` error names the expected class only, not the value
+    found.
+- [x] 6.3 **STOP — the owner reviews the fixture and tests from 6.1–6.2.** Result:
+  approved 2026-09-27, including the changed `valid/` groups and the new counts.
+- [x] 6.4 Implement the model extension, `formats/reference_chart.py`, the checks and the
+  wiring. *Verify:* tests pass; Ruff clean; the MVP-002 tests unchanged.
+  Result:
+  - `Account.group` / `reference_description`, `ReferenceChart`, `books/reference.py`
+    (`check_reference()`), `formats/reference_chart.py` and the `account-class` rule in
+    the `front-matter` reader. `validate` runs the reference check when
+    `checks.reference_chart` is set.
+  - All 332 tests pass; coverage 98.92 %; Ruff clean; the MVP-002 tests are
+    unchanged. No new function reaches the advisory complexity 10.
+  - **One approved test was wrong and was corrected:** the own-accounts test used
+    account 3990, whose group 39 is not in the test's reference, so it also gave
+    `reference-unknown-group` — the right behaviour, as in `kontroll.py`. The account
+    became 3099 (group 30). The implementation was not changed to fit the test.
+  - One untested branch: the reader skips the class check for account numbers that
+    are not four digits (they are errors in `check_books()` already).
+  - README, `overview.md` and `current-state.md` updated.
+
+Commit: `feat(books): check the chart of accounts against a reference chart`
+
+### Phase 7 — Fund value, budget, closing comments and to-do list
+
+- [x] 7.1 **Tests first**, with fixtures in `tests/fixtures/example-full/`:
+  - fund value: latest market value vs booked balance → info; invalid value → error;
+  - budget: every rule in §0.3 and the totals;
+  - closing comments: every rule, including a personal number → warning;
+  - to-do list: every rule, with the owners `kassör` and `vi`;
+  - a missing optional file → the check is skipped;
+  - no message quotes a comment's or task's text.
+
+  *Verify:* the tests fail for the right reason.
+  Result: 36 new tests, all failing for the right reason:
+  - `tests/test_supplements.py` (22) and `tests/test_supplement_readers.py` (13) fail
+    at collection: `ImportError: cannot import name 'BudgetItem'`;
+  - `tests/test_cli_validate_details.py`: one new test for the four summaries on
+    `example-full`; the three CLI tests that count info findings expect 4 more.
+
+  `example-full` gets `budget.csv`, `comments.csv`, `todo.csv` and `fund-value.csv`,
+  with `bank.fund_account` 1350 (not in the chart, so booked at 0) and the three
+  `checks` files.
+
+  Locked by the tests:
+  - models `FundValue(date, value)`, `BudgetItem(kind, name, accounts, amount | None,
+    note, row)`, `ClosingComment(id, date | None, kind, accounts, vouchers, text,
+    row)`, `TodoItem(id, owner, when, area, task, done_when, status, depends_on, row)`;
+  - readers `bank_statement.read_fund_values()` and `supplements.read_budget()`,
+    `read_comments()`, `read_todo()` → `(items | None, findings)`; a missing file is
+    `(None, [])`; an invalid value, amount or date is an error at `<file>:<row>` — the
+    fund row is skipped, a budget item or comment is kept with `None`;
+  - `check_fund(values, books, fund_account)`, `check_budget(items, books)`,
+    `check_comments(comments, books)`, `check_todo(items)` with the rules of §0.3;
+    locations `account <n>`, `budget row <n>`, `closing comment <id>`, `to-do <id>`;
+    the other budget row is named by its row, not its name; allowed values are listed
+    in the message, the value found is not;
+  - as in `kontroll.py`: a budget item of unknown type counts as a cost in the totals;
+    a duplicate to-do id is reported on each of its rows.
+- [x] 7.2 **STOP — the owner reviews the tests from 7.1.** Result: approved 2026-09-27.
+- [x] 7.3 Implement the models, `formats/supplements.py`, the checks and the wiring.
+  *Verify:* tests pass; Ruff clean.
+  Result:
+  - `books/supplements.py` (models and `check_fund`, `check_budget`,
+    `check_comments`, `check_todo`), `formats/supplements.py` (budget, comments,
+    to-do) and `read_fund_values()` in `formats/bank_statement.py`. `validate` runs
+    the three file checks with a `checks` section and the fund check with
+    `bank.fund_account`.
+  - All 368 tests pass on the first run; coverage 99.01 %; Ruff clean; no new
+    function reaches the advisory complexity 10.
+  - README, `overview.md` and `current-state.md` updated.
+  - Found while running it: terminal output that is piped is written as cp1252 on
+    Windows, so `kassör` arrives garbled; see §6.
+
+Commit: `feat(books): check fund value, budget, closing comments and to-do list`
+
+### Phase 8 — Reports I: framework and the accounts
+
+- [x] 8.1 **Tests first** (`tests/test_reports_*.py`), on `example-full`:
+  - amount formatting (`1 234,50`, negative, whole kronor);
+  - the header (name, number, fiscal year, period to the last voucher, preliminary) with
+    an injected clock;
+  - every table cell masked with `[personnummer]`; `|` escaped;
+  - income statement, balance sheet (balances, "Balansen stämmer"), general ledger with
+    trial balance, voucher list, monthly overview — expected figures computed by hand for
+    the fixture;
+  - grouping by `Account.group`, and the two-digit fallback without it;
+  - `report` CLI: writes the files to the configured folder; refuses on errors (exit 1,
+    no files written); `--force`; organisation mismatch; missing `reports` section.
+
+  *Verify:* the tests fail for the right reason.
+  Result: 34 new tests, all failing for the right reason:
+  - `tests/test_reports_format.py` (9) and `tests/test_reports_accounts.py` (16) fail
+    at collection: `ModuleNotFoundError: No module named 'accounting_agent.reports'`;
+  - `tests/test_cli_report.py` (9): `invalid choice: 'report'`.
+
+  `example-full` gets a `reports` section (output `reports`, an invented name and a
+  zero organisation number). The CLI tests work on a copy, since `report` writes.
+
+  Locked by the tests:
+  - `accounting_agent.reports`: `ReportContext(organisation_name, organisation_number,
+    fiscal_year, generated_at, bank_account, parking_accounts=(), fund_account=None,
+    fund_values=(), voucher_folder=None, guessed_posting_marker=None)`;
+    `format_amount(value, decimals=2)`, `table(headers, rows, right=())`,
+    `render_header(title, context, period_end)`, one `render_*` per report and
+    `render_reports(books, context) -> {file name: text}`;
+  - the Swedish texts, headings and table columns of `generera_redovisning.py`; the
+    header says "av Accounting Agent ur bokföringen" instead of the script's path;
+  - `format_amount`: non-breaking space for thousands, decimal comma, `-` first;
+  - voucher links `[NNNN](<voucher_folder>/<file>)`, relative from the output folder;
+    without a folder (or a file name) the voucher id is plain text; a voucher with a
+    series shows its id (`B7`); several lines list every account, `; `-separated;
+  - accounts without a group are grouped as `Kontogrupp NN`;
+  - the monthly overview drops the script's fixed stock-account note (§0.4);
+  - `report <org> --config-dir <dir> [--force]`: prints each file name and
+    `Wrote N reports to <folder>, up to <date>.`; refuses on any error (logged, exit 1,
+    no folder created); `--force` writes and logs a warning; other files in the
+    output folder are kept.
+- [x] 8.2 **STOP — the owner reviews the tests from 8.1.** Result: approved 2026-10-02.
+- [x] 8.3 Implement `accounting_agent/reports/` (pure rendering) and the `report` command.
+  *Verify:* tests pass; Ruff clean; `ruff check` shows `reports/` under the `TID251`
+  ban (a temporary `import pathlib` there is reported, then removed). README, AGENTS and
+  `overview.md` updated.
+  Result:
+  - `reports/format.py` (`ReportContext`, `format_amount`, `table`, `render_header`),
+    `reports/ledger.py` (postings and movements per account) and
+    `reports/accounts.py` (the five reports, `render_reports`); the `report` command
+    in `cli.py`. `validate` and `report` now share `_check_all()`, and the atomic write
+    moved to `formats/common.write_text_atomically()` for the statement, fund-value
+    and report files alike.
+  - All 25 approved report tests and the 9 CLI tests passed on the first run.
+  - **Found by running it on a copy of `example-full`:** the organisation number
+    `000000-0000` came out as `[personnummer]`. `render_reports()` masked the whole
+    text, and an organisation number has the shape of a personal identity number, so
+    a real one would have been hidden too. The whole-text mask was removed — voucher
+    texts only appear in table cells, which `table()` masks, as in
+    `generera_redovisning.py` — and a regression test was added
+    (`test_the_organisation_number_is_not_masked`).
+  - Proven: a temporary `import pathlib` in `reports/ledger.py` gave `TID251`; the file
+    was restored.
+  - 404 tests pass; coverage 98.82 %; Ruff clean; no new function reaches the advisory
+    complexity 10. Untested defensive branches: `report` on unreadable books, a
+    relative voucher link across Windows drives, and a voucher month after the period
+    end (only reachable with `--force`).
+  - README, AGENTS, `overview.md` and `current-state.md` updated.
+
+Commit: `feat(reports): render the income statement, balance sheet, ledger and lists`
+
+### Phase 9 — Reports II: budget, comments, to-do and summary
+
+- [x] 9.1 **Tests first:**
+  - budget follow-up: share of the year, per item, unbudgeted accounts, totals;
+  - closing comments: grouped by type with the Swedish headings;
+  - to-do: the measures without member measures (errors, unbooked, bank matches,
+    parking, guessed postings by the configured marker, payments without documents
+    except the configured accounts, outlays first by the configured prefix), then the
+    open tasks per owner and when;
+  - summary: figures, budget, measures, tasks, the check result and the report links —
+    without the member section.
+
+  *Verify:* the tests fail for the right reason.
+  Result: 19 new tests and 2 changed, all failing for the right reason:
+  - `tests/test_reports_summary.py` (18) fails at collection:
+    `ImportError: cannot import name 'render_budget_follow_up'`;
+  - `tests/test_cli_report.py`: one new test (the written summary and to-do report on
+    `example-full`); `Wrote 5 reports` became `Wrote 9 reports`;
+  - `tests/test_reports_accounts.py`: the approved `render_reports` test now expects
+    eight reports without a budget (the five, plus summary, to-do and closing
+    comments).
+
+  Locked by the tests:
+  - `ReportContext` gains `no_document_accounts`, `outlay_prefix`, `budget`,
+    `comments`, `todo`, `findings` and `statement_read`; new renderers
+    `render_budget_follow_up` (None without a budget), `render_closing_comments`,
+    `render_todo`, `render_summary`; `render_reports` returns all nine in
+    `generera_redovisning.py`'s order;
+  - the measures are the script's, without the three member measures; parking,
+    guessed postings and the outlay count only appear when their convention is
+    configured; "(utom bankavgifter)" becomes "(utom konto <accounts>)" from
+    `no_document_accounts`; the unbooked count is the number of `unbooked` findings
+    (the transactions after the last voucher), so `report` reconciles with
+    `--unbooked`'s listing on;
+  - the bank balance "Stämmer mot bankens kontoutdrag" only when the statement file
+    was read and no `bank-*` finding is an error;
+  - equity is the accounts whose group is "Eget kapital" (case-insensitive), as in the
+    script, or BAS group 20 when the chart has no groups;
+  - comment and task texts outside tables are masked too; file paths of the
+    organisation (`Bokföring/budget.csv`) are not named in the texts.
+- [x] 9.2 **STOP — the owner reviews the tests from 9.1.** Result: approved 2026-10-02.
+- [x] 9.3 Implement. *Verify:* tests pass; Ruff clean.
+  Result:
+  - `reports/overview.py`: `render_budget_follow_up`, `render_closing_comments`,
+    `render_todo`, `render_summary` and `render_reports` (moved from `accounts.py`,
+    whose link and fund helpers became public for it). `ReportContext` gained the
+    fields of 9.1. The `report` command reads the budget, comments and to-do list for
+    the reports, passes the findings, and reconciles with the unbooked listing on.
+  - All 423 tests pass on the first run; coverage 98.82 %; Ruff clean; no new
+    function reaches the advisory complexity 10.
+  - Run on a copy of `example-full`: nine reports; the summary shows the bank as
+    reconciled, the budget, 2 of 5 measures and T1.
+  - The findings listed in the summary are in English, as the core's findings are;
+    the script listed its own Swedish ones.
+  - README, `overview.md` and `current-state.md` updated.
+
+Commit: `feat(reports): render budget follow-up, closing comments, to-do and summary`
+
+### Phase 10 — Pilot: Helsingborgs Judoklubb through the core
+
+- [x] 10.1 Add the new sections to `HJK - Ekonomi/2026/organisation.yaml` (configuration
+  only). *Verify:* `validate` loads it; the owner commits it in the HJK repository.
+  Result (2026-10-02): `bank`, `checks`, `conventions` (parking 3008, no documents
+  needed on 6570, `Gissad kontering`, `Utlägg`) and `reports` (output `Redovisning`,
+  the organisation's name and number) added after checking that every folder exists;
+  the profile loads with all sections. **Pending: the owner commits
+  `2026/organisation.yaml` in the HJK repository** — the MVP-002 version of it is not
+  committed there yet either. Note: `report` writes to `Redovisning/`, replacing the
+  files `generera_redovisning.py` writes there (except `medlemsavgifter.md`).
+- [x] 10.2 **Bank statement:** a throwaway scratchpad script picks the latest statement
+  export by header without printing file names. It runs the organisation's import and the
+  core's `import-bank`, both with output redirected to the scratchpad, and prints only
+  equal / not equal plus row counts. It also compares with the existing
+  `kontoutdrag-1930.csv`. *Verify:* equal; any difference is investigated by row number
+  and column only.
+  Result (2026-10-02): one statement export found in `Bankpapper/`; **163 rows from
+  both tools, byte-identical**, and identical to the existing `kontoutdrag-1930.csv`.
+  The outputs were deleted.
+- [x] 10.3 **Checks:** run `validate` and `kontroll.py`, reduce both to counts per
+  severity and rule, map the rules per §0.3, and compare. Compare the unbooked
+  transactions on (date, amount) with `--unbooked` and `--obokförda`. *Verify:* the same
+  counts per rule in scope (§0.1: 3 duplicates, 4 personal numbers, 1 chart warning, the
+  corresponding info), and 0 unbooked on both sides.
+  Result (2026-10-02, counts only; the outputs were deleted). Both `RESULT: OK`, 0
+  errors, 8 warnings:
+
+  | `kontroll.py` | Core | Count |
+  |---|---|---|
+  | `dubblett` (warning) | `voucher-duplicate` | 3 = 3 |
+  | `personuppgift` (warning) | `personal-number` | 4 = 4 |
+  | `kontoplan` (warning, "finns flera gånger") | `account-duplicate` | 1 = 1 |
+  | `kontoplan` (info: 4 other meaning, 1 own accounts, 1 unused) | `reference-other-meaning`, `reference-own-accounts`, `unused-accounts` | 6 = 4 + 1 + 1 |
+  | `bank`, `fond`, `budget`, `kommentarer`, `att-göra`, `underlag` (info) | `bank-summary`, `fund-value`, `budget-summary`, `comments-summary`, `todo-summary`, `documents-summary` | 1 = 1 each |
+  | `medlemmar` (info) | — out of scope | 3 / — |
+
+  The `kontoplan` findings were split by fixed message fragments only. Unbooked
+  transactions: 0 on both sides (`--obokförda`, `--unbooked`). No parked postings and
+  no bank errors, as the baseline (§0.1) said, so those rules are proven on fixtures
+  only (§0.2 (7)).
+- [x] 10.4 **Reports:** run `generera_redovisning.py` (output redirected) and `report`
+  to the scratchpad. A throwaway script parses both sets of Markdown tables and prints
+  only "N of M amounts equal" per report, plus the account numbers that differ. Delete
+  the outputs. *Verify:* all equal for the nine reports in scope.
+  Result (2026-10-02): the script ran with its output folder redirected; the core ran
+  on a scratch copy of the configuration with absolute paths. Every table row with
+  amounts, keyed by its first cell, compared:
+
+  | Report | Rows with amounts equal |
+  |---|---|
+  | `huvudbok.md` | 402 of 402 |
+  | `verifikationslista.md` | 163 of 163 |
+  | `resultatrapport.md` | 29 of 29 |
+  | `budgetuppföljning.md` | 20 of 20 |
+  | `balansrapport.md` | 16 of 16 |
+  | `månadsöversikt.md` | 10 of 10 |
+  | `sammanfattning.md` | 10 of 10 |
+  | `att-göra.md` | 28 of 29 — the one row is under "Betalningar som inte är kopplade till en medlem", the member section (out of scope) |
+  | `bokslutskommentarer.md` | no amounts; written by both |
+
+  `medlemsavgifter.md` is only written by the script (out of scope). The outputs and
+  the scratch configuration were deleted; the HJK repository shows no change besides
+  `organisation.yaml`.
+
+Commit: `docs(mvp-003): record the Helsingborgs Judoklubb pilot result`
+
+### Phase 11 — Close
+
+- [x] 11.1 Update `docs/development/organisation-projects.md`: what Helsingborgs Judoklubb
+  now runs through the core (import, validate, report), the new configuration sections,
+  and the Swedish `CLAUDE.md` section. *Verify:* the documented commands run as written
+  on `example-full`.
+  Result: rewritten for MVP-003 — Helsingborgs Judoklubb's row (only members left in
+  its own scripts), the full `organisation.yaml` with every section (the organisation's
+  name and number as placeholders), daily use with `import-bank`, `validate
+  --unbooked` and `report`, and the Swedish `CLAUDE.md` section. All five documented
+  commands ran on a copy of `example-full` with exit 0.
+- [x] 11.2 Re-measure coverage; keep or raise `fail_under`; update interpretations §1.
+  *Verify:* `pytest --cov` passes at the floor.
+  Result: baseline 98.82 % (1765 of 1786 statements); `fail_under` raised from 95 to
+  **97**; interpretations §1, `overview.md` and `current-state.md` updated; `pytest
+  --cov` passes at 97.
+- [x] 11.3 Gap register: note the pilot and the §0.2 (10) observation under
+  `GAP-F2-CONFIDENTIAL`; add a changelog entry and the follow-up plan index row.
+  *Verify:* the rows reference this plan.
+  Result: changelog entry (no row closed; the first write paths have a STRIDE pass;
+  floor 97 %); the 2026-10-02 note on `GAP-F2-CONFIDENTIAL`; an MVP-003 row in the
+  follow-up plan index.
+- [x] 11.4 Verify each acceptance criterion against the real system:
+  - fixtures pass and fail per rule (test run);
+  - the statement byte comparison (10.2);
+  - `validate` against `kontroll.py` per rule, and the unbooked transactions (10.3);
+  - report figures (10.4);
+  - `git grep` in `src/` for organisation-specific values (organisation names, ids,
+    `1930`, `1350`, `3008`, `6570`, `2026`, `Bokföring`, `Gissad`), expecting none;
+  - findings never quote a voucher text, name or message (tests from 4.1, 5.1, 6.2, 7.1);
+  - reports written only to the configured folder and masked (tests from 8.1);
+  - the MVP-001 gates green (all CI checks locally, then the PR);
+  - `git ls-files docs/reference` is empty.
+
+  Fill in "Outcome at close" in the MVP.
+
+  Result (2026-10-02, run for real):
+  - Tests: 423 passed; every new rule has a passing and a broken fixture case.
+  - Pilot (10.2–10.4): byte-identical statement; the same outcome per rule; every
+    report row with amounts equal, except one in the member section.
+  - `git grep` in `src/` for the organisations' names, ids, `1930`, `1350`, `3008`,
+    `6570`, `2026`, `Bokföring`, `Gissad`, the organisation number and the statement
+    file name: no value found. The organisation's name was in nine provenance
+    docstrings added in this MVP; they now say "the first organisation", and the grep
+    is empty. The remaining Swedish words (`utlägg`, `gissade konteringar`,
+    `bokföringen`) are the reports' own text, not configuration values.
+  - Findings never quote data: the tests from 4.1, 5.1, 6.2, 7.1 pass.
+  - Reports only in the configured folder, masked: the tests from 8.1 and 9.1 pass.
+  - MVP-001 gates, locally: Ruff format and lint, all 7 pre-commit hooks (including
+    detect-secrets), the instruction-file scan, and the tests at the 97 % floor — all
+    green. Semgrep, `pip-audit`, the licence scan and the lock-drift check are not
+    installed locally; no dependency changed in this MVP, so they run unchanged in the
+    pull request.
+  - `git ls-files docs/reference` → 0.
+
+  "Outcome at close" is filled in in the MVP; the roadmap, `overview.md` and
+  `current-state.md` say MVP-003 is implemented and pending its pull request.
+
+Commit: `docs(mvp-003): close MVP-003`
+
+## 5. Risks / open questions
+
+- **Size.** About 11 phases on one branch, against E1 SKA 1's short-lived branches.
+  Accepted by the owner (§0.4). Each phase ends in a green, self-contained commit, so the
+  branch can be reviewed commit by commit.
+- **Reports leaking Confidential data (highest risk).** The voucher list and general
+  ledger contain voucher texts by design. Mitigations: written only to the configured
+  output folder in the organisation's own project; every cell masked; the pilot compares
+  figures only and deletes outputs; stdout shows counts only.
+- **Findings quoting data.** The domain's bank transaction has no name or message field,
+  and tests assert that no message contains invented fixture names.
+- **Masking misses.** The same pattern as the organisation's scripts; a number in an
+  unusual format is still possible, as in MVP-002.
+- **"Same outcome" is per-rule counts.** `kontroll.py` groups many rules under
+  `kontoplan`, `verifikation` and `bank`; the mapping in §0.3 is the basis. On the real
+  books many error rules are only proven on fixtures (§0.2 (7)).
+- **Byte identity depends on the export.** If the existing statement file was produced
+  from an older export, 10.2 compares the two tools on the same export as the primary
+  proof, and reports the comparison with the existing file separately.
+- **Report figures may differ where the scripts use organisation shortcuts** (equity by
+  group name, grouping by `kontogrupp`). The core reads the group from the chart, so the
+  figures should match; any difference is investigated by account number.
+- **Deferred on purpose:** members (backlog, high priority), other banks, PDF statements,
+  Aktivitet Förebygger.
+
+### STRIDE (C1 SKA 4) — new flows: the core writes bank files and reports
+
+```text
+bank export (owner's download) → import-bank → masked statement / fund-value file (books folder)
+books + statement + supplementary files → validate → masked findings (stdout)
+books + supplementary files → report → Swedish Markdown reports (configured output folder)
+```
+
+| Threat | Relevance | Mitigation |
+|---|---|---|
+| **S**poofing | Running one organisation's command against another's files | The profile's organisation check, reused by `import-bank` and `report` |
+| **T**ampering | Overwriting the statement file with a partial export; writing outside the configured paths; corrupting vouchers | The refusal rule; writes only to configured paths; atomic replace; never a write path to vouchers (ADR-008); the export is never changed |
+| **R**epudiation | Who imported which export | The organisation project's git history shows the statement change; the audit trail is R3 |
+| **I**nformation disclosure | Names, messages and personal numbers reaching stdout, AI context or the public repository | No name or message in the domain model; findings without texts; `[personnummer]` masking in written files; reports only in the organisation's folder; synthetic fixtures; pilot output reduced to counts |
+| **D**enial of service | Large or malformed exports | Local, owner-controlled input; header detection and per-row errors instead of crashes (tested) |
+| **E**levation of privilege | Configured paths pointing outside the organisation folder | Local and owner-controlled; accepted, as in MVP-002. Revisit if the core ever runs on untrusted configuration |
+
+## 6. Found during this MVP
+
+- **Piped terminal output is not UTF-8 on Windows** (found in phase 7, 2026-09-27) —
+  `validate` writes to stdout in the locale's code page (cp1252) when stdout is a pipe,
+  so `kassör` arrives garbled in a script or an AI tool reading it, and a character
+  outside cp1252 would crash the write. Until phase 7 the output was ASCII, so it did
+  not show. Fix: reconfigure stdout to UTF-8 in `main()`, as `kontroll.py` does.
+  Regression test `tests/test_cli_encoding.py` (fails on Windows without the fix).
+  The test was approved by the owner on 2026-09-27 and committed with phase 7 in
+  `384bd22` (whose message names the fix). The fix itself — `main()` reconfigures a
+  `TextIOWrapper` stdout to UTF-8 — was committed with phase 8 in `6448fdf`.
+- **`.gitignore` hid the `reports` package** (found in phase 8, 2026-10-02) — the
+  template's output rules `output/`, `exports/` and `reports/` matched folders of that
+  name anywhere, so `src/accounting_agent/reports/` would never have been committed.
+  They are now anchored at the root (`/output/`, `/exports/`, `/reports/`). Checked:
+  no other file became untracked-visible. Committed with phase 8 in `6448fdf`.
+- **Commit boundaries:** `384bd22` (named `fix(cli)`) holds phase 7, and `6448fdf`
+  holds phase 8 with the UTF-8 fix and the `.gitignore` change. Named in the pull
+  request's notes for the reviewer; the history is not rewritten.

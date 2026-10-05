@@ -102,6 +102,23 @@ books:                      # needed by `validate`
   format: front-matter      # the book file format (ADR-006)
   fiscal_year: 2026
   bank_account: "1930"
+bank:                       # needed by `import-bank` (ADR-008)
+  export_format: nordea-csv # the bank's export format
+  statement_file: Bokföring/kontoutdrag.csv
+  fund_account: "1350"      # optional, together with fund_value_file
+  fund_value_file: Bokföring/fondvärde.csv
+checks:                     # turns on the detail checks in `validate`
+  documents: underlag       # the supporting-documents folder
+  reference_chart: kontobas # the BAS reference chart, in four CSV files
+  budget_file: Bokföring/budget.csv        # optional files; a missing one is skipped
+  comments_file: Bokföring/kommentarer.csv
+  todo_file: Bokföring/att-göra.csv
+conventions:                # organisation conventions (optional)
+  parking_accounts: ["3008"]
+reports:                    # needed by `report` (ADR-008)
+  output: Redovisning       # created if missing
+  organisation_name: Exempelklubben
+  organisation_number: 000000-0000
 ```
 
 `accounting-agent validate <organisation> --config-dir <path>` reads the books and checks
@@ -109,6 +126,39 @@ them:
 - It reports findings as `ERROR` / `WARNING` / `INFO`, and exits 1 on any error.
 - It never prints a voucher's text, and masks personal identity numbers in all output.
 - `--balances` also lists the balance per account.
+- With a `checks` section it also runs the detail checks: duplicates, date order,
+  revenue and cost accounts on the unexpected side, supporting documents that do not
+  exist, and summaries of vouchers without documents, parking accounts and unused
+  accounts. A missing document is named by its position, never by its file name.
+  With `reference_chart` it also checks the chart of accounts against the reference
+  chart (BAS): accounts not to use, unknown groups, and differing descriptions and
+  groups. The budget, closing comments and to-do list are checked in the core's own
+  formats (ADR-007), and with `bank.fund_account` the fund's latest market value is
+  compared with its booked value.
+- With a `bank` section it also reconciles the books against the statement file: the
+  bank's own balances, the opening balance, and every bank voucher against a bank
+  transaction and the reverse. `--unbooked` lists the transactions after the last voucher
+  by date, amount and row — never by name or message.
+
+`accounting-agent import-bank <organisation> --config-dir <path> <export>` turns a file
+downloaded from the bank into the organisation's statement file or fund-value file:
+- The export's header tells which; the export itself is never changed.
+- The statement file is replaced, oldest transaction first. An export that starts later
+  than the existing file is refused, since it would drop transactions.
+- Fund values are merged by date.
+- Personal identity numbers are masked as `[personnummer]` in the written file. The
+  terminal shows only file names, dates and counts.
+
+`accounting-agent report <organisation> --config-dir <path> [--force]` writes the
+accounts as Swedish Markdown to the `reports.output` folder: a summary, a to-do report,
+the income statement, balance sheet, budget follow-up (with a budget), monthly overview,
+general ledger, voucher list and closing comments.
+- It runs the same checks as `validate` first, and writes nothing if the books have
+  errors, unless `--force` is given.
+- The reports contain voucher texts — they are the accounts — so they belong in the
+  organisation's own project. Personal identity numbers in them are masked as
+  `[personnummer]`; the terminal shows only file names and counts.
+- Existing reports are replaced; other files in the folder are left alone.
 
 ## Required GitHub Actions secrets
 

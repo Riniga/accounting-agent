@@ -11,7 +11,22 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-**MVP-002 is implemented and pending its pull request.**
+**MVP-003 is implemented and pending its pull request.**
+[MVP-003 – Bank import, reconciliation, remaining checks and reports via core](mvp/MVP-003-bank-reconciliation-and-reports.md)
+delivered:
+- bank import (`import-bank`, the `nordea-csv` format) into masked statement and
+  fund-value files — the core's first writes (ADR-008);
+- reconciliation against the bank, and every other check in `kontroll.py` except members;
+- the reports as Swedish Markdown (`report`);
+- models and core-owned formats for the supplementary files (ADR-007).
+
+Helsingborgs Judoklubb's 2026 books give the same statement file, the same check
+outcome and the same report figures as its own scripts. Next:
+[MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
+(approved 2026-10-05, plan waiting for review), then member management via core (backlog,
+high priority; owner decision 2026-10-05).
+
+*Earlier:* **MVP-002 is merged** (PR #7).
 [MVP-002 – Common book model and validation via core](mvp/MVP-002-common-book-model.md)
 delivered:
 - a general double-entry book model (ADR-006);
@@ -20,8 +35,7 @@ delivered:
 - `accounting-agent validate`, with masked output.
 
 Helsingborgs Judoklubb's real 2026 books validate through the core with the same outcome
-as its own tool, and identical balances. Next: [MVP-003](mvp/MVP-003-bank-reconciliation-and-reports.md) — bank import,
-reconciliation, the remaining checks and the reports (owner decision 2026-09-26).
+as its own tool, and identical balances.
 
 *Earlier:* **R1 – Foundation is done** (MVP-001, merged in PR #5).
 [MVP-001 – Walking skeleton & baseline analysis](mvp/MVP-001-walking-skeleton.md) delivered:
@@ -31,11 +45,9 @@ reconciliation, the remaining checks and the reports (owner decision 2026-09-26)
 - the licence;
 - the first methodology assessment.
 
-The next focus is R2, through
-[MVP-002 – Common book model and validation via core](mvp/MVP-002-common-book-model.md),
-which is defined but has no plan yet. The largest open methodology items are no second
-reviewer (EX-001), and the AI-data gaps `GAP-F2-CONFIDENTIAL` and `GAP-F2-DPA`. Apply the
-reading rule for `docs/reference/` (interpretations §9) when the MVP-002 analysis starts.
+The largest open methodology items are no second reviewer (EX-001), and the AI-data gaps
+`GAP-F2-CONFIDENTIAL` and `GAP-F2-DPA`. The reading rule for `docs/reference/`
+(interpretations §9) applies to all extraction work.
 
 ---
 
@@ -71,6 +83,12 @@ report chain in the core, with Helsingborgs Judoklubb as the first organisation 
 Establishes the defined agent tools, confidence levels, approval policies and the audit
 trail — and decides how the core is exposed to the agent in each organisation project.
 
+* [MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
+  — **approved 2026-10-05, plan waiting for review.** One command writes the voucher from the bank
+  statement; the agent or the treasurer supplies only the account, the supporting
+  document and whether it is a guess. Supersedes ADR-008's "never vouchers" with a new
+  ADR.
+
 ## R4 – JudoSyd migration (Planned)
 
 Moves JudoSyd onto the core, adding PDF import, Gmail, Discord and scheduled runs as general
@@ -88,7 +106,7 @@ Ideas that come up while working on an MVP land here, not in the MVP. Format:
 instead — see `docs/development/methodology.md` "Found during an MVP".
 
 * (2026-09-26, MVP-002) **Member management via core — high priority, next after
-  MVP-003.** This covers Helsingborgs Judoklubb's `medlemskontroll.py`, the member checks
+  MVP-004** (owner decision 2026-10-05; before that, next after MVP-003). This covers Helsingborgs Judoklubb's `medlemskontroll.py`, the member checks
   in `kontroll.py` (the member register and the member payments linked to vouchers) and
   the member-fee report. It was left out of MVP-003 by owner decision. It handles
   personal data about members and children, so it needs its own STRIDE pass, and the
@@ -106,6 +124,13 @@ instead — see `docs/development/methodology.md` "Found during an MVP".
     methodology compliance). Make them neutral, or move them to a private repository?
   - Consider adding it as a principle in the vision, and as an automated check (a CI grep
     for known consumer names).
+
+* (2026-10-05, MVP-004) Machine-readable posting rules: the voucher command warns when
+  the chosen account differs from the organisation's rule for that kind of transaction.
+  Wait until the command from MVP-004 is in use.
+* (2026-10-05, MVP-004) Supporting documents named from what is known when they are
+  saved (date, direction, amount), never from a voucher number, so that a document can
+  be paired with an unbooked bank transaction by a script.
 
 * Remove the remaining template leftovers — `.github/workflows/dast.yml` and the example
   section in `docs/methodology-compliance/interpretations.md`. The owner does this together

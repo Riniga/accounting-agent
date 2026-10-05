@@ -1,0 +1,37 @@
+# Synthetic example organisation with every MVP-003 section. Not a real organisation
+# (ADR-003). The books are shared with `example`; the other files live here.
+organisation: example
+
+features:
+  accounting: true
+  payroll: false
+  gmail: false
+  discord: false
+
+books:
+  path: ../books/valid
+  format: front-matter
+  fiscal_year: 2026
+  bank_account: "1930"
+
+bank:
+  export_format: nordea-csv
+  statement_file: statement.csv
+  fund_account: "1350"
+  fund_value_file: fund-value.csv
+
+checks:
+  documents: documents
+  reference_chart: ../reference
+  budget_file: budget.csv
+  comments_file: comments.csv
+  todo_file: todo.csv
+
+conventions:
+  # 2890 stands in for a parking account in this synthetic organisation.
+  parking_accounts: ["2890"]
+
+reports:
+  output: reports
+  organisation_name: Exempelklubben
+  organisation_number: 000000-0000

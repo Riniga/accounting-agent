@@ -1,0 +1,211 @@
+"""The organisation's bank statement file and fund-value file (ADR-007, ADR-008).
+
+Both are semicolon-separated UTF-8 without BOM, with LF line endings:
+
+- the statement file, ``datum;belopp;namn;meddelande;anteckning;saldo``, oldest first;
+- the fund-value file, ``datum;värde``, sorted by date.
+
+This module holds the core's first write paths. It writes only these two files, and
+always through a temporary file that replaces the target, so that an interrupted run
+never leaves half a file. It also reads the statement file back into the core model for
+reconciliation — dates, amounts and balances only, never names or messages (ADR-007).
+"""
+
+import csv
+import io
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
+from datetime import date
+from pathlib import Path
+
+from accounting_agent.books import BankTransaction, Finding, FundValue, Severity
+from accounting_agent.formats.common import (
+    Findings,
+    parse_amount,
+    read_csv,
+    write_text_atomically,
+)
+from accounting_agent.formats.nordea_csv import StatementRow
+
+STATEMENT_HEADER = ["datum", "belopp", "namn", "meddelande", "anteckning", "saldo"]
+FUND_HEADER = ["datum", "värde"]
+
+
+class StatementRefusedError(Exception):
+    """Writing the export would drop transactions that the existing file holds."""
+
+
+@dataclass(frozen=True)
+class StatementWrite:
+    """What ``write_statement`` wrote."""
+
+    rows: int
+    first_date: str
+    last_date: str
+    replaced_rows: int | None
+
+
+@dataclass(frozen=True)
+class FundWrite:
+    """What ``write_fund_values`` wrote."""
+
+    values: int
+    latest_date: str
+
+
+def write_statement(path: Path, rows: Sequence[StatementRow]) -> StatementWrite:
+    """Replace the statement file at ``path`` with ``rows`` (oldest first).
+
+    Raises:
+        StatementRefusedError: if the export starts later than the existing file, which
+            would silently drop the transactions before it.
+    """
+    existing = _read_rows(path)
+    if existing and rows[0].date > existing[0][0]:
+        raise StatementRefusedError(
+            f"the export starts {rows[0].date} but {path.name} starts "
+            f"{existing[0][0]}; fetch the whole year from 1 January."
+        )
+    _write_atomically(
+        path,
+        [STATEMENT_HEADER]
+        + [
+            [row.date, row.amount, row.name, row.message, row.note, row.balance]
+            for row in rows
+        ],
+    )
+    return StatementWrite(
+        rows=len(rows),
+        first_date=rows[0].date,
+        last_date=rows[-1].date,
+        replaced_rows=None if existing is None else len(existing),
+    )
+
+
+def write_fund_values(path: Path, values: dict[str, str]) -> FundWrite:
+    """Merge ``values`` (date → value) into the fund-value file at ``path``."""
+    merged = {row[0]: row[1] for row in _read_rows(path) or []}
+    merged.update(values)
+    dates = sorted(merged)
+    _write_atomically(path, [FUND_HEADER] + [[d, merged[d]] for d in dates])
+    return FundWrite(values=len(dates), latest_date=dates[-1])
+
+
+def read_statement(
+    path: Path, fiscal_year: int
+) -> tuple[tuple[BankTransaction, ...] | None, list[Finding]]:
+    """Read the statement file into bank transactions, oldest first.
+
+    Returns ``(None, findings)`` when there is nothing to reconcile against: the file is
+    missing (info, not an error — the organisation may not have imported yet), or it
+    cannot be read.
+    """
+    findings = Findings()
+    if not path.is_file():
+        findings.add(
+            Severity.INFO,
+            "bank-statement-missing",
+            path.name,
+            "file is missing; no reconciliation against the bank",
+        )
+        return None, findings.items
+    rows = read_csv(path, STATEMENT_HEADER, findings)
+    if rows is None:
+        return None, findings.items
+
+    transactions: list[BankTransaction] = []
+    for row in rows:
+        transaction = _transaction(row, path.name, findings)
+        if transaction is None:
+            continue
+        location = f"{path.name}:{transaction.row}"
+        if transaction.date.year != fiscal_year:
+            findings.add(
+                Severity.ERROR,
+                "bank-statement-year",
+                location,
+                f"date {transaction.date} is outside the fiscal year {fiscal_year}",
+            )
+        if transactions and transaction.date < transactions[-1].date:
+            findings.add(
+                Severity.ERROR,
+                "bank-statement-order",
+                location,
+                f"date {transaction.date} is earlier than the row before; "
+                f"the file must be oldest first",
+            )
+        transactions.append(transaction)
+    return tuple(transactions), findings.items
+
+
+def read_fund_values(
+    path: Path,
+) -> tuple[tuple[FundValue, ...] | None, list[Finding]]:
+    """Read the fund-value file; ``(None, [])`` if there is none (nothing to check)."""
+    findings = Findings()
+    if not path.is_file():
+        return None, findings.items
+    rows = read_csv(path, FUND_HEADER, findings)
+    if rows is None:
+        return None, findings.items
+    values: list[FundValue] = []
+    for row in rows:
+        value = parse_amount(row["värde"])
+        try:
+            day = date.fromisoformat(row["datum"])
+        except ValueError:
+            value = None
+        if value is None:
+            findings.add(
+                Severity.ERROR,
+                "fund-value-invalid",
+                f"{path.name}:{row['_line']}",
+                "datum or värde is not valid (YYYY-MM-DD; decimal point, no spaces)",
+            )
+            continue
+        values.append(FundValue(date=day, value=value))
+    return tuple(values), findings.items
+
+
+def _transaction(
+    row: dict[str, str], name: str, findings: Findings
+) -> BankTransaction | None:
+    # Messages name the column, never the value: the row also holds names and messages.
+    location = f"{name}:{row['_line']}"
+    try:
+        day = date.fromisoformat(row["datum"])
+    except ValueError:
+        findings.add(
+            Severity.ERROR,
+            "bank-statement-date",
+            location,
+            "datum is not a valid date (YYYY-MM-DD)",
+        )
+        return None
+    amount = parse_amount(row["belopp"])
+    balance = parse_amount(row["saldo"]) if row["saldo"] else None
+    if amount is None or (row["saldo"] and balance is None):
+        findings.add(
+            Severity.ERROR,
+            "bank-statement-amount",
+            location,
+            "belopp or saldo is not a valid amount (decimal point, no spaces)",
+        )
+        return None
+    return BankTransaction(
+        date=day, amount=amount, balance=balance, row=int(row["_line"])
+    )
+
+
+def _read_rows(path: Path) -> list[list[str]] | None:
+    """The data rows of an existing file, or ``None`` if there is no file yet."""
+    if not path.is_file():
+        return None
+    text = path.read_text(encoding="utf-8")
+    return list(csv.reader(io.StringIO(text, newline=""), delimiter=";"))[1:]
+
+
+def _write_atomically(path: Path, rows: Iterable[list[str]]) -> None:
+    buffer = io.StringIO(newline="")
+    csv.writer(buffer, delimiter=";", lineterminator="\n").writerows(rows)
+    write_text_atomically(path, buffer.getvalue())

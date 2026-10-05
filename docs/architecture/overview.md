@@ -16,16 +16,21 @@ public repository holds the general functionality they share. See
 Swedish bookkeeping terms and their English names in the code are in the
 [glossary](glossary.md).
 
-**Current state (MVP-002 in progress):** one installable package, behind the CI quality
-gates from MVP-001, containing:
+**Current state (MVP-003 implemented, pending its pull request):** one installable
+package, behind the CI quality gates from MVP-001, containing:
 - an organisation-profile loader;
-- a general double-entry book model (ADR-006);
-- a reader for the `front-matter` book format;
-- the general book checks;
-- `accounting-agent run` and `accounting-agent validate`.
+- a general double-entry book model (ADR-006), with supplementary-file models (ADR-007);
+- readers for the `front-matter` book format, the `nordea-csv` bank export, the bank
+  statement, the BAS reference chart and the supplementary files;
+- the general checks, the detail checks, the reference-chart check and reconciliation
+  against the bank;
+- Swedish Markdown reports;
+- `accounting-agent run`, `validate`, `import-bank` and `report` — the last two are the
+  core's only writes (ADR-008).
 
-The Helsingborgs Judoklubb pilot ([MVP-002](../mvp/MVP-002-common-book-model.md), phase 7)
-is next.
+Helsingborgs Judoklubb runs its bookkeeping tooling through it, except member
+management: verified on its 2026 books in the
+[MVP-003](../mvp/MVP-003-bank-reconciliation-and-reports.md) pilot.
 
 ## Current Workspace Structure
 
@@ -36,13 +41,28 @@ src/accounting_agent/   The core package (ADR-002)
     cli.py              `accounting-agent` command line: run, validate (argparse)
     profile.py          Organisation profile: organisation.yaml → OrganisationProfile (+ books)
     books/              The book domain — no file I/O (ADR-006; Ruff TID251)
-        model.py        Account, OpeningBalance, PostingLine, Voucher, Books
+        model.py        Account, OpeningBalance, PostingLine, Voucher, Books, BankTransaction,
+                        ReferenceChart
         balances.py     compute_balances()
         checks.py       check_books() — the general checks
+        details.py      check_details() — the detail checks from kontroll.py
+        reference.py    check_reference() — the chart against a reference chart (BAS)
+        supplements.py  FundValue, BudgetItem, ClosingComment, TodoItem and their checks
+        reconciliation.py  reconcile() — the books against the bank statement
         findings.py     Finding, Severity
         masking.py      Personal identity number masking
-    formats/            One reader per book file format (ADR-006)
+    formats/            One reader per file format (ADR-006, ADR-007); the only writers (ADR-008)
+        common.py       Shared CSV rules (encoding, header, columns, amounts)
         front_matter.py read_books() for the `front-matter` format
+        reference_chart.py  read_reference_chart() — the four-file BAS reference
+        supplements.py  read_budget(), read_comments(), read_todo()
+        nordea_csv.py   read_export() for the `nordea-csv` bank export
+        bank_statement.py  read_statement(), read_fund_values(); write_statement(), write_fund_values() — atomic writes
+    reports/            Swedish Markdown reports, rendered from the model — no file I/O (ADR-008)
+        format.py       ReportContext, amounts, tables (masked cells), the report header
+        ledger.py       The books worked out per account for the reports
+        accounts.py     Income statement, balance sheet, general ledger, voucher list, monthly overview
+        overview.py     Budget follow-up, closing comments, to-do report, summary; render_reports()
 tests/                  pytest suite; fixtures/ holds synthetic organisations only (ADR-003)
 docs/                   Vision, roadmap, architecture + ADRs, MVPs, plans, standards,
                         development setup, methodology + compliance, Claude prompts
@@ -83,11 +103,42 @@ LICENSE                 PolyForm Noncommercial 1.0.0 (ADR-005)
   opening-balance CSV and one Markdown voucher file per voucher — with the same field
   semantics as the organisation's own tool. It reports parse- and format-level findings,
   including the bank-sign rule.
-- **`cli.py`** provides two commands. Both load the profile, and both refuse if
+- **`books/details.py`** has the detail checks that MVP-002 deferred (duplicates, date
+  order, account sides, supporting documents, parking and unused accounts, the chart's
+  own rules). `validate` runs them when the profile has a `checks` section; the CLI
+  lists the documents folder, so the domain stays free of I/O.
+- **`books/reference.py`** checks the chart against a reference chart (BAS) as
+  `kontroll.py` does, using the chart's own group and BAS description, which the
+  `front-matter` reader now keeps on `Account` (ADR-007). A format without those
+  columns leaves them `None`, and the text comparisons are skipped.
+- **`books/supplements.py`** models the supplementary files (fund value, budget,
+  closing comments, to-do list) and checks them as `kontroll.py` does. Their formats,
+  including the allowed values, are the core's own (ADR-007).
+- **`books/reconciliation.py`** reconciles the books against the bank statement as
+  `kontroll.py` does: the bank's balance arithmetic, the opening balance, and matching on
+  (date, amount), where a voucher's amount is the net of its bank lines. A
+  `BankTransaction` holds no name or message (ADR-007), so no finding can quote one.
+- **`formats/nordea_csv.py`** reads a `nordea-csv` bank export — a statement or fund
+  values, told apart by the header — into rows that are normalised, masked with
+  `[personnummer]` and oldest first. **`formats/bank_statement.py`** writes the
+  organisation's statement and fund-value files. These are the core's only write paths
+  (ADR-008): configured paths only, through a temporary file that replaces the target,
+  and never vouchers.
+- **`cli.py`** provides three commands. All load the profile, and all refuse if
   `<organisation>` doesn't match it.
   - `run <organisation> --config-dir <path>` logs the enabled features.
-  - `validate <organisation> --config-dir <path> [--balances]` prints a masked report to
-    stdout and exits 1 on errors.
+  - `validate <organisation> --config-dir <path> [--balances] [--unbooked]` prints a
+    masked report to stdout and exits 1 on errors. With a `bank` section it also
+    reconciles against the statement file.
+  - `import-bank <organisation> --config-dir <path> <export>` writes the statement or
+    fund-value file and prints only file names, dates and counts.
+  - `report <organisation> --config-dir <path> [--force]` runs the checks, then writes
+    the reports to the configured folder; it refuses on errors unless forced.
+- **`reports/`** renders the reports as Swedish Markdown strings, with the texts and
+  figures of Helsingborgs Judoklubb's `generera_redovisning.py`. It does no I/O — the
+  `TID251` ban covers it — and the CLI writes the files atomically. Table cells are
+  masked as `[personnummer]`; the header is not, since an organisation number has the
+  same shape as a personal number.
 
 The first consumer is Helsingborgs Judoklubb's 2026 books, in the MVP-002 pilot.
 
@@ -125,8 +176,8 @@ a fresh clone in MVP-001.
 
 ### Running Tests
 
-`pytest -q` from the repository root. The coverage floor is 95 % (`pyproject.toml`,
-raised at the close of MVP-002); coverage is currently 98.76 %.
+`pytest -q` from the repository root. The coverage floor is 97 % (`pyproject.toml`,
+raised at the close of MVP-003); coverage is currently 98.82 %.
 
 ### Development Workflow
 
@@ -223,12 +274,12 @@ series, and the core's general checks already cover both.
 
 *Everything in this section is planned, not existing.*
 
-- **MVP-002 (remaining):** the Helsingborgs Judoklubb pilot, and a written comparison
-  with Aktivitet Förebygger's table format (a "Book formats" section here).
+- **Member management via core (backlog, high priority):** the member register, member
+  payments and the member-fee report, with their own STRIDE pass.
 - **Aktivitet Förebygger reader:** a second reader for the table format (multi-line
   vouchers, series) into the same model.
 - **Later module areas** (from the initial idea, added only as extraction justifies them):
-  bank import and reconciliation (MVP-003), reports (MVP-004), agent tools, confidence
+  member management (backlog), agent tools, confidence
   and approval policies, and the audit trail (R3), integrations (R4), payroll (R5).
 - **Consumption by organisation projects (undecided, R3):** Claude Code acts as the agent
   in each organisation project, locally and on a schedule. JudoSyd already does this with
@@ -239,7 +290,8 @@ series, and the core's general checks already cover both.
 
 - How organisation projects consume the core (package / scripts / MCP) — Unknown – to be
   decided (R3).
-- The data model's file schemas beyond the book model — MVP-002 onward.
+- The data model's file schemas beyond the book model — MVP-003 adds the supplementary
+  files (ADR-007).
 - Confidence thresholds and approval levels per operation — Unknown – to be decided (R3).
 - Local scheduler mechanism — Unknown – to be decided.
 - Relation to the Swedish Bookkeeping Act (archiving, verification) — backlog.

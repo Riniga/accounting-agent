@@ -7,6 +7,7 @@ never numbers from real books.
 import pytest
 
 from accounting_agent.books import contains_personal_number, mask_personal_numbers
+from accounting_agent.books.masking import FILE_MASK
 
 MASK = "[personal number]"
 
@@ -51,3 +52,18 @@ def test_ordinary_numbers_are_left_alone(text: str) -> None:
 
 def test_text_without_digits_is_unchanged() -> None:
     assert mask_personal_numbers("Hyra för mars") == "Hyra för mars"
+
+
+# --- The mask text for files the core writes (ADR-008) ---------------------------------
+
+
+def test_file_mask_is_the_swedish_text_the_organisations_use() -> None:
+    assert FILE_MASK == "[personnummer]"
+
+
+def test_mask_text_can_be_chosen() -> None:
+    text = "Swish 19121212-1212"
+
+    assert mask_personal_numbers(text, mask=FILE_MASK) == "Swish [personnummer]"
+    # The default is unchanged: terminal output keeps the English mask.
+    assert mask_personal_numbers(text) == f"Swish {MASK}"
