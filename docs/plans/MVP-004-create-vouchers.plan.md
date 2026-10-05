@@ -231,7 +231,7 @@ Commit: `feat(formats): read and check a voucher's generated lines`
 
 ### Phase 3 — The domain: build a voucher
 
-- [ ] 3.1 **Tests first** (`tests/test_new_voucher.py`), for a pure function that takes
+- [x] 3.1 **Tests first** (`tests/test_posting.py`), for a pure function that takes
   the books, the bank transactions, the bank account and the caller's request:
   - money in → debit the bank account, credit the account; money out → the reverse;
   - the number is the highest number plus one;
@@ -244,7 +244,36 @@ Commit: `feat(formats): read and check a voucher's generated lines`
   - a refusal names the reason, never a text or a name.
 
   *Verify:* fail for the right reason. **STOP for review.**
-- [ ] 3.2 Implement `src/accounting_agent/books/posting.py`; export it from `books`.
+  Result: `tests/test_posting.py`, 34 tests. They fail for the right reason:
+  `ImportError: cannot import name 'VoucherRefusedError' from 'accounting_agent.books'`.
+  API locked by the tests:
+  - `VoucherRequest(date, amount, account, row=None, documents=(), note="", guess=False)`;
+  - `build_voucher(books, transactions, texts, bank_account, request, documents=None,
+    guessed_posting_marker=None) -> Voucher`, where `texts` maps a statement row to the
+    voucher text the format composed for it;
+  - `VoucherRefusedError` with a `rule`: `transaction-missing`,
+    `transaction-ambiguous`, `row-mismatch`, `already-booked`, `account-unknown`,
+    `account-is-bank`, `guess-without-reason`, `guess-marker-missing`,
+    `document-missing`, `documents-not-configured`, `document-name`, `document-twice`.
+
+  Differences from what was planned, all found while writing the tests:
+  - **The function also takes the rows' texts.** Among several rows with the same date
+    and amount, the only way to tell which ones already have a voucher is the text: a
+    row is booked when as many vouchers as rows have that date, amount and text.
+  - **The document refusals are decided here,** not in the CLI, from the set of files
+    the CLI lists — the same way `check_details` gets it. Two more were added: the same
+    document twice, and a name with the field's separator `;`.
+  - **A known limit:** when a voucher's text was edited by hand, its row looks unbooked
+    by text. If every row with that date and amount has a voucher, the request is still
+    refused on the count. If only some have, the caller could book the edited row twice
+    and leave another unbooked; the counts then match and `validate` does not see it.
+    The caller chooses the row from `validate`'s list, so this needs a wrong row from
+    the caller as well. Accepted; added to §5.
+- [x] 3.2 Implement `src/accounting_agent/books/posting.py`; export it from `books`.
+  Result: 483 tests pass; coverage 98.90 %, `posting.py` 100 %. One test was added
+  with the implementation, for a line the first 34 did not reach: a voucher that is not
+  on the bank account does not count as booking a transaction with the same date and
+  amount.
 
 Commit: `feat(books): build a voucher from a bank transaction`
 
@@ -340,6 +369,11 @@ Commit: `docs(mvp-004): document the command and close the MVP`
   treasurer's decision. Accepted (ADR-009).
 - **The text rule fits 147 of 163.** If the pilot shows a second systematic rule, it is
   added to the format before close; one-off hand edits are accepted.
+- **Rows with the same date and amount, and a hand-edited text.** A voucher whose text
+  was edited no longer matches its statement row, so that row looks unbooked. The count
+  per date and amount still stops a voucher too many, but not the wrong row among
+  several (TODO 3.1). Accepted: the voucher holds no link to its statement row, and
+  adding one changes the file format.
 - **Booking out of date order.** Creating a voucher for a newer transaction first makes
   the older ones `bank-unbooked` errors. That does not block (§0.2 point 1), but the
   routine should stay oldest first.
