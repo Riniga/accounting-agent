@@ -1,4 +1,4 @@
-"""Reader for the `front-matter` book format (ADR-006).
+"""Reader and voucher writer for the `front-matter` book format (ADR-006, ADR-009).
 
 The format: a chart of accounts and an opening balance as semicolon-separated UTF-8 CSV,
 and one Markdown file per voucher whose fields sit between two ``---`` lines. The field
@@ -14,6 +14,7 @@ reader's sake, so they are kept out of the note and checked against the fields.
 
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
@@ -61,6 +62,10 @@ OTHER_CLASS = "Kostnader och resultat"
 # The generated lines, in Swedish like the rest of the organisation's files (ADR-009).
 GENERATED_ACCOUNTS = re.compile(r"Debet (\d{4}) (.+?) · Kredit (\d{4}) (.+)")
 GENERATED_DOCUMENT = re.compile(r"Underlag: \[(.+)\]\(<(.+)>\)")
+
+
+class VoucherExistsError(Exception):
+    """A file for the voucher's number already exists; it is never replaced (ADR-009)."""
 
 
 @dataclass(frozen=True)
@@ -394,3 +399,92 @@ def _check_bank_sign(
     else:
         return
     findings.add(Severity.ERROR, "bank-sign", name, message)
+
+
+def voucher_file_name(voucher: Voucher) -> str:
+    """The name of the voucher's file: its number and its date.
+
+    Raises:
+        ValueError: if the number does not fit the name's four digits.
+    """
+    # The file name has four digits for the number.
+    if not 1 <= voucher.number <= 9999:
+        raise ValueError("The format has voucher numbers 1 to 9999.")
+    return f"{voucher.number:04d}_{voucher.date.isoformat()}.md"
+
+
+def render_voucher(
+    voucher: Voucher,
+    account_names: Mapping[str, str],
+    bank_account: str,
+    link_path: str | None,
+) -> str:
+    """Render ``voucher`` as the content of its file: the fields, the generated lines
+    (ADR-009), then the note.
+
+    ``link_path`` is the path from the voucher folder to the documents folder, with
+    forward slashes; ``None`` when there is none, and the links then hold the name only.
+
+    Raises:
+        ValueError: if the voucher does not fit the format — it needs one debit and one
+            credit line of the same amount, on accounts in the chart.
+    """
+    if (
+        len(voucher.lines) != 2
+        or voucher.lines[0].debit <= 0
+        or voucher.lines[0].debit != voucher.lines[1].credit
+    ):
+        raise ValueError(
+            "The format needs one debit and one credit line of the same amount."
+        )
+    debit, credit = voucher.lines
+    for line in voucher.lines:
+        if line.account not in account_names:
+            raise ValueError(f"Account {line.account} is not in the chart of accounts.")
+
+    # The amount is signed as the bank shows it: - when the bank account is credited.
+    amount = -debit.debit if credit.account == bank_account else debit.debit
+    whole = amount == amount.to_integral_value()
+    lines = [
+        "---",
+        f"verifikation: {voucher.number}",
+        f"datum: {voucher.date.isoformat()}",
+        # A JSON string keeps quotes, colons and line breaks on one line.
+        f"text: {json.dumps(voucher.text, ensure_ascii=False)}",
+        f"belopp: {amount:.0f}" if whole else f"belopp: {amount:.2f}",
+        f"debet: {debit.account}",
+        f"kredit: {credit.account}",
+        f"underlag: {'; '.join(voucher.documents)}".rstrip(),
+        "---",
+        "",
+        f"Debet {debit.account} {account_names[debit.account]} · "
+        f"Kredit {credit.account} {account_names[credit.account]}",
+    ]
+    for name in voucher.documents:
+        target = name if link_path is None else f"{link_path}/{name}"
+        # Angle brackets let the target hold spaces and parentheses.
+        lines.append(f"Underlag: [{name}](<{target}>)")
+    if voucher.note:
+        lines += ["", voucher.note]
+    return "\n".join(lines) + "\n"
+
+
+def write_voucher(directory: Path, voucher: Voucher, content: str) -> Path:
+    """Create the voucher's file in ``directory`` with ``content``; return its path.
+
+    An existing voucher is never replaced (ADR-009): the file is created exclusively,
+    and a number that another file already has is refused.
+
+    Raises:
+        VoucherExistsError: if a file with the voucher's number exists.
+        FileNotFoundError: if ``directory`` does not exist; it is not created.
+    """
+    name = voucher_file_name(voucher)
+    prefix = name.split("_")[0] + "_"
+    if any(path.name.startswith(prefix) for path in directory.iterdir()):
+        # The message gives the number only; the text may hold a name.
+        raise VoucherExistsError(f"voucher {voucher.number} already has a file")
+    path = directory / name
+    with path.open("xb") as file:
+        file.write(content.encode("utf-8"))
+    return path

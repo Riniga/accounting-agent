@@ -279,7 +279,7 @@ Commit: `feat(books): build a voucher from a bank transaction`
 
 ### Phase 4 — The format: text, render, write
 
-- [ ] 4.1 **Tests first:**
+- [x] 4.1 **Tests first:**
   - `bank_statement`: the text of a row is `name(message)`, the name alone when the
     message is empty; personal identity numbers are masked;
   - `front_matter`: rendering gives the fields in the format's order, the text as a
@@ -292,7 +292,31 @@ Commit: `feat(books): build a voucher from a bank transaction`
     leaves the folder unchanged.
 
   *Verify:* fail for the right reason. **STOP for review.**
-- [ ] 4.2 Implement.
+  Result: `tests/test_voucher_writer.py`, 37 tests. They fail for the right reason:
+  `ImportError: cannot import name 'read_voucher_texts' from
+  'accounting_agent.formats.bank_statement'`. API locked by the tests:
+  - `bank_statement.read_voucher_texts(path) -> dict[int, str]`, statement row → text;
+    empty when the file is missing or cannot be read;
+  - `front_matter.render_voucher(voucher, account_names, bank_account, link_path) -> str`;
+  - `front_matter.voucher_file_name(voucher) -> str`;
+  - `front_matter.write_voucher(directory, voucher, content) -> Path`, raising
+    `VoucherExistsError`.
+
+  The file's conventions were counted on the pilot's 163 voucher files (counts only),
+  and the tests follow them:
+  - the `underlag` field is always written, empty when there is no document (163 of
+    163 have the line; 101 are empty);
+  - several documents are separated by `; ` (3 of 3);
+  - a whole amount has no decimals, others have two (no voucher has `.00`, although
+    153 statement rows do);
+  - a blank line follows the closing `---` (163 of 163).
+
+  Also locked: a voucher that is not one debit line and one credit line of the same
+  amount, or that uses an account outside the chart, cannot be rendered (`ValueError`);
+  the number must be 1–9999; a missing voucher folder is not created.
+- [x] 4.2 Implement.
+  Result: 520 tests pass; coverage 98.92 %. Every new line is covered; the uncovered
+  lines in the two modules are the same as before this phase.
 
 Commit: `feat(formats): render and write a front-matter voucher`
 
