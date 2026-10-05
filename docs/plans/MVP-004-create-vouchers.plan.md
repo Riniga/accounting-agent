@@ -370,7 +370,7 @@ Commit: `feat(cli): add the new-voucher command`
 
 ### Phase 6 — The document checks
 
-- [ ] 6.1 **Tests first:**
+- [x] 6.1 **Tests first:**
   - `details`: one warning `documents-expected` naming the cost vouchers without a
     document, leaving out the exempt accounts; none when there are none;
   - `details`: one info `documents-unused` with the count of files no voucher refers to;
@@ -378,9 +378,36 @@ Commit: `feat(cli): add the new-voucher command`
   - the existing `documents-summary` is unchanged.
 
   *Verify:* fail for the right reason. **STOP for review.**
-- [ ] 6.2 Implement; pass the exempt accounts from the profile to the check.
+  Result: 24 new tests — `tests/test_document_checks.py` (13), four in
+  `tests/test_reports_summary.py`, `tests/test_cli_documents.py` (7). 22 fail for the
+  right reason: `check_details()` has no `no_document_accounts`, and `ReportContext`
+  has no `unused_documents`. 2 pass already and pin what must not change: the example
+  books give neither finding, and a profile without a documents folder gets no list.
 
-Commit: `feat(books): name vouchers without documents and count unused documents`
+  Differences from what was planned:
+  - **`documents-expected` follows the to-do report's rule, not "cost vouchers".** The
+    report already lists *money out of the bank* without a document, except the
+    accounts configured as needing none. Two definitions of the same thing would
+    disagree — a purchase for stock is money out but not a cost account — so the check
+    uses the report's rule. The pilot's expected number (22, counted on cost accounts)
+    is therefore counted again in TODO 7.2.
+  - **One warning per voucher, not one for all.** It matches the other voucher rules,
+    and it lets `new-voucher` say exactly when the voucher it just created lacks a
+    document.
+  - **The fixture `example-full` now configures 6570 as needing no document,** so that
+    its books stay without warnings. No existing test changed its expectation.
+  - The list in the to-do report is shown when a documents folder is configured, also
+    when it is empty ("Inga."), like the report's other sections.
+- [x] 6.2 Implement; pass the exempt accounts from the profile to the check.
+  Result: 576 tests pass; coverage 98.99 %, every new line covered.
+  - One existing test changed its expectation:
+    `test_vouchers_without_documents_are_summarised` compared the whole list of
+    findings with the summary alone, and its payment without a document now also gets
+    `documents-expected`. The summary itself is unchanged. (6.1 said that no existing
+    test changed; that was true for the fixture, not for this check.)
+  - The report's list is filled in by `report` itself, sorted by name.
+
+Commit: `feat(books): name payments without documents and count unused documents`
 
 ### Phase 7 — Pilot
 

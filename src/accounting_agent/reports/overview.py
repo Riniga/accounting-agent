@@ -425,6 +425,8 @@ def render_todo(books: Books, context: ReportContext) -> str:
     if context.guessed_posting_marker:
         out += _guessed_section(books, context, ledger)
     out += _without_documents_section(books, context, ledger)
+    if context.unused_documents is not None:
+        out += _unused_documents_section(context.unused_documents)
     return "\n".join(out)
 
 
@@ -486,6 +488,20 @@ def _without_documents_section(
     ]
     headers = ["Ver", "Datum", "Belopp", "Konto", "Bankens text"]
     return [*section, table(headers, rows, right=(2,)) + "\n"]
+
+
+def _unused_documents_section(unused: tuple[str, ...]) -> list[str]:
+    section = [f"### Underlag som ingen verifikation hänvisar till ({len(unused)})\n"]
+    if not unused:
+        return [*section, "Inga.\n"]
+    names = "".join(
+        f"- {mask_personal_numbers(name, mask=FILE_MASK)}\n" for name in unused
+    )
+    return [
+        *section,
+        "Koppla dem till en verifikation, eller ta bort dem om de inte behövs.\n",
+        names,
+    ]
 
 
 # --- Summary ----------------------------------------------------------------------------

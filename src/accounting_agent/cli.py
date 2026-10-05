@@ -329,6 +329,11 @@ def _report(args: argparse.Namespace) -> int:
 
     output = profile.reports.output
     context = _report_context(profile, config, profile.reports, findings)
+    # The names of unused documents go to the to-do report only, never to the terminal.
+    documents = _list_documents(profile.checks)
+    if documents is not None:
+        used = {name for voucher in books.vouchers for name in voucher.documents}
+        context = replace(context, unused_documents=tuple(sorted(documents - used)))
     reports = render_reports(books, context)
     output.mkdir(exist_ok=True)
     for name, text in reports.items():
@@ -416,6 +421,7 @@ def _check_details(
         config.bank_account,
         parking_accounts=profile.conventions.parking_accounts,
         documents=_list_documents(checks),
+        no_document_accounts=profile.conventions.no_document_accounts,
     )
     if checks.reference_chart is not None:
         reference, read_findings = reference_chart.read_reference_chart(

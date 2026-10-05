@@ -209,13 +209,20 @@ def test_vouchers_without_documents_are_summarised() -> None:
 
     findings = check(books(*CLEAN, no_document_income, no_document_cost))
 
+    # The payment is also named on its own since MVP-004 (test_document_checks.py).
     assert findings == [
+        Finding(
+            Severity.WARNING,
+            "documents-expected",
+            "voucher 6",
+            "money out of the bank without a supporting document",
+        ),
         Finding(
             Severity.INFO,
             "documents-summary",
             "vouchers",
             "2 of 6 vouchers have no supporting document (of which 1 costs)",
-        )
+        ),
     ]
 
 
