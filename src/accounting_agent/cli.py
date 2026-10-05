@@ -4,9 +4,11 @@ import argparse
 import io
 import logging
 import os
+import re
 import sys
 from collections.abc import Callable, Sequence
-from datetime import datetime
+from dataclasses import replace
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -19,6 +21,10 @@ from accounting_agent.books import (
     FundValue,
     Severity,
     TodoItem,
+    Voucher,
+    VoucherRefusedError,
+    VoucherRequest,
+    build_voucher,
     check_books,
     check_budget,
     check_comments,
@@ -37,7 +43,7 @@ from accounting_agent.formats import (
     reference_chart,
     supplements,
 )
-from accounting_agent.formats.common import write_text_atomically
+from accounting_agent.formats.common import parse_amount, write_text_atomically
 from accounting_agent.profile import (
     BankConfig,
     BooksConfig,
@@ -120,7 +126,71 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Write the reports even if the books have errors.",
     )
     report.set_defaults(handler=_report)
+
+    new_voucher = commands.add_parser(
+        "new-voucher",
+        help="Create the voucher for one bank transaction (never changes a voucher).",
+    )
+    _add_organisation_arguments(new_voucher)
+    new_voucher.add_argument(
+        "--date",
+        type=_date_argument,
+        required=True,
+        help="The bank transaction's date, YYYY-MM-DD.",
+    )
+    new_voucher.add_argument(
+        "--amount",
+        type=_amount_argument,
+        required=True,
+        help="The bank transaction's amount as the bank shows it, e.g. -458 or 200.50.",
+    )
+    new_voucher.add_argument(
+        "--account",
+        type=_account_argument,
+        required=True,
+        help="The account to post against; the other line is the bank account.",
+    )
+    new_voucher.add_argument(
+        "--row",
+        type=int,
+        help="The row in the statement file, when several transactions share the "
+        "date and the amount (validate prints it).",
+    )
+    new_voucher.add_argument(
+        "--document",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="A file in the documents folder that supports the voucher; repeatable.",
+    )
+    new_voucher.add_argument("--note", default="", help="A note for the voucher.")
+    new_voucher.add_argument(
+        "--guess",
+        action="store_true",
+        help="Mark the posting as a guess; the note must say why.",
+    )
+    new_voucher.set_defaults(handler=_new_voucher)
     return parser
+
+
+def _date_argument(value: str) -> date:
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError("not a date (YYYY-MM-DD)") from None
+
+
+def _amount_argument(value: str) -> Decimal:
+    amount = parse_amount(value)
+    if amount is None:
+        raise argparse.ArgumentTypeError("not an amount (decimal point, no spaces)")
+    return amount
+
+
+def _account_argument(value: str) -> str:
+    if not re.fullmatch(r"\d{4}", value):
+        raise argparse.ArgumentTypeError("not an account number (four digits)")
+    return value
 
 
 def _add_organisation_arguments(parser: argparse.ArgumentParser) -> None:
@@ -341,18 +411,11 @@ def _check_details(
 
     The documents folder is listed here, so the domain stays free of I/O.
     """
-    documents = None
-    if checks.documents is not None:
-        documents = frozenset(
-            path.relative_to(checks.documents).as_posix()
-            for path in checks.documents.rglob("*")
-            if path.is_file()
-        )
     findings = check_details(
         books,
         config.bank_account,
         parking_accounts=profile.conventions.parking_accounts,
-        documents=documents,
+        documents=_list_documents(checks),
     )
     if checks.reference_chart is not None:
         reference, read_findings = reference_chart.read_reference_chart(
@@ -363,6 +426,17 @@ def _check_details(
             findings += check_reference(books.accounts, reference)
     findings += _check_supplements(checks, books)
     return findings
+
+
+def _list_documents(checks: ChecksConfig | None) -> frozenset[str] | None:
+    """The files in the documents folder, relative to it; ``None`` if none is configured."""
+    if checks is None or checks.documents is None:
+        return None
+    return frozenset(
+        path.relative_to(checks.documents).as_posix()
+        for path in checks.documents.rglob("*")
+        if path.is_file()
+    )
 
 
 def _check_supplements(checks: ChecksConfig, books: Books) -> list[Finding]:
@@ -456,6 +530,149 @@ def _write_statement(path: Path, export: nordea_csv.StatementExport) -> None:
         f"Wrote {path.name}: {written.rows} rows, "
         f"{written.first_date} to {written.last_date}."
     )
+
+
+# A bank transaction without a voucher is fixed by creating that voucher, so this one
+# error does not stop new-voucher (ADR-009).
+FIXED_BY_NEW_VOUCHER = "bank-unbooked"
+NOT_CREATED = "No voucher was created"
+
+
+def _new_voucher(args: argparse.Namespace) -> int:
+    profile = _load_matching_profile(args)
+    if profile is None:
+        return EXIT_ERROR
+    config, bank = profile.books, profile.bank
+    if config is None or bank is None:
+        logger.error(
+            "%s has no '%s' section in organisation.yaml; new-voucher needs one.",
+            args.config_dir,
+            "books" if config is None else "bank",
+        )
+        return EXIT_ERROR
+
+    books, read_findings = READERS[config.format](config.path, config.bank_account)
+    if books is None:
+        logger.error(
+            "%s: the books could not be read. Run validate for details.", NOT_CREATED
+        )
+        return EXIT_ERROR
+    before = read_findings + _check_all(profile, config, books, unbooked=False)
+    errors = _blocking_errors(before)
+    if errors:
+        logger.error(
+            "%s: the books have %d error(s). Run validate for details.",
+            NOT_CREATED,
+            len(errors),
+        )
+        return EXIT_ERROR
+    transactions, _ = bank_statement.read_statement(
+        bank.statement_file, config.fiscal_year
+    )
+    if transactions is None:
+        logger.error(
+            "%s: the bank statement file %s could not be read. Run import-bank first.",
+            NOT_CREATED,
+            bank.statement_file.name,
+        )
+        return EXIT_ERROR
+
+    request = VoucherRequest(
+        date=args.date,
+        amount=args.amount,
+        account=args.account,
+        row=args.row,
+        documents=tuple(args.document),
+        note=args.note,
+        guess=args.guess,
+    )
+    # Messages name rules, dates, amounts and numbers only — never a text or a name.
+    try:
+        voucher = build_voucher(
+            books,
+            transactions,
+            bank_statement.read_voucher_texts(bank.statement_file),
+            config.bank_account,
+            request,
+            documents=_list_documents(profile.checks),
+            guessed_posting_marker=profile.conventions.guessed_posting_marker,
+        )
+        voucher = replace(voucher, source=front_matter.voucher_file_name(voucher))
+        with_voucher = replace(books, vouchers=(*books.vouchers, voucher))
+        after = read_findings + _check_all(
+            profile, config, with_voucher, unbooked=False
+        )
+        added = [finding for finding in after if finding not in before]
+        # The safety net: whatever the checks say, a voucher that breaks the books is
+        # not written.
+        errors = _blocking_errors(added)
+        if errors:
+            logger.error("%s: it would add %d error(s).", NOT_CREATED, len(errors))
+            for finding in errors:
+                logger.error("%s", mask_personal_numbers(finding.render()))
+            return EXIT_ERROR
+        content = front_matter.render_voucher(
+            voucher,
+            {account.number: account.name for account in books.accounts},
+            config.bank_account,
+            _link_path(profile.checks, config),
+        )
+        front_matter.write_voucher(
+            config.path / front_matter.VOUCHER_DIR, voucher, content
+        )
+    except VoucherRefusedError as error:
+        logger.error("%s: [%s] %s", NOT_CREATED, error.rule, error)
+        return EXIT_ERROR
+    except (front_matter.VoucherExistsError, ValueError) as error:
+        logger.error("%s: %s", NOT_CREATED, error)
+        return EXIT_ERROR
+
+    _emit_created(voucher, config.bank_account, added)
+    return EXIT_OK
+
+
+def _blocking_errors(findings: list[Finding]) -> list[Finding]:
+    return [
+        finding
+        for finding in findings
+        if finding.severity is Severity.ERROR and finding.rule != FIXED_BY_NEW_VOUCHER
+    ]
+
+
+def _link_path(checks: ChecksConfig | None, config: BooksConfig) -> str | None:
+    """The path from the voucher folder to the documents folder, for the links."""
+    if checks is None or checks.documents is None:
+        return None
+    try:
+        relative = os.path.relpath(
+            checks.documents, config.path / front_matter.VOUCHER_DIR
+        )
+    except ValueError:
+        # Different drives on Windows: no relative link is possible.
+        return None
+    return Path(relative).as_posix()
+
+
+def _emit_created(voucher: Voucher, bank_account: str, added: list[Finding]) -> None:
+    """Say what was created: the number, date, amount and accounts — never the text,
+    the note or a document's name."""
+    debit, credit = voucher.lines
+    amount = -debit.debit if credit.account == bank_account else debit.debit
+    line = f"  {voucher.date}, {amount}, debit {debit.account}, credit {credit.account}"
+    if voucher.documents:
+        count = len(voucher.documents)
+        line += f", {count} supporting document{'s' if count > 1 else ''}"
+    _emit(f"Created voucher {voucher.id} ({voucher.source})")
+    _emit(line)
+    # Only the warnings that name the new voucher: summaries change with every voucher.
+    for finding in added:
+        ids = finding.location.removeprefix("voucher ").split(", ")
+        if (
+            finding.severity is Severity.WARNING
+            and finding.location.startswith("voucher ")
+            and voucher.id in ids
+        ):
+            _emit(f"  {finding.render()}")
 
 
 def _emit_findings(findings: list[Finding]) -> None:

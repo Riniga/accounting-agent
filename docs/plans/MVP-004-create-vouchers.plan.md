@@ -322,7 +322,7 @@ Commit: `feat(formats): render and write a front-matter voucher`
 
 ### Phase 5 — The command
 
-- [ ] 5.1 **Tests first** (`tests/test_cli_new_voucher.py`), on a copy of `example-full`
+- [x] 5.1 **Tests first** (`tests/test_cli_new_voucher.py`), on a copy of `example-full`
   in `tmp_path`:
   - a successful run creates one file; `validate` then gives no new error, and the
     transaction is no longer unbooked;
@@ -337,8 +337,34 @@ Commit: `feat(formats): render and write a front-matter voucher`
   - new warnings caused by the voucher are printed.
 
   *Verify:* fail for the right reason. **STOP for review.**
-- [ ] 5.2 Implement `new-voucher` in `cli.py`: check before, build, check the books with
+  Result: `tests/test_cli_new_voucher.py`, 29 tests. 25 fail for the right reason:
+  argparse does not know the command (`SystemExit: 2`, "invalid choice"). The 4 that
+  pass are the malformed-argument tests, which expect exit code 2; they pass for the
+  wrong reason until the command exists, and are re-checked in 5.2. Locked by the tests:
+  - the arguments: `--date`, `--amount`, `--account` (four digits) are required and
+    checked by the parser; `--row`, `--document` (repeatable), `--note`, `--guess`;
+  - the output: `Created voucher N (<file name>)`, then the date, the amount, the two
+    accounts and the number of documents, then the warnings the voucher added;
+  - a refusal is logged as `[rule] message` with exit code 1, and every file under the
+    organisation is byte-identical afterwards;
+  - the link path is the relative path from the voucher folder to the documents folder.
+
+  The "would add an error" safety net cannot be reached by any request today — every
+  known cause is refused earlier — so its test lets a check object to the new voucher.
+- [x] 5.2 Implement `new-voucher` in `cli.py`: check before, build, check the books with
   the new voucher added, write, print.
+  Result: 552 tests pass; coverage 98.97 %, and every new line in `cli.py` is covered.
+  - The four malformed-argument tests now pass for the right reason: the parser rejects
+    the value, and nothing is read.
+  - Three tests were added with the implementation, for lines the first 29 did not
+    reach: a profile without a `checks` section, a file that appears between the read
+    and the write (never replaced), and folders on different drives (the link is the
+    name alone).
+  - Only warnings that name the new voucher are printed. Summaries such as the number
+    of unbooked transactions change with every voucher and would otherwise be repeated.
+  - Run for real on a copy of the synthetic organisation: the voucher was created, a
+    second run was refused as `already-booked`, and `validate` gave `RESULT: OK` with
+    no warning left.
 
 Commit: `feat(cli): add the new-voucher command`
 
