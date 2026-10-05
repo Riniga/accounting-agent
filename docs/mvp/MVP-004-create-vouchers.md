@@ -3,9 +3,20 @@
 Roadmap: [R3 – Agent tools & human-in-the-loop](../roadmap.md#r3--agent-tools--human-in-the-loop-planned) ·
 Plan: [MVP-004 plan](../plans/MVP-004-create-vouchers.plan.md)
 
-> **Approved by the owner 2026-10-05.** The plan is waiting for review; its §0.2 lists
-> where this document needs correcting, and the correction note is added in plan
-> TODO 1.2.
+> **Corrected 2026-10-05 (plan §0.2, approved by the owner with the plan):**
+>
+> - "Errors stop" has one exception: a bank transaction that lacks a voucher although
+>   later ones are booked is an error, and creating that voucher is the fix. That error
+>   does not block the command (ADR-009).
+> - Date and amount do not always identify a bank transaction. The caller also gives the
+>   statement row when more than one row has that date and amount.
+> - `validate` gives the **number** of documents no voucher refers to. Their names are
+>   listed in the to-do report, since a file name can hold a person's name.
+> - Cost vouchers without a document are named by voucher number in one warning.
+> - Generated lines: account numbers that disagree with the fields are an error; an
+>   account name that differs from the chart is a warning.
+> - The voucher's text is the statement row's name and message as `name(message)`, or the
+>   name alone when there is no message.
 
 ## Purpose
 

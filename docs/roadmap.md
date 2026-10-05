@@ -11,7 +11,7 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-**MVP-003 is implemented and pending its pull request.**
+**MVP-003 is merged** (PR #13). **MVP-004 is in progress.**
 [MVP-003 – Bank import, reconciliation, remaining checks and reports via core](mvp/MVP-003-bank-reconciliation-and-reports.md)
 delivered:
 - bank import (`import-bank`, the `nordea-csv` format) into masked statement and
@@ -23,7 +23,7 @@ delivered:
 Helsingborgs Judoklubb's 2026 books give the same statement file, the same check
 outcome and the same report figures as its own scripts. Next:
 [MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
-(approved 2026-10-05, plan waiting for review), then member management via core (backlog,
+(plan approved 2026-10-05), then member management via core (backlog,
 high priority; owner decision 2026-10-05).
 
 *Earlier:* **MVP-002 is merged** (PR #7).
@@ -84,7 +84,7 @@ Establishes the defined agent tools, confidence levels, approval policies and th
 trail — and decides how the core is exposed to the agent in each organisation project.
 
 * [MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
-  — **approved 2026-10-05, plan waiting for review.** One command writes the voucher from the bank
+  — **in progress.** One command writes the voucher from the bank
   statement; the agent or the treasurer supplies only the account, the supporting
   document and whether it is a guess. Supersedes ADR-008's "never vouchers" with a new
   ADR.

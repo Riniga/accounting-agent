@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-004-create-vouchers.md`](../mvp/MVP-004-create-vouchers.md)
 
-**Status:** Written 2026-10-05 — waiting for the owner's review. No TODO is started.
+**Status:** In progress (plan approved 2026-10-05)
 
 ## 0. Investigation
 
@@ -90,7 +90,8 @@ From here on the reference copy is only counted, through the core's readers. Not
 1. The command belongs in the core, not in each organisation's project.
 2. MVP-004 comes before member management.
 3. The generated lines are in Swedish.
-4. Errors in the books stop the command (with the exception in §0.2 point 1, to confirm).
+4. Errors in the books stop the command, with the exception in §0.2 point 1 (approved
+   with the plan).
 5. Supporting documents stay optional; the core creates none.
 6. Account names are shown in the voucher, but not stored as fields.
 
@@ -176,24 +177,27 @@ the right reason before the implementation is written. Every phase runs `pytest`
 
 ### Phase 1 — Decisions and branch
 
-- [ ] 1.1 The owner merges MVP-003's pull request. Create
-  `feature/mvp-004-create-vouchers` from `main`. If MVP-003 is not merged yet, the owner
-  decides whether to branch from the MVP-003 branch instead.
-- [ ] 1.2 Update the MVP-004 document with a dated correction note per §0.2: the
-  `bank-unbooked` exception, the statement row, unused documents counted in `validate`
-  and listed in the report, and the two severities for generated lines.
+- [x] 1.1 The owner merges MVP-003's pull request. Create
+  `feature/mvp-004-create-vouchers` from `main`.
+  Result: PR #13 is merged; the branch is created from `origin/main` (`98eedd3`). The
+  MVP document, this plan and ADR-009 were already on `main` (`e96584d`).
+- [x] 1.2 Update the MVP-004 document with a dated correction note per §0.2.
   *Verify:* every change traces to §0.
-- [ ] 1.3 Set ADR-009 to Accepted, change ADR-008's status line to "Accepted — superseded
+  Result: a correction note at the top with six points, each tracing to §0.2.
+- [x] 1.3 Set ADR-009 to Accepted, change ADR-008's status line to "Accepted — superseded
   in part by ADR-009", and remove "(Proposed)" from the index row.
   *Verify:* ADR-008's body is unchanged (`git diff` shows the status line only).
-- [ ] 1.4 Glossary: generated lines, counter account (motkonto), guessed posting.
+  Result: done; `git diff` on ADR-008 shows one changed line.
+- [x] 1.4 Glossary: generated lines, counter account (motkonto), guessed posting.
+  Result: three rows added. The stale "pending PR" for MVP-003 in `roadmap.md` and
+  `current-state.md` was also corrected.
 
-Commit: `docs(mvp-004): define the MVP, the plan and ADR-009`
+Commit: `docs(mvp-004): approve the plan and accept ADR-009`
 
 ### Phase 2 — The reader: generated lines
 
-- [ ] 2.1 **Tests first** (`tests/test_front_matter.py`, new fixtures under
-  `tests/fixtures/books/`):
+- [x] 2.1 **Tests first** (`tests/test_front_matter_generated.py`; the variants are built
+  from the `valid` books by helpers, as in `test_front_matter.py`):
   - a voucher with generated lines reads to the same `Voucher` as one without them, and
     its note holds only the text after the generated lines;
   - a voucher without generated lines reads exactly as today;
@@ -205,6 +209,17 @@ Commit: `docs(mvp-004): define the MVP, the plan and ADR-009`
   - no finding quotes a name, a text or a file name.
 
   *Verify:* the tests fail for the right reason. **STOP for review.**
+  Result: `tests/test_front_matter_generated.py`, 25 tests. 22 fail for the right
+  reason: the generated lines end up in the note, and no `generated-*` finding exists.
+  3 pass already, as they should: they pin today's behaviour that must not change (a
+  line of the same shape further down, a document line without an account line, and
+  vouchers without generated lines). The shape locked by the tests:
+  - `Debet NNNN <name> · Kredit NNNN <name>` as the first non-blank line of the body;
+  - then one `Underlag: [<name>](<<path>/<name>>)` line per document, in the field's
+    order, where the path must end with the document's name;
+  - the note is whatever follows.
+
+  Also tested: a wrong number gives the error only, not the name warning as well.
 - [ ] 2.2 Implement in `front_matter.py`. *Verify:* all tests pass; the existing 423
   still pass unchanged.
 
@@ -329,7 +344,6 @@ Commit: `docs(mvp-004): document the command and close the MVP`
   this MVP exists to prevent.
 - **A file in the documents folder that is not a document** (for example a note) is
   counted as unused. The organisation moves it; the core does not guess.
-- **To confirm with the owner:** the `bank-unbooked` exception to "errors stop".
 
 ### Threat model (STRIDE)
 

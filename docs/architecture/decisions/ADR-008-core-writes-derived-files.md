@@ -1,6 +1,6 @@
 # ADR-008: The core writes derived files — bank statements and reports — never vouchers
 
-**Status:** Accepted
+**Status:** Accepted — superseded in part by [ADR-009](ADR-009-core-creates-vouchers.md) ("never vouchers")
 **Date:** 2026-09-26
 
 ## Context
