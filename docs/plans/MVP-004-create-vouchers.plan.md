@@ -220,8 +220,12 @@ Commit: `docs(mvp-004): approve the plan and accept ADR-009`
   - the note is whatever follows.
 
   Also tested: a wrong number gives the error only, not the name warning as well.
-- [ ] 2.2 Implement in `front_matter.py`. *Verify:* all tests pass; the existing 423
+- [x] 2.2 Implement in `front_matter.py`. *Verify:* all tests pass; the existing 423
   still pass unchanged.
+  Result: 448 tests pass (423 unchanged + 25); coverage 98.85 %, and every new line in
+  `front_matter.py` is covered. The body is split after the voucher is read, so the
+  fields are read exactly as before; the checks compare the generated lines with the
+  voucher's two posting lines and its documents.
 
 Commit: `feat(formats): read and check a voucher's generated lines`
 

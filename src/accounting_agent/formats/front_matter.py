@@ -6,10 +6,15 @@ parser deliberately reproduces the semantics of the organisation's own tool (a v
 starting with ``"`` is a JSON string; a line is split at its first colon), so that results
 stay comparable. Every problem is reported as a finding; no finding ever quotes a
 voucher's text.
+
+Below the fields a voucher may start with generated lines (ADR-009): the accounts with
+their names, then a link to each supporting document. They repeat the fields for the
+reader's sake, so they are kept out of the note and checked against the fields.
 """
 
 import json
 import re
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -53,6 +58,18 @@ CLASS_BY_FIRST_DIGIT = {
     "3": "Intäkter",
 }
 OTHER_CLASS = "Kostnader och resultat"
+# The generated lines, in Swedish like the rest of the organisation's files (ADR-009).
+GENERATED_ACCOUNTS = re.compile(r"Debet (\d{4}) (.+?) · Kredit (\d{4}) (.+)")
+GENERATED_DOCUMENT = re.compile(r"Underlag: \[(.+)\]\(<(.+)>\)")
+
+
+@dataclass(frozen=True)
+class _GeneratedLines:
+    """What a voucher's generated lines say: accounts as (number, name), then links."""
+
+    debit: tuple[str, str]
+    credit: tuple[str, str]
+    links: tuple[tuple[str, str], ...]
 
 
 def read_books(path: Path, bank_account: str) -> tuple[Books | None, list[Finding]]:
@@ -64,7 +81,8 @@ def read_books(path: Path, bank_account: str) -> tuple[Books | None, list[Findin
     findings = Findings()
     chart_rows = read_csv(path / CHART_FILE, CHART_HEADER, findings)
     opening_rows = read_csv(path / OPENING_FILE, OPENING_HEADER, findings)
-    vouchers = _read_vouchers(path / VOUCHER_DIR, bank_account, findings)
+    account_names = {r["konto"]: r["lokal_benämning"] for r in chart_rows or []}
+    vouchers = _read_vouchers(path / VOUCHER_DIR, bank_account, account_names, findings)
     if chart_rows is None or opening_rows is None or vouchers is None:
         return None, findings.items
 
@@ -121,7 +139,10 @@ def _opening_balances(
 
 
 def _read_vouchers(
-    directory: Path, bank_account: str, findings: Findings
+    directory: Path,
+    bank_account: str,
+    account_names: dict[str, str],
+    findings: Findings,
 ) -> tuple[Voucher, ...] | None:
     if not directory.is_dir():
         findings.add(
@@ -146,11 +167,78 @@ def _read_vouchers(
         parsed = _read_front_matter(path, findings)
         if parsed is None:
             continue
-        fields, note = parsed
+        fields, body = parsed
+        generated, note = _split_generated(body)
         voucher = _to_voucher(path.name, match, fields, note, bank_account, findings)
         if voucher is not None:
+            if generated is not None:
+                _check_generated(voucher, generated, account_names, findings)
             vouchers.append(voucher)
     return tuple(vouchers)
+
+
+def _split_generated(body: str) -> tuple[_GeneratedLines | None, str]:
+    """Split a voucher's body into its generated lines and the note.
+
+    Only the top of the body counts: the account line first, then the document lines.
+    A line of the same shape further down is the writer's own and stays in the note.
+    """
+    lines = body.split("\n")
+    accounts = GENERATED_ACCOUNTS.fullmatch(lines[0].rstrip())
+    if accounts is None:
+        return None, body
+    links: list[tuple[str, str]] = []
+    for line in lines[1:]:
+        link = GENERATED_DOCUMENT.fullmatch(line.rstrip())
+        if link is None:
+            break
+        links.append((link.group(1), link.group(2)))
+    generated = _GeneratedLines(
+        debit=(accounts.group(1), accounts.group(2)),
+        credit=(accounts.group(3), accounts.group(4)),
+        links=tuple(links),
+    )
+    return generated, "\n".join(lines[1 + len(links) :]).strip()
+
+
+def _check_generated(
+    voucher: Voucher,
+    generated: _GeneratedLines,
+    account_names: dict[str, str],
+    findings: Findings,
+) -> None:
+    """The fields are the single source; generated lines that disagree mislead."""
+    # Messages name account numbers only: names and file names can hold a person's name.
+    debit, credit = voucher.lines
+    if (generated.debit[0], generated.credit[0]) != (debit.account, credit.account):
+        findings.add(
+            Severity.ERROR,
+            "generated-accounts",
+            voucher.source,
+            "the generated account line does not match the fields 'debet' and 'kredit'",
+        )
+    else:
+        for number, name in (generated.debit, generated.credit):
+            if account_names.get(number, name) != name:
+                findings.add(
+                    Severity.WARNING,
+                    "generated-account-name",
+                    voucher.source,
+                    f"the generated line gives account {number} another name than "
+                    f"the chart of accounts",
+                )
+    names = tuple(name for name, _ in generated.links)
+    targets_match = all(
+        target == name or target.endswith(f"/{name}")
+        for name, target in generated.links
+    )
+    if names != voucher.documents or not targets_match:
+        findings.add(
+            Severity.ERROR,
+            "generated-documents",
+            voucher.source,
+            "the generated document lines do not match the field 'underlag'",
+        )
 
 
 def _read_front_matter(
