@@ -98,7 +98,11 @@ godkänt det.
     - organisationens id (små bokstäver och bindestreck) och mappstrukturen:
       var bokföringen, kontoutdragsfilen, underlagen, BAS-referensen och
       rapporterna ska ligga;
-    - hela innehållet i `organisation.yaml`;
+    - hela innehållet i `organisation.yaml`. Ta med avsnittet `reports` – mappen
+      där rapporterna ska skrivas, organisationens namn och dess
+      organisationsnummer – annars går redovisningen inte att skapa. Exemplet
+      i kärnans testmapp saknar det avsnittet; mallen i
+      `organisation-projects.md` har det;
     - kontoplanen som tabell: konto, BAS-benämning, eget kort namn. Håll den så
       liten som möjligt: bara konton som behövs nu. Fler läggs till när de
       behövs;
@@ -148,6 +152,13 @@ godkänt det.
 
     Målet är `RESULT: OK` med 0 verifikationer, och en rad `[unbooked]` per
     banktransaktion.
+
+    Kontrollera också att redovisningen går att skapa:
+
+        accounting-agent report <id> --config-dir 2026
+
+    Den ska skriva rapporterna till mappen i `reports.output`. Rapporterna är
+    nästan tomma nu, men kommandot ska gå igenom.
 
     - Fel: läs meddelandet, rätta filen du skapade och kör igen. Rätta bara
       filer du själv har skapat i den här körningen.
