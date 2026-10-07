@@ -24,3 +24,4 @@ mellan dem. Se [`docs/standards/documentation.md`](../../standards/documentation
 | [ADR-007](ADR-007-supplementary-book-files.md) | Supplementary book files get core models and core-owned formats; accounts get an optional group |
 | [ADR-008](ADR-008-core-writes-derived-files.md) | The core writes derived files — bank statements and reports — never vouchers |
 | [ADR-009](ADR-009-core-creates-vouchers.md) | The core creates new vouchers from bank transactions — it never changes one |
+| [ADR-010](ADR-010-one-book-format.md) | The core has one book format; organisations adapt to it |

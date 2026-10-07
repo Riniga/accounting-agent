@@ -11,13 +11,14 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-**MVP-004 is implemented and pending its pull request.**
+**MVP-004 is merged** (PR #14). **MVP-005 is in progress.**
 [MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
 delivered `new-voucher`: one command creates the voucher for a bank transaction from the
 caller's decisions, and refuses rather than writes a wrong one (ADR-009). Helsingborgs
 Judoklubb's whole 2026 was built again from nothing with it. Next: vouchers with several
-lines and vouchers without a bank transaction, which payroll and invoices need (owner
-direction 2026-10-07, see R2); then member management via core.
+lines and vouchers without a bank transaction, which payroll and invoices need —
+[MVP-005](mvp/MVP-005-multi-line-vouchers.md), plan approved 2026-10-07; then member
+management via core.
 
 *Earlier:* **MVP-003 is merged** (PR #13).
 [MVP-003 – Bank import, reconciliation, remaining checks and reports via core](mvp/MVP-003-bank-reconciliation-and-reports.md)
@@ -79,9 +80,8 @@ report chain in the core, with Helsingborgs Judoklubb as the first organisation 
   it.** The platform is meant for many organisations, so a reader per organisation does
   not scale. Aktivitet Förebygger moves its books to the core's format. Where the
   format cannot hold what an organisation needs, the one format is extended: it must
-  get vouchers with several lines and vouchers without a bank transaction. To record
-  as an ADR that supersedes ADR-006's "each file format has its own reader", in the
-  next MVP.
+  get vouchers with several lines and vouchers without a bank transaction (MVP-005).
+  Recorded as [ADR-010](architecture/decisions/ADR-010-one-book-format.md).
 * [MVP-003 – Bank import, reconciliation, remaining checks and reports via core](mvp/MVP-003-bank-reconciliation-and-reports.md)
   — Helsingborgs Judoklubb's agent tooling (bank import, reconciliation, the rest of
   `kontroll.py`, the reports) through the core, except member management. It replaces
@@ -94,10 +94,15 @@ Establishes the defined agent tools, confidence levels, approval policies and th
 trail — and decides how the core is exposed to the agent in each organisation project.
 
 * [MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
-  — **implemented, pending its pull request.** One command writes the voucher from the bank
+  — **merged (PR #14).** One command writes the voucher from the bank
   statement; the agent or the treasurer supplies only the account, the supporting
   document and whether it is a guess. Supersedes ADR-008's "never vouchers" with a new
   ADR.
+
+* [MVP-005 – Vouchers with several lines, and without a bank transaction](mvp/MVP-005-multi-line-vouchers.md)
+  — **in progress.** The one book format is extended so that a salary
+  payment and an issued invoice can be recorded, and Aktivitet Förebygger adopts the
+  format. Records the one-format decision as an ADR.
 
 ## R4 – JudoSyd migration (Planned)
 

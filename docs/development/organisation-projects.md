@@ -7,11 +7,15 @@ work MVP by MVP (see the [roadmap](../roadmap.md)).
 
 ## What each organisation can use today
 
-| Organisation | Book format | Can use | Keeps using its own tooling for |
-|---|---|---|---|
-| Helsingborgs Judoklubb | `front-matter` | `import-bank` (bank statement and fund value), `validate` (every check in `kontroll.py` except members, and the reconciliation against the bank), `new-voucher` (a voucher for a bank transaction), `report` (every report except the member fees) | Members: `medlemskontroll.py`, the member checks in `kontroll.py` and the member-fee report (backlog) |
-| Aktivitet Förebygger | table format | nothing yet — no reader ([Book formats](../architecture/overview.md#book-formats)) | everything |
-| JudoSyd | not in files yet | nothing yet | everything |
+| Organisation | Can use | Keeps using its own tooling for |
+|---|---|---|
+| Helsingborgs Judoklubb | `import-bank` (bank statement and fund value), `validate` (every check in `kontroll.py` except members, and the reconciliation against the bank), `new-voucher` (a voucher for a bank transaction), `report` (every report except the member fees) | Members: `medlemskontroll.py`, the member checks in `kontroll.py` and the member-fee report (backlog) |
+| Aktivitet Förebygger | nothing yet — it is adopting the core's format; its salaries and invoices need vouchers with several lines (MVP-005) | everything |
+| JudoSyd | nothing yet — its books are not in files | everything |
+
+The core has one book format, and an organisation adopts it
+([ADR-010](../architecture/decisions/ADR-010-one-book-format.md)); see
+[Book formats](../architecture/overview.md#book-formats).
 
 The treasurer's decisions — which account, which supporting document, whether a posting
 is a guess — stay with each organisation and its own routine (for example Helsingborgs

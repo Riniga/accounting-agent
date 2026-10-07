@@ -21,7 +21,7 @@ once a working concrete function exists to generalise
 
 | Area | Location |
 |------|----------|
-| Core package | `src/accounting_agent/`. This repository *is* the shared code; there is no `apps/`/`packages/` split (ADR-002). `books/` is the domain (no file I/O, enforced by Ruff `TID251`), `formats/` holds one reader per book file format (ADR-006) |
+| Core package | `src/accounting_agent/`. This repository *is* the shared code; there is no `apps/`/`packages/` split (ADR-002). `books/` is the domain (no file I/O, enforced by Ruff `TID251`), `formats/` holds the reader and writer of the one book format, and a reader per external format such as a bank's export (ADR-010) |
 | Organisation projects | How they use the core, and a `CLAUDE.md` snippet for them: `docs/development/organisation-projects.md` |
 | Reference material | `docs/reference/` — local, git-ignored copies of the private organisation projects. Contains real data: read only code, instructions, configuration and rules; never commit or copy data from it ([ADR-003](docs/architecture/decisions/ADR-003-no-real-data-in-core-repo.md)) |
 | Roadmap / MVPs / plans | `docs/roadmap.md`, `docs/mvp/`, `docs/plans/` |
