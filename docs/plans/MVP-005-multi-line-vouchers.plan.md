@@ -512,10 +512,17 @@ Commit: `feat(books): expect documents for vouchers without a bank transaction`
 
 ### Phase 8 — Pilot: Aktivitet Förebygger
 
-- [ ] 8.1 Write `docs/claude-prompts/set-up-organisation-project.md`: lets Claude Code in
+- [x] 8.1 Write `docs/claude-prompts/set-up-organisation-project.md`: lets Claude Code in
   an organisation's project create `organisation.yaml`, the chart of accounts and the
   opening balance in the core's format, import the bank export and reach `RESULT: OK`
   with no vouchers.
+  Result: two prompts, since setting up and booking are separate steps with separate
+  stops: `set-up-organisation-project.md` (configuration, chart, opening balance and
+  the imported statement, to `RESULT: OK` with no voucher) and `book-the-year.md` (the
+  vouchers, from the statement and the supporting documents, with one stop to agree
+  on a posting template per kind of event). The flow they describe was run on an
+  invented organisation with the synthetic Sparbanken Syd export: import, `RESULT: OK`
+  with no voucher, then one voucher of each of the command's three uses.
 - [ ] 8.2 The owner runs it in Aktivitet Förebygger's project, then lets the agent book
   2026 from the bank statement and the supporting documents. *Verify, counts only:* at
   least one salary payment and one issued invoice created by the command;
@@ -525,13 +532,17 @@ Commit: `docs(mvp-005): record the pilot result`
 
 ### Phase 9 — Documentation and close
 
-- [ ] 9.1 `organisation-projects.md`: the two new uses of the command, the lines form,
+- [x] 9.1 `organisation-projects.md`: the two new uses of the command, the lines form,
   and the `CLAUDE.md` snippet.
-- [ ] 9.2 `README.md`, `AGENTS.md`, `overview.md`, `current-state.md`, `roadmap.md`
+- [x] 9.2 `README.md`, `AGENTS.md`, `overview.md`, `current-state.md`, `roadmap.md`
   (status; member management is next).
 - [ ] 9.3 The MVP's "Outcome at close", checked against each acceptance criterion.
-- [ ] 9.4 Methodology compliance: the note under `GAP-F2-CONFIDENTIAL` (§0.3).
-- [ ] 9.5 `git grep` for organisation-specific values in `src/`: none.
+- [x] 9.4 Methodology compliance: the note under `GAP-F2-CONFIDENTIAL` (§0.3).
+  Result: a changelog entry, the row's note and the plan table. It also notes a net
+  amount that a pilot comparison printed in TODO 6.2.
+- [x] 9.5 `git grep` for organisation-specific values in `src/`: none.
+  Result: no organisation name, id or account number in `src/`. The export format
+  is named after the bank, like `nordea-csv`.
 
 Commit: `docs(mvp-005): document the lines form and close the MVP`
 
@@ -590,4 +601,7 @@ Bank export (a file the treasurer downloaded) → import-bank → the statement 
 
 ## 6. Found during this MVP
 
-- *(none yet)*
+- `fix(books)`: with no voucher at all, the warning about unbooked bank transactions
+  said "after 0001-01-01". It now says that the books have no voucher yet. Every
+  organisation is in that state right after it is set up. Found when the set-up flow
+  was tried (TODO 8.1); regression test in `test_reconciliation.py` (`ba9977d`).

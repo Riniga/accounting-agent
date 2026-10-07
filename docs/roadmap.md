@@ -11,7 +11,8 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-**MVP-004 is merged** (PR #14). **MVP-005 is in progress.**
+**MVP-004 is merged** (PR #14). **MVP-005 is implemented; its pilot in Aktivitet
+Förebygger's project and the pull request remain.**
 [MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
 delivered `new-voucher`: one command creates the voucher for a bank transaction from the
 caller's decisions, and refuses rather than writes a wrong one (ADR-009). Helsingborgs
@@ -100,7 +101,7 @@ trail — and decides how the core is exposed to the agent in each organisation 
   ADR.
 
 * [MVP-005 – Vouchers with several lines, and without a bank transaction](mvp/MVP-005-multi-line-vouchers.md)
-  — **in progress.** The one book format is extended so that a salary
+  — **implemented; the pilot and the pull request remain.** The one book format is extended so that a salary
   payment and an issued invoice can be recorded, and Aktivitet Förebygger adopts the
   format. Records the one-format decision as an ADR.
 
@@ -140,6 +141,12 @@ instead — see `docs/development/methodology.md` "Found during an MVP".
   - Consider adding it as a principle in the vision, and as an automated check (a CI grep
     for known consumer names).
 
+* (2026-10-07, MVP-005) Reconcile a second statement: the tax account against its
+  account in the books, from the tax authority's statement. Until then its events
+  are vouchers without a bank transaction.
+* (2026-10-07, MVP-005) A voucher that covers several bank transactions, for a salary
+  run the bank pays as separate payments. Today it is one voucher without the bank
+  account and one per payment. Needs reconciliation rebuilt; wait for a real need.
 * (2026-10-05, MVP-004) Machine-readable posting rules: the voucher command warns when
   the chosen account differs from the organisation's rule for that kind of transaction.
   Wait until the command from MVP-004 is in use.

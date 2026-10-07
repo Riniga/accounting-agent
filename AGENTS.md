@@ -184,6 +184,9 @@ accounting-agent validate <org> --config-dir <path-to-organisation-config> [--ba
 accounting-agent import-bank <org> --config-dir <path-to-organisation-config> <export>
 # write the reports (Swedish Markdown) to the configured folder (ADR-008)
 accounting-agent report <org> --config-dir <path-to-organisation-config> [--force]
-# create the voucher for one bank transaction; never changes a voucher (ADR-009)
-accounting-agent new-voucher <org> --config-dir <path-to-organisation-config> --date <YYYY-MM-DD> --amount <amount> --account <account> [--row <n>] [--document <name>]... [--note <text>] [--guess]
+# create one voucher; never changes a voucher (ADR-009). A bank transaction against
+# one account, or against several lines; or, without --amount, no bank transaction
+accounting-agent new-voucher <org> --config-dir <path-to-organisation-config> --date <YYYY-MM-DD> --amount <amount> --account <account>
+accounting-agent new-voucher <org> --config-dir <path-to-organisation-config> --date <YYYY-MM-DD> --amount <amount> --debit <account>=<amount> --credit <account>=<amount>
+accounting-agent new-voucher <org> --config-dir <path-to-organisation-config> --date <YYYY-MM-DD> --text <text> --debit <account>=<amount> --credit <account>=<amount>
 ```

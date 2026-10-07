@@ -16,12 +16,13 @@ public repository holds the general functionality they share. See
 Swedish bookkeeping terms and their English names in the code are in the
 [glossary](glossary.md).
 
-**Current state (MVP-003 merged; MVP-004 implemented, pending its pull request):** one
-installable
+**Current state (MVP-004 merged; MVP-005 implemented, pending its pilot and pull
+request):** one installable
 package, behind the CI quality gates from MVP-001, containing:
 - an organisation-profile loader;
 - a general double-entry book model (ADR-006), with supplementary-file models (ADR-007);
-- readers for the `front-matter` book format, the `nordea-csv` bank export, the bank
+- readers for the `front-matter` book format, the `nordea-csv` and
+  `sparbanken-syd-csv` bank exports, the bank
   statement, the BAS reference chart and the supplementary files;
 - the general checks, the detail checks, the reference-chart check and reconciliation
   against the bank;
@@ -59,7 +60,9 @@ src/accounting_agent/   The core package (ADR-002)
         front_matter.py read_books() for the `front-matter` format; render_voucher(), write_voucher()
         reference_chart.py  read_reference_chart() — the four-file BAS reference
         supplements.py  read_budget(), read_comments(), read_todo()
+        bank_export.py  What every bank export reader gives: statement rows, fund values
         nordea_csv.py   read_export() for the `nordea-csv` bank export
+        sparbanken_syd_csv.py  read_export() for the `sparbanken-syd-csv` bank export
         bank_statement.py  read_statement(), read_fund_values(), read_voucher_texts(); write_statement(), write_fund_values() — atomic writes
     reports/            Swedish Markdown reports, rendered from the model — no file I/O (ADR-008)
         format.py       ReportContext, amounts, tables (masked cells), the report header
@@ -148,9 +151,11 @@ LICENSE                 PolyForm Noncommercial 1.0.0 (ADR-005)
     fund-value file and prints only file names, dates and counts.
   - `report <organisation> --config-dir <path> [--force]` runs the checks, then writes
     the reports to the configured folder; it refuses on errors unless forced.
-  - `new-voucher <organisation> --config-dir <path> --date … --amount … --account …`
-    creates the voucher for one bank transaction and prints its number, date, amount
-    and accounts.
+  - `new-voucher <organisation> --config-dir <path> --date … ` creates one voucher and
+    prints its number, date, amount and lines. With `--amount` it is for a bank
+    transaction, against `--account` or against lines (`--debit`, `--credit`); without
+    `--amount` it has no bank transaction, and `--text` and every line are the caller's
+    (MVP-005).
 - **`reports/`** renders the reports as Swedish Markdown strings, with the texts and
   figures of Helsingborgs Judoklubb's `generera_redovisning.py`. It does no I/O — the
   `TID251` ban covers it — and the CLI writes the files atomically. Table cells are
@@ -266,7 +271,9 @@ semicolons. Vouchers are numbered 1..N across the year, without series.
 
 **When the format lacks something an organisation needs, the format is extended** for
 everyone, in a way that keeps existing books valid. A voucher has one debit and one
-credit account today; MVP-005 adds a form with any number of lines.
+credit account in the *simple form*; MVP-005 added the *lines form*, with one `debet:`
+or `kredit:` field per posting line, each an account and an amount. The simple form is
+still what one debit and one credit line is written in, so no existing voucher changed.
 
 **Formats that belong to someone else are not book formats.** The core reads one export
 format per bank (`bank.export_format`), and the BAS reference chart as it is published.
@@ -285,8 +292,8 @@ reader would have had to do, are history: see the MVP-002 plan (§0.1 and TODO 8
 
 - **Member management via core (backlog, high priority):** the member register, member
   payments and the member-fee report, with their own STRIDE pass.
-- **Vouchers with several lines, and without a bank transaction (MVP-005):** the one
-  book format extended, so that salaries and invoices can be recorded.
+- **Reconciling a second statement**, such as the tax account against its account in
+  the books (backlog).
 - **Later module areas** (from the initial idea, added only as extraction justifies them):
   member management (backlog), agent tools, confidence
   and approval policies, and the audit trail (R3), integrations (R4), payroll (R5).

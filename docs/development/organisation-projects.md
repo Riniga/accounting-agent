@@ -10,7 +10,7 @@ work MVP by MVP (see the [roadmap](../roadmap.md)).
 | Organisation | Can use | Keeps using its own tooling for |
 |---|---|---|
 | Helsingborgs Judoklubb | `import-bank` (bank statement and fund value), `validate` (every check in `kontroll.py` except members, and the reconciliation against the bank), `new-voucher` (a voucher for a bank transaction), `report` (every report except the member fees) | Members: `medlemskontroll.py`, the member checks in `kontroll.py` and the member-fee report (backlog) |
-| Aktivitet Förebygger | nothing yet — it is adopting the core's format; its salaries and invoices need vouchers with several lines (MVP-005) | everything |
+| Aktivitet Förebygger | everything the core has, once its year folder is set up in the core's format: `import-bank` (`sparbanken-syd-csv`), `validate`, `new-voucher` (salaries and invoices need its lines), `report` | reconciling the tax account; calculating salaries |
 | JudoSyd | nothing yet — its books are not in files | everything |
 
 The core has one book format, and an organisation adopts it
@@ -65,7 +65,7 @@ books:                           # validate, report
   fiscal_year: 2026
   bank_account: "1930"
 bank:                            # import-bank; reconciliation in validate
-  export_format: nordea-csv
+  export_format: nordea-csv      # or sparbanken-syd-csv
   statement_file: Bokföring/kontoutdrag-1930.csv
   fund_account: "1350"           # optional, together with fund_value_file
   fund_value_file: Bokföring/fondvärde-1350.csv
@@ -107,6 +107,12 @@ conda run -n accounting-agent accounting-agent validate hbg-judo --config-dir 20
 # create the voucher for one of them — one run per bank transaction, oldest first
 conda run -n accounting-agent accounting-agent new-voucher hbg-judo --config-dir 2026 --date 2026-03-05 --amount -458 --account 5010 --document "20260305-faktura-1001.pdf"
 
+# a bank transaction against several accounts: give the other side, the bank line is added
+conda run -n accounting-agent accounting-agent new-voucher hbg-judo --config-dir 2026 --date 2026-04-25 --amount -21000 --debit 7010=30000 --credit 2710=9000
+
+# an event without a bank transaction: no --amount; the date, the text and every line
+conda run -n accounting-agent accounting-agent new-voucher hbg-judo --config-dir 2026 --date 2026-04-30 --text "Faktura 12" --debit 1510=12500 --credit 3010=12500
+
 # after every change to the books
 conda run -n accounting-agent accounting-agent validate hbg-judo --config-dir 2026
 
@@ -120,6 +126,18 @@ conda run -n accounting-agent accounting-agent report hbg-judo --config-dir 2026
 - **Warnings** (for example `personal-number`, `voucher-duplicate`): review them. They
   don't block.
 - **`new-voucher`** creates one new file in the voucher folder and nothing else.
+  - With `--amount` the voucher is for a bank transaction, against `--account` or
+    against lines given with `--debit` and `--credit`. The lines are the other side
+    only; they must add up to the bank's amount.
+  - Without `--amount` the voucher has no bank transaction: an issued invoice, a salary
+    run, a tax-account event, a closing entry. `--text` and every line are needed, the
+    lines must balance, the date must be in the fiscal year, and the bank account
+    cannot be among the lines. The same date, text and lines twice is refused.
+  - A voucher belongs to at most one bank transaction. A salary run that the bank pays
+    as several transactions is one voucher without the bank account, with the net as a
+    liability, and one voucher per payment.
+  - The core calculates nothing. Tax, employer's contributions and net salary come from
+    the supporting document.
   - `--row` is needed when several bank transactions have the same date and amount;
     `validate` prints the row.
   - `--document` names a file in the documents folder and can be repeated. `--note`
@@ -134,8 +152,16 @@ conda run -n accounting-agent accounting-agent report hbg-judo --config-dir 2026
     hand, change the line too, or `validate` reports the difference.
   - A wrong voucher is not undone by the core. Removing or changing it is the
     treasurer's decision, by the organisation's routine.
+- **Two forms of voucher file.** One debit and one credit line is written with one
+  `debet`, one `kredit` and `belopp`, as before. Any other voucher has one `debet:` or
+  `kredit:` field per line, each an account and an amount, and `belopp` is then the
+  net on the bank account, or the total without it. The forms never mix in a file.
+- **A statement without balances** (`bank-no-balances`): some banks export no balance.
+  The core then cannot check the opening balance of the bank account, or the bank's own
+  arithmetic; check the opening balance against a statement yourself.
 - **Supporting documents:** `validate` warns for each payment out of the bank without a
-  document (`documents-expected`), except on the accounts in
+  document, and for each voucher without a bank transaction and without a document
+  (`documents-expected`), except on the accounts in
   `conventions.no_document_accounts`, and counts the files no voucher refers to
   (`documents-unused`). The to-do report lists those files by name.
 - **`import-bank`** refuses an export that starts later than the existing statement file:
@@ -175,13 +201,24 @@ kommando, men ändrar eller tar aldrig bort en befintlig.
   `conda run -n accounting-agent accounting-agent new-voucher hbg-judo --config-dir 2026 --date <ÅÅÅÅ-MM-DD> --amount <belopp> --account <motkonto> [--row <rad>] [--document <fil>] [--note <text>] [--guess]`
   - Du anger bara besluten: motkonto enligt konteringsreglerna, underlag och eventuell
     anteckning. Datum, belopp, text och nummer hämtas ur kontoutdraget och bokföringen.
+  - Flera konton mot en banktransaktion (till exempel lön): byt `--account` mot
+    `--debit <konto>=<belopp>` och `--credit <konto>=<belopp>`, en per rad. Ange bara
+    den andra sidan; bankraden läggs till av kommandot, och raderna måste gå ihop med
+    bankens belopp.
+  - En händelse utan banktransaktion (utställd faktura, lönekörning, skattekonto,
+    bokslutspost): utelämna `--amount` och ange `--text "<vad det är>"` och alla rader
+    med `--debit`/`--credit`. Debet ska vara lika med kredit, och bankkontot får inte
+    vara med.
+  - En verifikation hör till högst en banktransaktion.
+  - Räkna inte ut belopp. Skatt, arbetsgivaravgifter och nettolön tas från underlaget.
   - `--row` behövs när flera transaktioner har samma datum och belopp.
   - Är konteringen en gissning: `--guess` och skälet i `--note`. Gissa aldrig utan det.
   - Vägrar kommandot, läs skälet och rätta anropet. Försök inte gå runt det genom att
     skriva filen själv.
   - Raderna under fälten (konton med namn, länkar till underlag) skapas av kommandot.
     Ändra dem inte.
-- `validate` varnar för utbetalningar utan underlag (`documents-expected`) och räknar
+- `validate` varnar för utbetalningar utan underlag, och för verifikationer utan
+  banktransaktion som saknar underlag (`documents-expected`), och räknar
   underlag som ingen verifikation pekar på (`documents-unused`); rapporten *att-göra*
   listar dem.
 - Rapporterna: `conda run -n accounting-agent accounting-agent report hbg-judo --config-dir 2026`.
