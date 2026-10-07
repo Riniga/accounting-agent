@@ -7,6 +7,10 @@ starting with ``"`` is a JSON string; a line is split at its first colon), so th
 stay comparable. Every problem is reported as a finding; no finding ever quotes a
 voucher's text.
 
+A voucher is in one of two forms, never mixed (MVP-005): the simple form, with one
+``debet`` and one ``kredit`` account and the amount in ``belopp``; or the lines form, with
+any number of ``debet`` and ``kredit`` fields, each an account and a positive amount.
+
 Below the fields a voucher may start with generated lines (ADR-009): the accounts with
 their names, then a link to each supporting document. They repeat the fields for the
 reader's sake, so they are kept out of the note and checked against the fields.
@@ -49,6 +53,8 @@ CHART_HEADER = [
 ]
 OPENING_HEADER = ["konto", "lokal_benämning", "ingående_balans"]
 REQUIRED_FIELDS = ("verifikation", "datum", "text", "belopp", "debet", "kredit")
+# The posting fields; in the lines form they are repeated, each with an amount.
+LINE_FIELDS = ("debet", "kredit")
 OPTIONAL_FIELDS = ("underlag",)
 VOUCHER_FILE_NAME = re.compile(r"(\d{4})_(\d{4}-\d{2}-\d{2})\.md")
 ACCOUNT_NUMBER = re.compile(r"\d{4}")
@@ -172,9 +178,11 @@ def _read_vouchers(
         parsed = _read_front_matter(path, findings)
         if parsed is None:
             continue
-        fields, body = parsed
+        fields, postings, body = parsed
         generated, note = _split_generated(body)
-        voucher = _to_voucher(path.name, match, fields, note, bank_account, findings)
+        voucher = _to_voucher(
+            path.name, match, fields, postings, note, bank_account, findings
+        )
         if voucher is not None:
             if generated is not None:
                 _check_generated(voucher, generated, account_names, findings)
@@ -214,8 +222,8 @@ def _check_generated(
 ) -> None:
     """The fields are the single source; generated lines that disagree mislead."""
     # Messages name account numbers only: names and file names can hold a person's name.
-    debit, credit = voucher.lines
-    if (generated.debit[0], generated.credit[0]) != (debit.account, credit.account):
+    written = [(line.account, line.debit > 0) for line in voucher.lines]
+    if written != [(generated.debit[0], True), (generated.credit[0], False)]:
         findings.add(
             Severity.ERROR,
             "generated-accounts",
@@ -246,9 +254,13 @@ def _check_generated(
         )
 
 
+Postings = list[tuple[str, str]]
+
+
 def _read_front_matter(
     path: Path, findings: Findings
-) -> tuple[dict[str, str], str] | None:
+) -> tuple[dict[str, str], Postings, str] | None:
+    """The fields, the posting fields in the order written, and the body below."""
     text = read_text(path, findings)
     if text is None:
         return None
@@ -263,44 +275,10 @@ def _read_front_matter(
         )
         return None
     end = stripped.index("---", 1)
+    fields, postings = _parse_fields(lines[1:end], path.name, findings)
 
-    fields: dict[str, str] = {}
-    for line_number, line in enumerate(lines[1:end], start=2):
-        if not line.strip():
-            continue
-        key, colon, value = line.partition(":")
-        key, value = key.strip(), value.strip()
-        # Messages name the line or the field, never the value: it may be voucher text.
-        if not colon or key not in REQUIRED_FIELDS + OPTIONAL_FIELDS:
-            findings.add(
-                Severity.ERROR,
-                "unknown-field",
-                path.name,
-                f"line {line_number} is not a known field",
-            )
-            continue
-        if key in fields:
-            findings.add(
-                Severity.ERROR,
-                "duplicate-field",
-                path.name,
-                f"field '{key}' appears more than once",
-            )
-            continue
-        if value.startswith('"'):
-            try:
-                value = json.loads(value)
-            except ValueError:
-                findings.add(
-                    Severity.ERROR,
-                    "quoting",
-                    path.name,
-                    f"field '{key}' has invalid quotes",
-                )
-                continue
-        fields[key] = value
-
-    missing = [key for key in REQUIRED_FIELDS if key not in fields]
+    present = set(fields) | {side for side, _ in postings}
+    missing = [key for key in REQUIRED_FIELDS if key not in present]
     if missing:
         findings.add(
             Severity.ERROR,
@@ -311,13 +289,60 @@ def _read_front_matter(
         return None
     fields.setdefault("underlag", "")
     note = "\n".join(lines[end + 1 :]).strip()
-    return fields, note
+    return fields, postings, note
+
+
+def _parse_fields(
+    lines: list[str], name: str, findings: Findings
+) -> tuple[dict[str, str], Postings]:
+    fields: dict[str, str] = {}
+    postings: Postings = []
+    for line_number, line in enumerate(lines, start=2):
+        if not line.strip():
+            continue
+        key, colon, value = line.partition(":")
+        key, value = key.strip(), value.strip()
+        # Messages name the line or the field, never the value: it may be voucher text.
+        if not colon or key not in REQUIRED_FIELDS + OPTIONAL_FIELDS:
+            findings.add(
+                Severity.ERROR,
+                "unknown-field",
+                name,
+                f"line {line_number} is not a known field",
+            )
+            continue
+        if key in LINE_FIELDS:
+            # May be repeated: the lines form has one field per posting line.
+            postings.append((key, value))
+            continue
+        if key in fields:
+            findings.add(
+                Severity.ERROR,
+                "duplicate-field",
+                name,
+                f"field '{key}' appears more than once",
+            )
+            continue
+        if value.startswith('"'):
+            try:
+                value = json.loads(value)
+            except ValueError:
+                findings.add(
+                    Severity.ERROR,
+                    "quoting",
+                    name,
+                    f"field '{key}' has invalid quotes",
+                )
+                continue
+        fields[key] = value
+    return fields, postings
 
 
 def _to_voucher(
     name: str,
     match: re.Match[str],
     fields: dict[str, str],
+    postings: Postings,
     note: str,
     bank_account: str,
     findings: Findings,
@@ -361,24 +386,84 @@ def _to_voucher(
         )
         return None
 
-    debit_account, credit_account = fields["debet"], fields["kredit"]
-    _check_bank_sign(
-        name, amount, debit_account, credit_account, bank_account, findings
-    )
-    magnitude = abs(amount)
+    lines = _posting_lines(name, postings, amount, bank_account, findings)
+    if lines is None:
+        return None
     return Voucher(
         series=None,
         number=number,
         date=voucher_date,
         text=fields["text"],
-        lines=(
-            PostingLine(debit_account, debit=magnitude),
-            PostingLine(credit_account, credit=magnitude),
-        ),
+        lines=lines,
         documents=tuple(d.strip() for d in fields["underlag"].split(";") if d.strip()),
         note=note,
         source=name,
     )
+
+
+def _posting_lines(
+    name: str,
+    postings: Postings,
+    amount: Decimal,
+    bank_account: str,
+    findings: Findings,
+) -> tuple[PostingLine, ...] | None:
+    """The voucher's lines, from the simple form or the lines form (MVP-005)."""
+    with_amount = [len(value.split()) > 1 for _, value in postings]
+    if len(postings) == len(LINE_FIELDS) and not any(with_amount):
+        # The simple form: one account on each side, and the amount in `belopp`.
+        accounts = dict(postings)
+        debit_account, credit_account = accounts["debet"], accounts["kredit"]
+        _check_bank_sign(
+            name, amount, debit_account, credit_account, bank_account, findings
+        )
+        return (
+            PostingLine(debit_account, debit=abs(amount)),
+            PostingLine(credit_account, credit=abs(amount)),
+        )
+    if not all(with_amount):
+        findings.add(
+            Severity.ERROR,
+            "lines-mixed",
+            name,
+            "a voucher with several lines needs an amount on every 'debet' and "
+            "'kredit' line",
+        )
+        return None
+
+    lines: list[PostingLine] = []
+    for position, (side, value) in enumerate(postings, start=1):
+        parts = value.split()
+        line_amount = parse_amount(parts[1]) if len(parts) == 2 else None
+        if line_amount is None or line_amount <= 0:
+            # The position, not the value: it is what the person wrote.
+            findings.add(
+                Severity.ERROR,
+                "invalid-line",
+                name,
+                f"posting line {position} is not an account and a positive amount "
+                f"(decimal point, no spaces)",
+            )
+            return None
+        if side == "debet":
+            lines.append(PostingLine(parts[0], debit=line_amount))
+        else:
+            lines.append(PostingLine(parts[0], credit=line_amount))
+
+    # `belopp` is what the bank shows: the net on the bank account, or the total.
+    bank = [line for line in lines if line.account == bank_account]
+    if bank:
+        expected = sum((line.debit - line.credit for line in bank), Decimal(0))
+    else:
+        expected = sum((line.debit for line in lines), Decimal(0))
+    if amount != expected:
+        findings.add(
+            Severity.ERROR,
+            "amount-mismatch",
+            name,
+            f"belopp differs from the posting lines (expected {expected})",
+        )
+    return tuple(lines)
 
 
 def _check_bank_sign(

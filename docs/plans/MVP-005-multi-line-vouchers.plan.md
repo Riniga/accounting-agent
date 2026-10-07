@@ -258,8 +258,12 @@ Commit: `docs(mvp-005): approve the plan and accept ADR-010`
   - the simple form keeps `bank-sign`; other fields still give `duplicate-field`;
   - an unknown account, an unbalanced voucher and an account on both sides are left to
     the general checks.
-- [ ] 2.2 Implement; split the field parser where it helps. *Verify:* the 576 existing
+- [x] 2.2 Implement; split the field parser where it helps. *Verify:* the 576 existing
   tests pass unchanged.
+  Result: 608 tests pass (576 unchanged + 32); coverage 99.00 %, every new line
+  covered. The field parser is split in two: `_parse_fields()` collects the fields and
+  the posting fields in the order written, and `_posting_lines()` turns them into lines
+  from either form.
 
 Commit: `feat(formats): read vouchers with several posting lines`
 
