@@ -39,10 +39,12 @@ from accounting_agent.books import (
     reconcile,
 )
 from accounting_agent.formats import (
+    bank_export,
     bank_statement,
     front_matter,
     nordea_csv,
     reference_chart,
+    sparbanken_syd_csv,
     supplements,
 )
 from accounting_agent.formats.common import parse_amount, write_text_atomically
@@ -65,6 +67,12 @@ EXIT_ERROR = 1
 BookReader = Callable[[Path, str], tuple[Books | None, list[Finding]]]
 # One reader per book file format (ADR-006); the profile's `books.format` selects it.
 READERS: dict[str, BookReader] = {"front-matter": front_matter.read_books}
+ExportReader = Callable[[Path], bank_export.StatementExport | bank_export.FundExport]
+# One reader per bank's export format (ADR-010); `bank.export_format` selects it.
+EXPORT_READERS: dict[str, ExportReader] = {
+    "nordea-csv": nordea_csv.read_export,
+    "sparbanken-syd-csv": sparbanken_syd_csv.read_export,
+}
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -550,8 +558,9 @@ def _import_bank(args: argparse.Namespace) -> int:
 
     # Messages name files, dates and counts only — never a row's name or message.
     try:
-        export = nordea_csv.read_export(args.export)
-        if isinstance(export, nordea_csv.StatementExport):
+        # The profile names the bank's format; each reader refuses another's file.
+        export = EXPORT_READERS[profile.bank.export_format](args.export)
+        if isinstance(export, bank_export.StatementExport):
             _write_statement(profile.bank.statement_file, export)
         elif profile.bank.fund_value_file is None:
             logger.error(
@@ -569,7 +578,7 @@ def _import_bank(args: argparse.Namespace) -> int:
                 f"latest {written.latest_date}."
             )
     except (
-        nordea_csv.ExportFormatError,
+        bank_export.ExportFormatError,
         bank_statement.StatementRefusedError,
     ) as error:
         logger.error("%s", error)
@@ -577,7 +586,7 @@ def _import_bank(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
-def _write_statement(path: Path, export: nordea_csv.StatementExport) -> None:
+def _write_statement(path: Path, export: bank_export.StatementExport) -> None:
     written = bank_statement.write_statement(path, export.rows)
     if written.replaced_rows is not None:
         _emit(f"Replaced {written.replaced_rows} rows with {written.rows}.")

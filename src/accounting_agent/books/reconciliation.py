@@ -31,6 +31,17 @@ def reconcile(
     if not transactions:
         return []
     findings, opening = _check_balances(transactions)
+    if all(transaction.balance is None for transaction in transactions):
+        # Some banks export no balance; "the bank agrees" then means less.
+        findings.append(
+            Finding(
+                Severity.INFO,
+                "bank-no-balances",
+                STATEMENT,
+                "the statement has no balances, so the bank's own arithmetic and the "
+                "opening balance are not checked",
+            )
+        )
     findings += _check_opening_balance(books, bank_account, opening, transactions)
     findings += _match(books.vouchers, transactions, bank_account, list_unbooked)
     findings.append(_summary(transactions))

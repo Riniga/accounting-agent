@@ -37,7 +37,7 @@ Aktivitet Förebygger's reference material for 2026, by shape only:
 |---|---|
 | Supporting documents | 11 Markdown files: 8 invoices, 3 payslips with gross salary, tax and net salary |
 | Reference chart | four CSV files, as the core reads today |
-| Bank export | 16 rows, **no header row**, 5 fields `date;text;amount;currency;` with an empty last field; UTF-8 with BOM; amounts with a thousands point and a decimal comma; newest first; every row SEK; no balance column; no quoted fields |
+| Bank export | 16 rows, **no header row**, 5 fields `date;text;amount;currency;` with an empty last field; UTF-8 with BOM; amounts with a thousands point and a decimal comma; oldest first (first recorded as newest first — corrected 2026-10-07, see TODO 6.2); every row SEK; no balance column; no quoted fields |
 | Second statement | 4 quoted columns; first the organisation's name and number, an opening-balance row, then date, text, amount and balance, and a closing-balance row. Not a bank export: it looks like a tax-account statement |
 
 ### 0.2 Where the MVP needs correcting or completing
@@ -410,7 +410,7 @@ Commit: `feat(cli): let new-voucher take several lines and no bank transaction`
 
 ### Phase 6 — The bank export
 
-- [ ] 6.1 **Tests first** (`tests/test_sparbanken_syd_csv.py`, a synthetic export in
+- [x] 6.1 **Tests first** (`tests/test_sparbanken_syd_csv.py`, a synthetic export in
   `tests/fixtures/bank/`):
   - the export is read into statement rows, oldest first: the date, the amount
     normalised from `1.234,56`, the text as the name, no message, no balance;
@@ -425,7 +425,45 @@ Commit: `feat(cli): let new-voucher take several lines and no bank transaction`
   - no message quotes a text.
 
   *Verify:* fail for the right reason. **STOP for review.**
-- [ ] 6.2 Implement.
+  Result: `tests/test_sparbanken_syd_csv.py` and a synthetic export,
+  `tests/fixtures/bank/sparbanken-syd-statement.csv` (BOM, CRLF, newest first, a
+  thousands point). It fails for the right reason, at collection:
+  `ModuleNotFoundError: No module named 'accounting_agent.formats.sparbanken_syd_csv'`.
+  Locked by the tests:
+  - a row is `date;text;amount;currency`, with or without the trailing separator; the
+    date is `YYYY-MM-DD`; the amount may have a thousands point or space and a decimal
+    comma; the currency is SEK;
+  - the rows must be newest first, and are written oldest first; rows of the same day
+    keep the bank's order, reversed;
+  - the text becomes the statement's name, masked; message, note and balance are empty;
+  - refused, naming the file and the row but never the row's content: an empty file,
+    another number of fields, a date or amount that cannot be read, another currency,
+    rows that are oldest first, a header row, and another bank's export;
+  - `bank.export_format` selects the reader in `import-bank`; each reader refuses the
+    other bank's file;
+  - reconciliation gives the info finding `bank-no-balances` when no row has a
+    balance, and nothing new when one has.
+
+  No existing test reconciles a statement without any balance, so none changes.
+- [x] 6.2 Implement.
+  Result: 749 tests pass; coverage 99.08 %, the new reader 100 %.
+  - **The investigation was wrong about the order, and the real file showed it.** §0.1
+    said the export is newest first. The check that said so compared the first date
+    with the last as text, and the first row starts with the file's BOM. The reader
+    built from that refused the real export. The export is oldest first. The reader
+    now accepts a file whose dates are in order either way — oldest first is kept,
+    newest first is turned around — and refuses dates in no order. The synthetic
+    export and four tests were changed to match, after the owner had reviewed them:
+    the same-day test, a new test for one day only, a new test for newest first, and
+    the refusal case "oldest first", which became "dates in no order".
+  - **Two refusal cases were added:** an amount with a decimal point (`12.50`), and a
+    point that does not group thousands (`1.25,00`). Without the check, `12.50` would
+    silently have become 1250.
+  - The shared types of the export readers moved to `formats/bank_export.py`; the
+    Nordea reader still exports them, so no import changed.
+  - On the reference copy, counts only: the real bank export is read (16 rows), written
+    as a statement file and read back with no finding. The second file there, the
+    tax-account statement, is refused, as it should be.
 
 Commit: `feat(formats): read the sparbanken-syd-csv bank export`
 
