@@ -269,7 +269,7 @@ Commit: `feat(formats): read vouchers with several posting lines`
 
 ### Phase 3 — Generated lines and the writer
 
-- [ ] 3.1 **Tests first:**
+- [x] 3.1 **Tests first:**
   - the reader recognises one generated line per posting at the top of the body, keeps
     them out of the note, and checks side, account and amount against the fields
     (`generated-accounts`), names against the chart (`generated-account-name`);
@@ -282,7 +282,28 @@ Commit: `feat(formats): read vouchers with several posting lines`
   - a voucher that does not balance, or has a line of zero, cannot be rendered.
 
   *Verify:* fail for the right reason. **STOP for review.**
-- [ ] 3.2 Implement.
+  Result: `tests/test_voucher_writer_lines.py`, 34 tests. 30 fail for the right reason:
+  the writer refuses anything but one debit and one credit line, and the reader does
+  not know the generated lines of the lines form. 4 pass already and pin the simple
+  form. Locked by the tests:
+  - the lines form: `debet: <account> <amount>` per line, in the voucher's order, then
+    one generated line per posting, `Debet <account> <name> <amount>`;
+  - `belopp` is the bank net, negative for money out, or the total without the bank;
+  - one debit and one credit line of the same amount, debit first, is written in the
+    simple form, byte for byte as before; the credit line first needs the lines form;
+  - a voucher with fewer than two lines, a line of zero, or debits that differ from
+    credits cannot be rendered;
+  - the generated lines must match the posting lines in side, account, amount, number
+    and order (`generated-accounts`); a wrong name is one warning per account;
+  - per-posting lines on a simple voucher are accepted when they agree.
+
+  One MVP-004 test changed, on purpose:
+  `test_only_a_debit_and_a_credit_line_of_the_same_amount_can_be_rendered` asserted that
+  three lines, and the credit line first, cannot be rendered. They now can. The test
+  keeps its two cases that still must fail (one line, unbalanced) under a new name.
+- [x] 3.2 Implement.
+  Result: 640 tests pass; coverage 99.02 %, every new line covered. The command from
+  MVP-004 still writes the same bytes for a voucher with one account against the bank.
 
 Commit: `feat(formats): render vouchers with several lines and their generated lines`
 

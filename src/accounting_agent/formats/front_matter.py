@@ -67,6 +67,8 @@ CLASS_BY_FIRST_DIGIT = {
 OTHER_CLASS = "Kostnader och resultat"
 # The generated lines, in Swedish like the rest of the organisation's files (ADR-009).
 GENERATED_ACCOUNTS = re.compile(r"Debet (\d{4}) (.+?) · Kredit (\d{4}) (.+)")
+# The lines form has one generated line per posting, with its amount (MVP-005).
+GENERATED_POSTING = re.compile(r"(Debet|Kredit) (\d{4}) (.+) (\d+(?:\.\d{1,2})?)")
 GENERATED_DOCUMENT = re.compile(r"Underlag: \[(.+)\]\(<(.+)>\)")
 
 
@@ -75,11 +77,23 @@ class VoucherExistsError(Exception):
 
 
 @dataclass(frozen=True)
-class _GeneratedLines:
-    """What a voucher's generated lines say: accounts as (number, name), then links."""
+class _GeneratedPosting:
+    """One posting as the generated lines state it.
 
-    debit: tuple[str, str]
-    credit: tuple[str, str]
+    ``amount`` is ``None`` on the single line of the simple form, which has none.
+    """
+
+    debit: bool
+    account: str
+    name: str
+    amount: Decimal | None
+
+
+@dataclass(frozen=True)
+class _GeneratedLines:
+    """What a voucher's generated lines say: the postings, then the document links."""
+
+    postings: tuple[_GeneratedPosting, ...]
     links: tuple[tuple[str, str], ...]
 
 
@@ -193,25 +207,47 @@ def _read_vouchers(
 def _split_generated(body: str) -> tuple[_GeneratedLines | None, str]:
     """Split a voucher's body into its generated lines and the note.
 
-    Only the top of the body counts: the account line first, then the document lines.
-    A line of the same shape further down is the writer's own and stays in the note.
+    Only the top of the body counts: the account lines first — one line for the simple
+    form, one per posting for the lines form — then the document lines. A line of the
+    same shape further down is the writer's own and stays in the note.
     """
     lines = body.split("\n")
-    accounts = GENERATED_ACCOUNTS.fullmatch(lines[0].rstrip())
-    if accounts is None:
+    postings = _generated_postings(lines)
+    if not postings:
         return None, body
+    # The simple form's two postings share one line.
+    used = 1 if postings[0].amount is None else len(postings)
     links: list[tuple[str, str]] = []
-    for line in lines[1:]:
+    for line in lines[used:]:
         link = GENERATED_DOCUMENT.fullmatch(line.rstrip())
         if link is None:
             break
         links.append((link.group(1), link.group(2)))
-    generated = _GeneratedLines(
-        debit=(accounts.group(1), accounts.group(2)),
-        credit=(accounts.group(3), accounts.group(4)),
-        links=tuple(links),
-    )
-    return generated, "\n".join(lines[1 + len(links) :]).strip()
+    generated = _GeneratedLines(postings=postings, links=tuple(links))
+    return generated, "\n".join(lines[used + len(links) :]).strip()
+
+
+def _generated_postings(lines: list[str]) -> tuple[_GeneratedPosting, ...]:
+    single = GENERATED_ACCOUNTS.fullmatch(lines[0].rstrip())
+    if single is not None:
+        return (
+            _GeneratedPosting(True, single.group(1), single.group(2), None),
+            _GeneratedPosting(False, single.group(3), single.group(4), None),
+        )
+    postings: list[_GeneratedPosting] = []
+    for line in lines:
+        match = GENERATED_POSTING.fullmatch(line.rstrip())
+        if match is None:
+            break
+        postings.append(
+            _GeneratedPosting(
+                debit=match.group(1) == "Debet",
+                account=match.group(2),
+                name=match.group(3),
+                amount=Decimal(match.group(4)),
+            )
+        )
+    return tuple(postings)
 
 
 def _check_generated(
@@ -222,16 +258,28 @@ def _check_generated(
 ) -> None:
     """The fields are the single source; generated lines that disagree mislead."""
     # Messages name account numbers only: names and file names can hold a person's name.
-    written = [(line.account, line.debit > 0) for line in voucher.lines]
-    if written != [(generated.debit[0], True), (generated.credit[0], False)]:
+    # The simple form's single line has no amounts; then sides and accounts are compared.
+    with_amounts = generated.postings[0].amount is not None
+    written = [
+        (
+            line.debit > 0,
+            line.account,
+            (line.debit or line.credit) if with_amounts else None,
+        )
+        for line in voucher.lines
+    ]
+    stated = [(p.debit, p.account, p.amount) for p in generated.postings]
+    if written != stated:
         findings.add(
             Severity.ERROR,
             "generated-accounts",
             voucher.source,
-            "the generated account line does not match the fields 'debet' and 'kredit'",
+            "the generated account lines do not match the fields 'debet' and 'kredit'",
         )
     else:
-        for number, name in (generated.debit, generated.credit):
+        # One warning per account, also when it is on several lines.
+        names = {p.account: p.name for p in generated.postings}
+        for number, name in names.items():
             if account_names.get(number, name) != name:
                 findings.add(
                     Severity.WARNING,
@@ -510,40 +558,70 @@ def render_voucher(
     ``link_path`` is the path from the voucher folder to the documents folder, with
     forward slashes; ``None`` when there is none, and the links then hold the name only.
 
+    One debit line followed by one credit line of the same amount is written in the
+    simple form; anything else in the lines form, one field and one generated line per
+    posting, in the voucher's order (MVP-005).
+
     Raises:
-        ValueError: if the voucher does not fit the format — it needs one debit and one
-            credit line of the same amount, on accounts in the chart.
+        ValueError: if the voucher does not fit the format — it needs at least two
+            lines with an amount each, debits that balance the credits, and accounts
+            that are in the chart.
     """
+    postings = voucher.lines
     if (
-        len(voucher.lines) != 2
-        or voucher.lines[0].debit <= 0
-        or voucher.lines[0].debit != voucher.lines[1].credit
+        len(postings) < len(LINE_FIELDS)
+        or any(line.debit == line.credit for line in postings)
+        or not voucher.is_balanced
     ):
         raise ValueError(
-            "The format needs one debit and one credit line of the same amount."
+            "A voucher needs at least two lines with an amount each, and debits that "
+            "balance the credits."
         )
-    debit, credit = voucher.lines
-    for line in voucher.lines:
+    for line in postings:
         if line.account not in account_names:
             raise ValueError(f"Account {line.account} is not in the chart of accounts.")
 
-    # The amount is signed as the bank shows it: - when the bank account is credited.
-    amount = -debit.debit if credit.account == bank_account else debit.debit
-    whole = amount == amount.to_integral_value()
+    # `belopp` is what the bank shows: the net on the bank account, or the total.
+    bank = [line for line in postings if line.account == bank_account]
+    if bank:
+        amount = sum((line.debit - line.credit for line in bank), Decimal(0))
+    else:
+        amount = voucher.total_debit
+    simple = (
+        len(postings) == len(LINE_FIELDS)
+        and postings[0].debit > 0
+        and postings[1].credit > 0
+    )
+    if simple:
+        debit, credit = postings
+        fields = [f"debet: {debit.account}", f"kredit: {credit.account}"]
+        generated = [
+            f"Debet {debit.account} {account_names[debit.account]} · "
+            f"Kredit {credit.account} {account_names[credit.account]}"
+        ]
+    else:
+        fields = [
+            f"{'debet' if line.debit else 'kredit'}: {line.account} "
+            f"{_format_amount(line.debit or line.credit)}"
+            for line in postings
+        ]
+        generated = [
+            f"{'Debet' if line.debit else 'Kredit'} {line.account} "
+            f"{account_names[line.account]} {_format_amount(line.debit or line.credit)}"
+            for line in postings
+        ]
     lines = [
         "---",
         f"verifikation: {voucher.number}",
         f"datum: {voucher.date.isoformat()}",
         # A JSON string keeps quotes, colons and line breaks on one line.
         f"text: {json.dumps(voucher.text, ensure_ascii=False)}",
-        f"belopp: {amount:.0f}" if whole else f"belopp: {amount:.2f}",
-        f"debet: {debit.account}",
-        f"kredit: {credit.account}",
+        f"belopp: {_format_amount(amount)}",
+        *fields,
         f"underlag: {'; '.join(voucher.documents)}".rstrip(),
         "---",
         "",
-        f"Debet {debit.account} {account_names[debit.account]} · "
-        f"Kredit {credit.account} {account_names[credit.account]}",
+        *generated,
     ]
     for name in voucher.documents:
         target = name if link_path is None else f"{link_path}/{name}"
@@ -552,6 +630,12 @@ def render_voucher(
     if voucher.note:
         lines += ["", voucher.note]
     return "\n".join(lines) + "\n"
+
+
+def _format_amount(amount: Decimal) -> str:
+    """A whole amount without decimals, any other with two — as the books write them."""
+    whole = amount == amount.to_integral_value()
+    return f"{amount:.0f}" if whole else f"{amount:.2f}"
 
 
 def write_voucher(directory: Path, voucher: Voucher, content: str) -> Path:

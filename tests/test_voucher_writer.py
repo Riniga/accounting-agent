@@ -230,26 +230,18 @@ def test_voucher_between_two_other_accounts_is_rendered_positive() -> None:
     [
         (PostingLine("5010", debit=Decimal("458")),),
         (
-            PostingLine("5010", debit=Decimal("400")),
-            PostingLine("3002", debit=Decimal("58")),
-            PostingLine(BANK, credit=Decimal("458")),
-        ),
-        (
-            PostingLine(BANK, credit=Decimal("458")),
-            PostingLine("5010", debit=Decimal("458")),
-        ),
-        (
             PostingLine("5010", debit=Decimal("458")),
             PostingLine(BANK, credit=Decimal("400")),
         ),
     ],
-    ids=["one-line", "three-lines", "credit-first", "unbalanced"],
+    ids=["one-line", "unbalanced"],
 )
-def test_only_a_debit_and_a_credit_line_of_the_same_amount_can_be_rendered(
+def test_voucher_that_does_not_balance_cannot_be_rendered(
     lines: tuple[PostingLine, ...],
 ) -> None:
-    # The format has one debit and one credit field.
-    with pytest.raises(ValueError, match="one debit and one credit"):
+    # Until MVP-005 three lines, or the credit line first, could not be rendered either;
+    # they are now written in the lines form (test_voucher_writer_lines.py).
+    with pytest.raises(ValueError, match="balance"):
         render(money_out(lines=lines))
 
 
