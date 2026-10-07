@@ -309,7 +309,7 @@ Commit: `feat(formats): render vouchers with several lines and their generated l
 
 ### Phase 4 — The domain: several lines, and no bank transaction
 
-- [ ] 4.1 **Tests first** (`tests/test_posting.py`, extended):
+- [x] 4.1 **Tests first** (`tests/test_posting.py`, extended):
   - a bank transaction against several lines: the bank line is added from the
     transaction; refused when the lines do not add up to the bank amount
     (`lines-unbalanced`), when a line is on the bank account (`account-is-bank`), on an
@@ -325,7 +325,33 @@ Commit: `feat(formats): render vouchers with several lines and their generated l
   - every MVP-004 test passes unchanged.
 
   *Verify:* fail for the right reason. **STOP for review.**
-- [ ] 4.2 Implement.
+  Result: `tests/test_posting_lines.py`, in a file of its own so that
+  `test_posting.py` stays as it was. It fails for the right reason, at collection:
+  `TypeError: VoucherRequest.__init__() got an unexpected keyword argument 'text'`.
+  API locked by the tests:
+  - `VoucherRequest` gets `lines` and `text`; `amount` and `account` become optional.
+    No `amount` means no bank transaction;
+  - `build_voucher()` gets `fiscal_year`, for the date of a voucher without a bank
+    transaction;
+  - the bank line is added last for money out and first for money in; the caller's
+    lines keep their order;
+  - new refusal rules: `lines-unbalanced`, `line-amount`, `account-on-both-sides`,
+    `account-and-lines`, `account-missing`, `text-with-transaction`, `text-missing`,
+    `lines-missing`, `bank-without-transaction`, `date-outside-year`, `amount-missing`,
+    `duplicate`.
+
+  Added while writing the tests:
+  - **`account-on-both-sides`** is refused by the command itself. The general check
+    would stop it anyway (`voucher-same-account`), but a refusal with its own rule says
+    what to change.
+  - **A text cannot be given for a bank transaction** (`text-with-transaction`): the
+    text comes from the statement, and a text that is silently ignored would mislead.
+  - **`duplicate` compares the lines whatever their order**, and names the existing
+    voucher by number.
+  - **One line against the bank is allowed** and gives the same voucher as `--account`.
+- [x] 4.2 Implement.
+  Result: 683 tests pass (43 new); coverage 99.05 %, `posting.py` 100 %. The 35 tests
+  from MVP-004 in `test_posting.py` pass unchanged.
 
 Commit: `feat(books): build vouchers with several lines and without a bank transaction`
 
