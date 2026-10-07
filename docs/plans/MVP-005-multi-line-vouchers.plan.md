@@ -469,17 +469,44 @@ Commit: `feat(formats): read the sparbanken-syd-csv bank export`
 
 ### Phase 7 — Documents, reports and the first organisation
 
-- [ ] 7.1 **Tests first:**
+- [x] 7.1 **Tests first:**
   - `documents-expected` names a voucher without a bank line and without a document;
   - the voucher list, the general ledger, the income statement and the balance sheet
     show a voucher with several lines, line by line, with the right totals.
 
   *Verify:* fail for the right reason, or pass already and pin today's behaviour.
   **STOP for review.**
-- [ ] 7.2 Implement what the tests need.
-- [ ] 7.3 On the reference copy of Helsingborgs Judoklubb's books, counts and equal/not
+  Result:
+  - `tests/test_reports_lines.py`, 6 tests on the `lines` books, with figures computed
+    by hand. **All pass already:** the voucher list, the general ledger, the income
+    statement and the balance sheet were built on the model's lines in MVP-003 and
+    show a voucher with several lines, line by line, with the right totals. They pin
+    that; the reports need no change.
+  - `tests/test_document_checks.py`: five tests for `documents-expected` on a voucher
+    without a bank line. 3 fail for the right reason — no finding is given today — and
+    2 pass and pin what stays (a voucher with a document; a payment with several
+    lines).
+  - One MVP-004 test changed, on purpose:
+    `test_voucher_that_is_not_on_the_bank_account_needs_no_document` asserted the
+    opposite of the new rule and is replaced by the five.
+  - The fixture `example-full` now also configures 2890 as needing no document, so
+    that its one voucher without a bank transaction gives no warning and no command
+    test changes its expected counts.
+- [x] 7.2 Implement what the tests need.
+  Result: 759 tests pass; coverage 99.13 %. Only `documents-expected` needed code; the
+  reports needed none.
+- [x] 7.3 On the reference copy of Helsingborgs Judoklubb's books, counts and equal/not
   equal only: `validate` and the report figures before and after this MVP.
   *Expected:* identical, apart from findings this MVP adds on purpose.
+  Result (2026-10-07): the code on `main` and the code on this branch were run on two
+  scratch copies of the reference books (163 vouchers).
+  - `validate --unbooked --balances`: the two outputs are byte-identical, 80 lines,
+    `RESULT: OK (errors: 0, warnings: 32, info: 13)`. No finding was added: every
+    voucher there is on the bank account, and the statement has balances.
+  - `report`: all nine reports are identical line for line, apart from the line with
+    the time they were generated.
+
+  The copies and the temporary worktree were removed.
 
 Commit: `feat(books): expect documents for vouchers without a bank transaction`
 

@@ -140,21 +140,25 @@ def _check_documents(voucher: Voucher, documents: frozenset[str]) -> list[Findin
 def _check_document_expected(
     voucher: Voucher, bank_account: str, no_document_accounts: Sequence[str]
 ) -> list[Finding]:
-    """Money out of the bank should have a document — the to-do report's rule."""
-    bank = [line for line in voucher.lines if line.account == bank_account]
-    paid = sum((line.credit - line.debit for line in bank), ZERO)
+    """Money out of the bank should have a document — the to-do report's rule — and so
+    should a voucher without a bank transaction, which nothing else backs (MVP-005)."""
     exempt = any(
         line.debit > ZERO and line.account in no_document_accounts
         for line in voucher.lines
     )
-    if voucher.documents or paid <= ZERO or exempt:
+    if voucher.documents or exempt:
+        return []
+    bank = [line for line in voucher.lines if line.account == bank_account]
+    if not bank:
+        message = "no bank transaction and no supporting document"
+    elif sum((line.credit - line.debit for line in bank), ZERO) > ZERO:
+        message = "money out of the bank without a supporting document"
+    else:
+        # Money in: the bank transaction itself is the evidence.
         return []
     return [
         Finding(
-            Severity.WARNING,
-            "documents-expected",
-            f"voucher {voucher.id}",
-            "money out of the bank without a supporting document",
+            Severity.WARNING, "documents-expected", f"voucher {voucher.id}", message
         )
     ]
 
