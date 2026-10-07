@@ -30,6 +30,8 @@ checks:
 conventions:
   # 2890 stands in for a parking account in this synthetic organisation.
   parking_accounts: ["2890"]
+  # Bank charges need no supporting document.
+  no_document_accounts: ["6570"]
 
 reports:
   output: reports

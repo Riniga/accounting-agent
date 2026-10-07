@@ -11,7 +11,15 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-**MVP-003 is implemented and pending its pull request.**
+**MVP-004 is implemented and pending its pull request.**
+[MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
+delivered `new-voucher`: one command creates the voucher for a bank transaction from the
+caller's decisions, and refuses rather than writes a wrong one (ADR-009). Helsingborgs
+Judoklubb's whole 2026 was built again from nothing with it. Next: vouchers with several
+lines and vouchers without a bank transaction, which payroll and invoices need (owner
+direction 2026-10-07, see R2); then member management via core.
+
+*Earlier:* **MVP-003 is merged** (PR #13).
 [MVP-003 – Bank import, reconciliation, remaining checks and reports via core](mvp/MVP-003-bank-reconciliation-and-reports.md)
 delivered:
 - bank import (`import-bank`, the `nordea-csv` format) into masked statement and
@@ -21,10 +29,7 @@ delivered:
 - models and core-owned formats for the supplementary files (ADR-007).
 
 Helsingborgs Judoklubb's 2026 books give the same statement file, the same check
-outcome and the same report figures as its own scripts. Next:
-[MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
-(approved 2026-10-05, plan waiting for review), then member management via core (backlog,
-high priority; owner decision 2026-10-05).
+outcome and the same report figures as its own scripts.
 
 *Earlier:* **MVP-002 is merged** (PR #7).
 [MVP-002 – Common book model and validation via core](mvp/MVP-002-common-book-model.md)
@@ -69,9 +74,14 @@ report chain in the core, with Helsingborgs Judoklubb as the first organisation 
   accounts, opening balances and vouchers modelled once in the core, with the general book
   checks; Helsingborgs Judoklubb validated through it, Aktivitet Förebygger's format
   compared.
-* Aktivitet Förebygger reader — a reader for the table-format books (multi-line vouchers,
-  voucher series) into the same core model; needed before R5. Found in the MVP-002 plan's
-  investigation (§0.1).
+* ~~Aktivitet Förebygger reader — a reader for the table-format books.~~ **Dropped by
+  owner decision 2026-10-07: the core has one book format, and organisations adapt to
+  it.** The platform is meant for many organisations, so a reader per organisation does
+  not scale. Aktivitet Förebygger moves its books to the core's format. Where the
+  format cannot hold what an organisation needs, the one format is extended: it must
+  get vouchers with several lines and vouchers without a bank transaction. To record
+  as an ADR that supersedes ADR-006's "each file format has its own reader", in the
+  next MVP.
 * [MVP-003 – Bank import, reconciliation, remaining checks and reports via core](mvp/MVP-003-bank-reconciliation-and-reports.md)
   — Helsingborgs Judoklubb's agent tooling (bank import, reconciliation, the rest of
   `kontroll.py`, the reports) through the core, except member management. It replaces
@@ -84,7 +94,7 @@ Establishes the defined agent tools, confidence levels, approval policies and th
 trail — and decides how the core is exposed to the agent in each organisation project.
 
 * [MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
-  — **approved 2026-10-05, plan waiting for review.** One command writes the voucher from the bank
+  — **implemented, pending its pull request.** One command writes the voucher from the bank
   statement; the agent or the treasurer supplies only the account, the supporting
   document and whether it is a guess. Supersedes ADR-008's "never vouchers" with a new
   ADR.

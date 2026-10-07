@@ -9,14 +9,18 @@ work MVP by MVP (see the [roadmap](../roadmap.md)).
 
 | Organisation | Book format | Can use | Keeps using its own tooling for |
 |---|---|---|---|
-| Helsingborgs Judoklubb | `front-matter` | `import-bank` (bank statement and fund value), `validate` (every check in `kontroll.py` except members, and the reconciliation against the bank), `report` (every report except the member fees) | Members: `medlemskontroll.py`, the member checks in `kontroll.py` and the member-fee report (backlog) |
+| Helsingborgs Judoklubb | `front-matter` | `import-bank` (bank statement and fund value), `validate` (every check in `kontroll.py` except members, and the reconciliation against the bank), `new-voucher` (a voucher for a bank transaction), `report` (every report except the member fees) | Members: `medlemskontroll.py`, the member checks in `kontroll.py` and the member-fee report (backlog) |
 | Aktivitet Förebygger | table format | nothing yet — no reader ([Book formats](../architecture/overview.md#book-formats)) | everything |
 | JudoSyd | not in files yet | nothing yet | everything |
 
-Bookkeeping itself — creating vouchers, posting, the treasurer's decisions — is still done
-by each organisation's own routine (for example Helsingborgs Judoklubb's `SOP.md`). **The
-core never writes vouchers.** It writes only derived files: the bank statement and
-fund-value files, and the reports, to the paths in `organisation.yaml`
+The treasurer's decisions — which account, which supporting document, whether a posting
+is a guess — stay with each organisation and its own routine (for example Helsingborgs
+Judoklubb's `SOP.md`). The core writes the voucher from those decisions: `new-voucher`
+takes the date, the amount, the text and the number from the bank statement and the
+books, and refuses rather than writes a wrong voucher
+([ADR-009](../architecture/decisions/ADR-009-core-creates-vouchers.md)). **The core never
+changes or removes a voucher.** Its other writes are derived files: the bank statement and
+fund-value files, and the reports
 ([ADR-008](../architecture/decisions/ADR-008-core-writes-derived-files.md)).
 
 ## One-time setup (per computer)
@@ -93,9 +97,14 @@ From the organisation project's root:
 # after downloading the bank's export (the export itself is never changed)
 conda run -n accounting-agent accounting-agent import-bank hbg-judo --config-dir 2026 "2026/Bankpapper/<export>.csv"
 
+# see which bank transactions have no voucher (date, amount and statement row)
+conda run -n accounting-agent accounting-agent validate hbg-judo --config-dir 2026 --unbooked
+
+# create the voucher for one of them — one run per bank transaction, oldest first
+conda run -n accounting-agent accounting-agent new-voucher hbg-judo --config-dir 2026 --date 2026-03-05 --amount -458 --account 5010 --document "20260305-faktura-1001.pdf"
+
 # after every change to the books
 conda run -n accounting-agent accounting-agent validate hbg-judo --config-dir 2026
-conda run -n accounting-agent accounting-agent validate hbg-judo --config-dir 2026 --unbooked
 
 # when the reports should be updated
 conda run -n accounting-agent accounting-agent report hbg-judo --config-dir 2026
@@ -106,6 +115,25 @@ conda run -n accounting-agent accounting-agent report hbg-judo --config-dir 2026
   `--force` is given.
 - **Warnings** (for example `personal-number`, `voucher-duplicate`): review them. They
   don't block.
+- **`new-voucher`** creates one new file in the voucher folder and nothing else.
+  - `--row` is needed when several bank transactions have the same date and amount;
+    `validate` prints the row.
+  - `--document` names a file in the documents folder and can be repeated. `--note`
+    adds a note. `--guess` marks the posting with the organisation's marker, and the
+    note must then say why.
+  - It refuses — and writes nothing — when the transaction is missing or already has a
+    voucher, the account is not in the chart, a document is not in the folder, or the
+    books have errors. One error does not stop it: a bank transaction that was skipped
+    earlier, since creating its voucher is the fix.
+  - Below the fields it writes the accounts with their names and a link to each
+    document. Leave those lines as they are; when the treasurer changes an account by
+    hand, change the line too, or `validate` reports the difference.
+  - A wrong voucher is not undone by the core. Removing or changing it is the
+    treasurer's decision, by the organisation's routine.
+- **Supporting documents:** `validate` warns for each payment out of the bank without a
+  document (`documents-expected`), except on the accounts in
+  `conventions.no_document_accounts`, and counts the files no voucher refers to
+  (`documents-unused`). The to-do report lists those files by name.
 - **`import-bank`** refuses an export that starts later than the existing statement file:
   fetch the whole year from 1 January.
 - The terminal output never contains voucher texts, names or bank messages, and personal
@@ -127,8 +155,8 @@ adjust the id and the year. It is in Swedish, like the organisation projects:
 ## Accounting Agent (gemensam kärna)
 
 Den här bokföringen importeras, kontrolleras och redovisas med Accounting Agent-kärnan
-(https://github.com/Riniga/accounting-agent). Kärnan skriver aldrig verifikationer; den
-skriver bara kontoutdrag, fondvärde och rapporter.
+(https://github.com/Riniga/accounting-agent). Kärnan skapar nya verifikationer på
+kommando, men ändrar eller tar aldrig bort en befintlig.
 
 - Ny bankexport: `conda run -n accounting-agent accounting-agent import-bank hbg-judo --config-dir 2026 <exportfil>`.
   Exporten måste börja den 1 januari; annars vägrar kärnan.
@@ -136,7 +164,22 @@ skriver bara kontoutdrag, fondvärde och rapporter.
   `conda run -n accounting-agent accounting-agent validate hbg-judo --config-dir 2026`
   En ändring är klar först när resultatet är `RESULT: OK`. Medlemskontrollerna finns
   ännu bara i projektets egna skript (`medlemskontroll.py`, `kontroll.py`).
-- `--unbooked` listar banktransaktioner efter sista verifikationen (datum och belopp).
+- `--unbooked` listar banktransaktioner efter sista verifikationen (datum, belopp och
+  rad i kontoutdraget).
+- **Skapa aldrig en verifikationsfil för hand.** Använd kommandot, en körning per
+  banktransaktion, äldst först:
+  `conda run -n accounting-agent accounting-agent new-voucher hbg-judo --config-dir 2026 --date <ÅÅÅÅ-MM-DD> --amount <belopp> --account <motkonto> [--row <rad>] [--document <fil>] [--note <text>] [--guess]`
+  - Du anger bara besluten: motkonto enligt konteringsreglerna, underlag och eventuell
+    anteckning. Datum, belopp, text och nummer hämtas ur kontoutdraget och bokföringen.
+  - `--row` behövs när flera transaktioner har samma datum och belopp.
+  - Är konteringen en gissning: `--guess` och skälet i `--note`. Gissa aldrig utan det.
+  - Vägrar kommandot, läs skälet och rätta anropet. Försök inte gå runt det genom att
+    skriva filen själv.
+  - Raderna under fälten (konton med namn, länkar till underlag) skapas av kommandot.
+    Ändra dem inte.
+- `validate` varnar för utbetalningar utan underlag (`documents-expected`) och räknar
+  underlag som ingen verifikation pekar på (`documents-unused`); rapporten *att-göra*
+  listar dem.
 - Rapporterna: `conda run -n accounting-agent accounting-agent report hbg-judo --config-dir 2026`.
   De skapas inte om bokföringen har fel. Rapporten om medlemsavgifter skapas fortfarande
   av `generera_redovisning.py`.

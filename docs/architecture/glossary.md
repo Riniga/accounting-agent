@@ -20,6 +20,9 @@ The English name in the right-hand column is the one used in the code.
 | belopp | amount | Always `Decimal`, never a floating-point number |
 | underlag | supporting document | The receipt, invoice or bank page that backs a voucher |
 | anteckning | note | Free text on a voucher |
+| motkonto | counter account | The account a bank transaction is posted against; the other line is the bank account |
+| genererade rader | generated lines | The lines the core writes below a voucher's fields: the accounts with their names and a link to each supporting document (ADR-009) |
+| gissad kontering | guessed posting | A posting the treasurer has not confirmed, marked in the note with the organisation's marker |
 | räkenskapsår | fiscal year | The accounting year; a calendar year for the current organisations |
 | balanskonto | balance account | An asset or liability/equity account (classes 1–2) |
 | resultatkonto | income-statement account | A revenue or cost account (classes 3–8) |

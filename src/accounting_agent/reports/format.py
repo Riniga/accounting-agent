@@ -40,6 +40,8 @@ class ReportContext:
     guessed_posting_marker: str | None = None
     no_document_accounts: tuple[str, ...] = ()
     outlay_prefix: str | None = None
+    # The files in the documents folder that no voucher refers to; None: no folder.
+    unused_documents: tuple[str, ...] | None = None
     budget: tuple[BudgetItem, ...] = ()
     comments: tuple[ClosingComment, ...] = ()
     todo: tuple[TodoItem, ...] = ()
