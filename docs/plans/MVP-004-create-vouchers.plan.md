@@ -468,6 +468,29 @@ Commit: `feat(books): name payments without documents and count unused documents
     the same voucher. Accepted: trailing whitespace is not kept.
   - Still open: the real batch, after the next bank import.
 
+  Changed again 2026-10-05 (owner): instead of waiting for a real batch, every voucher
+  is rebuilt from nothing in a copy —
+  [`docs/claude-prompts/rebuild-all-vouchers-test.md`](../claude-prompts/rebuild-all-vouchers-test.md).
+  The AI tool first ran the same rebuild on a scratch copy of the reference books, with
+  the real command and counts only; the copy and the scripts were deleted afterwards:
+  - 163 of 163 vouchers were created, in the originals' order, none refused;
+  - equal to the originals: number, date, accounts and amount, documents and file name
+    on all 163; the text on 147 (the same 16 as in 7.1); the note on 162 — the one that
+    differs holds a personal identity number, which the command masks;
+  - the balance is the same on all 25 accounts; two are printed with a different number
+    of decimals (`.5` and `.50`), since the originals write some amounts with one;
+  - `validate` on the rebuilt books: `RESULT: OK`, 0 errors; the only rule that differs
+    is `personal-number`, 4 → 0;
+  - the command printed 24 `documents-expected` and 3 `voucher-duplicate` warnings, the
+    same as `validate` counts on the originals.
+
+  One obstacle, now in the prompt: books without vouchers have errors when the closing
+  comments refer to vouchers (`comment-unknown-voucher`), and the command refuses when
+  the books have errors. For a rebuild from nothing the comments file is detached in
+  the copy while the vouchers are created. It does not affect ordinary use, where the
+  vouchers a comment refers to exist.
+  - Still open: the owner's own run of the rebuild in the organisation's project.
+
 Commit: `docs(mvp-004): record the pilot result`
 
 ### Phase 8 — Documentation and close
