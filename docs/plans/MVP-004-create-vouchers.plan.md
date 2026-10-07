@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-004-create-vouchers.md`](../mvp/MVP-004-create-vouchers.md)
 
-**Status:** In progress (plan approved 2026-10-05)
+**Status:** Implemented – pending PR (plan approved 2026-10-05)
 
 ## 0. Investigation
 
@@ -445,7 +445,7 @@ Commit: `feat(books): name payments without documents and count unused documents
     bank" (TODO 6.1), which also counts two payments that are not on cost accounts;
     and 1 `documents-unused`, "24 of 87 files".
   - No `generated-*` finding: no existing voucher has generated lines.
-- [ ] 7.3 The owner, as treasurer, creates a real batch of vouchers with the command in
+- [x] 7.3 The owner, as treasurer, creates a real batch of vouchers with the command in
   the organisation's own folder, and reports the counts. *Verify:* `RESULT: OK`, and no
   unbooked transaction before the last voucher.
   Changed 2026-10-05 (owner): the books have no unbooked transaction, and the owner
@@ -489,7 +489,17 @@ Commit: `feat(books): name payments without documents and count unused documents
   the books have errors. For a rebuild from nothing the comments file is detached in
   the copy while the vouchers are created. It does not affect ordinary use, where the
   vouchers a comment refers to exist.
-  - Still open: the owner's own run of the rebuild in the organisation's project.
+
+  Final result (2026-10-07): the owner went further than the rebuild in a copy. Every
+  voucher and all reports were removed in the organisation's own project, its
+  instructions were brought up to date with
+  [`docs/claude-prompts/update-organisation-project.md`](../claude-prompts/update-organisation-project.md),
+  and the AI agent there built the year from nothing with the command, choosing the
+  accounts from the organisation's rules. The measures in the reports afterwards, as
+  the owner passed them on: 0 errors; 0 unbooked transactions; the bank's balance
+  agrees with the books; 2 postings on the parking account; 20 guessed postings; 21
+  payments without a supporting document, 9 of them outlays. The last three are the
+  treasurer's to resolve and do not concern the command.
 
 Commit: `docs(mvp-004): record the pilot result`
 
@@ -500,7 +510,9 @@ Commit: `docs(mvp-004): record the pilot result`
   never by hand").
 - [x] 8.2 `README.md`, `AGENTS.md` (local commands), `overview.md`, `current-state.md`,
   `roadmap.md` (status; member management is next).
-- [ ] 8.3 The MVP's "Outcome at close", checked against each acceptance criterion.
+- [x] 8.3 The MVP's "Outcome at close", checked against each acceptance criterion.
+  Result: written 2026-10-07; one criterion was exceeded (the real batch became a
+  rebuild of the whole year), and three limits are listed as not proven.
 - [x] 8.4 Methodology compliance: the note under `GAP-F2-CONFIDENTIAL` (§0.3).
   Result: a changelog entry, the row's note and the plan table in `gap-register.md`.
 - [x] 8.5 `git grep` for organisation-specific values in `src/`: none.

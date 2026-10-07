@@ -146,4 +146,58 @@ whether the posting is a guess.
 3. **Books with errors.** The command refuses when `validate` gives errors. Warnings do
    not block.
 
-## Outcome at close (YYYY-MM-DD)
+## Outcome at close (2026-10-07)
+
+**Delivered.** Implemented on `feature/mvp-004-create-vouchers`, pending the pull
+request. Each criterion was checked against the real system
+([plan](../plans/MVP-004-create-vouchers.plan.md), phases 2–7):
+
+- **Fixtures per rule:** synthetic fixtures cover the command, every refusal and each
+  new check with a passing and a broken case; 576 tests pass (423 before).
+- **A created voucher is valid:** it passes `validate` with no new error, and its bank
+  transaction is no longer unbooked — in the tests and on a real run of the command.
+- **A refusal writes nothing:** every refusal test compares every file under the
+  organisation byte for byte, before and after.
+- **Twice gives one voucher:** the second run is refused as `already-booked`.
+- **Nothing is quoted:** the output and the refusals never hold a voucher text, a name,
+  a bank message or a document's file name; tests assert it for each rule.
+- **Compared with the real 2026 books:** each of Helsingborgs Judoklubb's 163 vouchers
+  was built again from its statement row and its own account. Number, date, accounts
+  and amount were equal on all 163, the text on 147. The 16 texts that differ: 4 hold a
+  personal identity number, which the core masks; 1 is the name without the message;
+  11 were edited by hand. No second systematic rule was found.
+- **A real batch — exceeded.** The criterion asked for one batch of unbooked
+  transactions. Instead the owner removed every voucher and all reports in the
+  organisation's own project and let the AI agent there build the year from nothing
+  with the command, choosing accounts from the organisation's rules and linking the
+  supporting documents. The reports' own measures afterwards: 0 errors, 0 unbooked
+  transactions, and the bank's balance agrees with the books. Before that, the same
+  rebuild in a scratch copy with the originals' decisions gave the same balance on all
+  25 accounts.
+- **No organisation-specific value in `src/`:** `git grep` for the organisations'
+  names, ids, accounts and markers finds none.
+- **AI-TDD:** in every phase the tests were written first, shown to fail for the right
+  reason and reviewed by the owner before the implementation.
+- **MVP-001 gates:** Ruff, the pre-commit hooks, detect-secrets, the instruction-file
+  scan and the tests run green locally; coverage 98.99 %, floor 97 %. Semgrep and the
+  dependency checks run in the pull request (no dependency changed).
+
+**Left for the treasurer in the rebuilt books**, as the reports list it: 20 guessed
+postings, 2 postings on the parking account, and 21 payments without a supporting
+document, 9 of them outlays. This is the judgement the command does not make. The
+account choices in the rebuilt books have not yet been compared with the earlier ones.
+
+**Changed from the definition** (each recorded in the plan under its TODO):
+`documents-expected` follows the to-do report's rule, money out of the bank, and gives
+one warning per voucher; unused documents are counted in the terminal and named only in
+the to-do report.
+
+**Not proven, or not possible yet:**
+
+- A voucher whose text was edited by hand no longer matches its statement row; among
+  several transactions with the same date and amount the wrong row can then be booked
+  without `validate` seeing it. Accepted in the plan (§5).
+- Books without vouchers have errors while the closing comments refer to vouchers, so a
+  rebuild from nothing needs the comments file detached meanwhile.
+- Vouchers with more than two lines, and vouchers without a bank transaction, cannot be
+  created. Payroll and invoices need both. Next MVP.
