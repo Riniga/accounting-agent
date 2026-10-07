@@ -14,11 +14,13 @@ from pathlib import Path
 
 from accounting_agent import __version__
 from accounting_agent.books import (
+    BankTransaction,
     Books,
     BudgetItem,
     ClosingComment,
     Finding,
     FundValue,
+    PostingLine,
     Severity,
     TodoItem,
     Voucher,
@@ -129,26 +131,52 @@ def _build_parser() -> argparse.ArgumentParser:
 
     new_voucher = commands.add_parser(
         "new-voucher",
-        help="Create the voucher for one bank transaction (never changes a voucher).",
+        help="Create one voucher, for a bank transaction or without one (never "
+        "changes a voucher).",
+        description="Create one voucher. For a bank transaction: --date and --amount, "
+        "and either --account or the lines of the other side with --debit/--credit; "
+        "the bank line comes from the bank statement. Without a bank transaction: "
+        "--date, --text and every line with --debit/--credit, and no --amount.",
     )
     _add_organisation_arguments(new_voucher)
     new_voucher.add_argument(
         "--date",
         type=_date_argument,
         required=True,
-        help="The bank transaction's date, YYYY-MM-DD.",
+        help="The date, YYYY-MM-DD: the bank transaction's, or the voucher's own.",
     )
     new_voucher.add_argument(
         "--amount",
         type=_amount_argument,
-        required=True,
-        help="The bank transaction's amount as the bank shows it, e.g. -458 or 200.50.",
+        help="The bank transaction's amount as the bank shows it, e.g. -458 or 200.50. "
+        "Leave it out for a voucher without a bank transaction.",
     )
     new_voucher.add_argument(
         "--account",
         type=_account_argument,
-        required=True,
-        help="The account to post against; the other line is the bank account.",
+        help="The one account to post a bank transaction against.",
+    )
+    # Both append to the same list, so the lines keep the order they are given in.
+    new_voucher.add_argument(
+        "--debit",
+        dest="lines",
+        action="append",
+        type=_debit_argument,
+        metavar="ACCOUNT=AMOUNT",
+        help="A debit line, e.g. 7010=30000; repeatable.",
+    )
+    new_voucher.add_argument(
+        "--credit",
+        dest="lines",
+        action="append",
+        type=_credit_argument,
+        metavar="ACCOUNT=AMOUNT",
+        help="A credit line, e.g. 2710=9000; repeatable.",
+    )
+    new_voucher.add_argument(
+        "--text",
+        default="",
+        help="The text of a voucher without a bank transaction.",
     )
     new_voucher.add_argument(
         "--row",
@@ -191,6 +219,27 @@ def _account_argument(value: str) -> str:
     if not re.fullmatch(r"\d{4}", value):
         raise argparse.ArgumentTypeError("not an account number (four digits)")
     return value
+
+
+def _line_amount(value: str) -> tuple[str, Decimal]:
+    account, equals, text = value.partition("=")
+    amount = parse_amount(text) if equals else None
+    if not re.fullmatch(r"\d{4}", account) or amount is None or amount <= 0:
+        raise argparse.ArgumentTypeError(
+            "not <account>=<amount>: four digits, and a positive amount with a "
+            "decimal point and no spaces"
+        )
+    return account, amount
+
+
+def _debit_argument(value: str) -> PostingLine:
+    account, amount = _line_amount(value)
+    return PostingLine(account, debit=amount)
+
+
+def _credit_argument(value: str) -> PostingLine:
+    account, amount = _line_amount(value)
+    return PostingLine(account, credit=amount)
 
 
 def _add_organisation_arguments(parser: argparse.ArgumentParser) -> None:
@@ -549,7 +598,9 @@ def _new_voucher(args: argparse.Namespace) -> int:
     if profile is None:
         return EXIT_ERROR
     config, bank = profile.books, profile.bank
-    if config is None or bank is None:
+    # Only a voucher for a bank transaction needs the bank statement (MVP-005).
+    for_transaction = args.amount is not None
+    if config is None or (for_transaction and bank is None):
         logger.error(
             "%s has no '%s' section in organisation.yaml; new-voucher needs one.",
             args.config_dir,
@@ -572,16 +623,20 @@ def _new_voucher(args: argparse.Namespace) -> int:
             len(errors),
         )
         return EXIT_ERROR
-    transactions, _ = bank_statement.read_statement(
-        bank.statement_file, config.fiscal_year
-    )
-    if transactions is None:
-        logger.error(
-            "%s: the bank statement file %s could not be read. Run import-bank first.",
-            NOT_CREATED,
-            bank.statement_file.name,
-        )
-        return EXIT_ERROR
+    transactions: tuple[BankTransaction, ...] = ()
+    texts: dict[int, str] = {}
+    if for_transaction and bank is not None:
+        read, _ = bank_statement.read_statement(bank.statement_file, config.fiscal_year)
+        if read is None:
+            logger.error(
+                "%s: the bank statement file %s could not be read. Run import-bank "
+                "first.",
+                NOT_CREATED,
+                bank.statement_file.name,
+            )
+            return EXIT_ERROR
+        transactions = read
+        texts = bank_statement.read_voucher_texts(bank.statement_file)
 
     request = VoucherRequest(
         date=args.date,
@@ -591,17 +646,20 @@ def _new_voucher(args: argparse.Namespace) -> int:
         documents=tuple(args.document),
         note=args.note,
         guess=args.guess,
+        lines=tuple(args.lines or ()),
+        text=args.text,
     )
     # Messages name rules, dates, amounts and numbers only — never a text or a name.
     try:
         voucher = build_voucher(
             books,
             transactions,
-            bank_statement.read_voucher_texts(bank.statement_file),
+            texts,
             config.bank_account,
             request,
             documents=_list_documents(profile.checks),
             guessed_posting_marker=profile.conventions.guessed_posting_marker,
+            fiscal_year=config.fiscal_year,
         )
         voucher = replace(voucher, source=front_matter.voucher_file_name(voucher))
         with_voucher = replace(books, vouchers=(*books.vouchers, voucher))
@@ -662,14 +720,28 @@ def _link_path(checks: ChecksConfig | None, config: BooksConfig) -> str | None:
 def _emit_created(voucher: Voucher, bank_account: str, added: list[Finding]) -> None:
     """Say what was created: the number, date, amount and accounts — never the text,
     the note or a document's name."""
-    debit, credit = voucher.lines
-    amount = -debit.debit if credit.account == bank_account else debit.debit
-    line = f"  {voucher.date}, {amount}, debit {debit.account}, credit {credit.account}"
+    # Amounts as the voucher file writes them, so the two can be compared by eye.
+    amount = front_matter.format_amount(
+        front_matter.voucher_amount(voucher, bank_account)
+    )
+    rows = [
+        f"{'debit' if line.debit else 'credit'} {line.account} "
+        f"{front_matter.format_amount(line.debit or line.credit)}"
+        for line in voucher.lines
+    ]
+    if front_matter.is_simple(voucher):
+        debit, credit = voucher.lines
+        line = f"  {voucher.date}, {amount}, debit {debit.account}, credit {credit.account}"
+        rows = []
+    else:
+        line = f"  {voucher.date}, {amount}, {len(rows)} lines"
     if voucher.documents:
         count = len(voucher.documents)
         line += f", {count} supporting document{'s' if count > 1 else ''}"
     _emit(f"Created voucher {voucher.id} ({voucher.source})")
     _emit(line)
+    for row in rows:
+        _emit(f"  {row}")
     # Only the warnings that name the new voucher: summaries change with every voucher.
     for finding in added:
         ids = finding.location.removeprefix("voucher ").split(", ")

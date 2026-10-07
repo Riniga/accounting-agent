@@ -581,18 +581,8 @@ def render_voucher(
         if line.account not in account_names:
             raise ValueError(f"Account {line.account} is not in the chart of accounts.")
 
-    # `belopp` is what the bank shows: the net on the bank account, or the total.
-    bank = [line for line in postings if line.account == bank_account]
-    if bank:
-        amount = sum((line.debit - line.credit for line in bank), Decimal(0))
-    else:
-        amount = voucher.total_debit
-    simple = (
-        len(postings) == len(LINE_FIELDS)
-        and postings[0].debit > 0
-        and postings[1].credit > 0
-    )
-    if simple:
+    amount = voucher_amount(voucher, bank_account)
+    if is_simple(voucher):
         debit, credit = postings
         fields = [f"debet: {debit.account}", f"kredit: {credit.account}"]
         generated = [
@@ -602,12 +592,12 @@ def render_voucher(
     else:
         fields = [
             f"{'debet' if line.debit else 'kredit'}: {line.account} "
-            f"{_format_amount(line.debit or line.credit)}"
+            f"{format_amount(line.debit or line.credit)}"
             for line in postings
         ]
         generated = [
             f"{'Debet' if line.debit else 'Kredit'} {line.account} "
-            f"{account_names[line.account]} {_format_amount(line.debit or line.credit)}"
+            f"{account_names[line.account]} {format_amount(line.debit or line.credit)}"
             for line in postings
         ]
     lines = [
@@ -616,7 +606,7 @@ def render_voucher(
         f"datum: {voucher.date.isoformat()}",
         # A JSON string keeps quotes, colons and line breaks on one line.
         f"text: {json.dumps(voucher.text, ensure_ascii=False)}",
-        f"belopp: {_format_amount(amount)}",
+        f"belopp: {format_amount(amount)}",
         *fields,
         f"underlag: {'; '.join(voucher.documents)}".rstrip(),
         "---",
@@ -632,7 +622,23 @@ def render_voucher(
     return "\n".join(lines) + "\n"
 
 
-def _format_amount(amount: Decimal) -> str:
+def voucher_amount(voucher: Voucher, bank_account: str) -> Decimal:
+    """What `belopp` holds: the net on the bank account as the bank shows it, or the
+    voucher's total when the bank account is not among its lines."""
+    bank = [line for line in voucher.lines if line.account == bank_account]
+    if bank:
+        return sum((line.debit - line.credit for line in bank), Decimal(0))
+    return voucher.total_debit
+
+
+def is_simple(voucher: Voucher) -> bool:
+    """True if the voucher is written in the simple form: one debit line followed by
+    one credit line."""
+    lines = voucher.lines
+    return len(lines) == len(LINE_FIELDS) and lines[0].debit > 0 and lines[1].credit > 0
+
+
+def format_amount(amount: Decimal) -> str:
     """A whole amount without decimals, any other with two — as the books write them."""
     whole = amount == amount.to_integral_value()
     return f"{amount:.0f}" if whole else f"{amount:.2f}"

@@ -357,7 +357,7 @@ Commit: `feat(books): build vouchers with several lines and without a bank trans
 
 ### Phase 5 — The command
 
-- [ ] 5.1 **Tests first** (`tests/test_cli_new_voucher_lines.py`), on a copy of the
+- [x] 5.1 **Tests first** (`tests/test_cli_new_voucher_lines.py`), on a copy of the
   fixtures:
   - a salary payment: one bank transaction, three accounts; the file is as in §1;
     `validate` gives no new error and the transaction is no longer unbooked;
@@ -371,7 +371,40 @@ Commit: `feat(books): build vouchers with several lines and without a bank trans
   - every MVP-004 command test passes unchanged.
 
   *Verify:* fail for the right reason. **STOP for review.**
-- [ ] 5.2 Implement.
+  Result: `tests/test_cli_new_voucher_lines.py`, 32 tests, and a synthetic organisation
+  `tests/fixtures/example-lines/` on the `lines` books, with a statement that has two
+  unbooked transactions and a documents folder. 24 fail for the right reason: the
+  parser requires `--amount` and `--account` and does not know `--debit`, `--credit` or
+  `--text`. The 8 malformed-line tests pass for the wrong reason until the options
+  exist, and are re-checked in 5.2. Locked by the tests:
+  - `--debit <account>=<amount>` and `--credit <account>=<amount>`, repeatable, checked
+    by the parser (four digits, a positive amount with a decimal point); `--text`;
+    `--amount` and `--account` are no longer required by the parser;
+  - the output for more than two lines: the date, the amount, the number of lines and
+    of documents, then one row per line with side, account and amount; for two lines
+    the row is as before;
+  - **amounts are printed as the voucher file writes them**, whole amounts without
+    decimals. MVP-004 printed the statement's own digits; no MVP-004 test asserted a
+    whole amount, so none changes for this;
+  - a voucher without a bank transaction needs no `bank` section; a bank transaction
+    still does.
+
+  One MVP-004 test changed, on purpose: a missing `--account` was rejected by the
+  parser (exit code 2). It is now the refusal `account-missing` (exit code 1), since
+  the lines can be given instead. The test's case is replaced by a missing `--date`,
+  which the parser still requires.
+- [x] 5.2 Implement.
+  Result: 715 tests pass; coverage 99.06 %, every new line covered.
+  - The eight malformed-line tests now pass for the right reason: the parser rejects
+    the value.
+  - `--debit` and `--credit` append to one list, so the lines keep the order they are
+    given in on the command line.
+  - The amount and the form are worked out in one place for the file and the output
+    (`voucher_amount()`, `is_simple()`, `format_amount()` in `front_matter.py`).
+  - Run for real on a copy of the synthetic organisation: an invoice without a bank
+    transaction, a salary with three lines, a payment whose lines did not add up
+    (refused as `lines-unbalanced`), then the payment against one account. `validate`
+    gave `RESULT: OK` with no warning and nothing unbooked.
 
 Commit: `feat(cli): let new-voucher take several lines and no bank transaction`
 
