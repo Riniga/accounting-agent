@@ -12,11 +12,18 @@ från kontoutdrag och underlag. Det görs med
 
 ## Innan du kör prompten
 
-1. Kärnan ska vara installerad. Kontrollera med `accounting-agent --help`.
+1. Kärnan ska vara installerad **på datorn**. Det görs en gång per dator, inte per
+   projekt: organisationens projekt behöver inget installerat och ingen egen kopia av
+   kärnan. Kontrollera med `conda run -n accounting-agent accounting-agent --help`.
+   Fungerar det inte, följ "One-time setup" i
+   [`organisation-projects.md`](../development/organisation-projects.md).
 2. Årsmappen ska innehålla bankens exportfil och underlagen, och gärna BAS-kontoplanen
    som referens (`kontobas`, fyra CSV-filer).
 3. Öppna **organisationens projekt** (inte kärnans repo) i Claude Code och klistra in
    prompten nedan. Byt årsmappen `2026` om året är ett annat.
+
+Projektet behöver inte ha någon `CLAUDE.md` eller några bokföringsregler sedan tidigare.
+Prompten skapar dem, så att Claude Code vet hur bokföringen sköts även i nästa session.
 
 Claude stannar en gång, efter inventeringen, med ett förslag. Inget skrivs förrän du har
 godkänt det.
@@ -82,6 +89,9 @@ godkänt det.
     5. **Ingående balans:** vad var balansen vid årets början? Källan är
        föregående års bokslut eller balansrapport. Finns ingen källa, säg det.
     6. **Räkenskapsår:** kalenderår eller brutet.
+    7. **Projektets instruktioner:** finns `CLAUDE.md` eller `AGENTS.md` i
+       projektets rot, och finns det en fil med bokföringsregler? Säg vad som
+       finns och vad som saknas.
 
     STOPP. Visa mig ett förslag:
 
@@ -96,6 +106,8 @@ godkänt det.
     - konventionerna: bankkonto, parkeringskonto för osäkra poster, konton som
       inte behöver underlag (till exempel bankavgifter), och markeringen för
       gissad kontering;
+    - vilka instruktionsfiler du tänker skapa eller ändra (se fas 3, punkt 4
+      och 5);
     - det du inte kunde avgöra, som frågor till mig.
 
     Vänta på mitt godkännande.
@@ -114,6 +126,21 @@ godkänt det.
 
        Exportfilen ändras inte. Kommandot skriver kontoutdragsfilen dit
        `organisation.yaml` pekar.
+    4. `CLAUDE.md` i projektets rot. Kärnans dokument
+       `docs/development/organisation-projects.md` har ett avsnitt
+       "Instructions for Claude Code in an organisation project" med texten som
+       ska stå där. Kopiera den och sätt in organisationens id och år. Finns
+       filen redan: lägg till avsnittet och behåll resten. Stryk rader som
+       hänvisar till skript som inte finns i det här projektet.
+    5. En fil med bokföringsregler i bokföringsmappen, `README.md`, om ingen
+       finns. Håll den kort:
+       - vilka filer som finns i mappen och vad de är;
+       - konventionerna från `organisation.yaml`, i klartext;
+       - en tom rubrik "Konteringsregler", där reglerna skrivs in när jag har
+         godkänt dem i nästa steg;
+       - en tom rubrik "Rättelser och beslut", för daterade beslut.
+
+       Skriv inga konteringsregler själv. De bestäms av mig.
 
     ## Fas 4 – Kontrollera
 
