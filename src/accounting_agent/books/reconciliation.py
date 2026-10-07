@@ -163,8 +163,10 @@ def _match(
                 Severity.WARNING,
                 "bank-unbooked-recent",
                 STATEMENT,
-                f"{len(recent)} unbooked transactions after {last_voucher} "
-                f"({recent[0].date} to {recent[-1].date}, net {net})",
+                f"{len(recent)} unbooked transactions "
+                + (f"after {last_voucher} " if vouchers else "")
+                + f"({recent[0].date} to {recent[-1].date}, net {net}"
+                + (")" if vouchers else "; the books have no voucher yet)"),
             )
         )
         if list_unbooked:
