@@ -109,7 +109,7 @@ before this was enforced, carry such a trailer; they are left unrewritten and tr
 
 ## Push and Merge Rules
 
-- Do not push or merge without explicit approval when working with an AI assistant.
+- An AI assistant does not push or merge. The owner does.
 - Do not force-push shared branches unless explicitly agreed.
 - Prefer small pull requests over large, mixed changes.
 - Keep documentation, code, and tests aligned.
@@ -137,7 +137,10 @@ See `.gitignore` for the complete ignore list.
 When Claude Code, GitHub Copilot, or another AI assistant is used:
 
 - The assistant must follow the active plan before implementation.
-- The assistant must not commit, push, merge, or delete branches without explicit approval.
+- The assistant must not commit, push, merge, or delete branches. It leaves the change in
+  the working tree, on a branch that had nothing uncommitted when it started, and
+  proposes a commit message; the owner reviews the diff and commits (owner decision
+  2026-10-08, see `AGENTS.md`).
 - The assistant should show the intended change before applying broad refactoring.
 - The assistant should implement one planned todo item at a time.
 - The assistant should update the plan as work progresses.

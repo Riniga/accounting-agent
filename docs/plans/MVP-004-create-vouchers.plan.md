@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-004-create-vouchers.md`](../mvp/MVP-004-create-vouchers.md)
 
-**Status:** Written 2026-10-05 — waiting for the owner's review. No TODO is started.
+**Status:** Implemented – pending PR (plan approved 2026-10-05)
 
 ## 0. Investigation
 
@@ -90,7 +90,8 @@ From here on the reference copy is only counted, through the core's readers. Not
 1. The command belongs in the core, not in each organisation's project.
 2. MVP-004 comes before member management.
 3. The generated lines are in Swedish.
-4. Errors in the books stop the command (with the exception in §0.2 point 1, to confirm).
+4. Errors in the books stop the command, with the exception in §0.2 point 1 (approved
+   with the plan).
 5. Supporting documents stay optional; the core creates none.
 6. Account names are shown in the voucher, but not stored as fields.
 
@@ -176,24 +177,27 @@ the right reason before the implementation is written. Every phase runs `pytest`
 
 ### Phase 1 — Decisions and branch
 
-- [ ] 1.1 The owner merges MVP-003's pull request. Create
-  `feature/mvp-004-create-vouchers` from `main`. If MVP-003 is not merged yet, the owner
-  decides whether to branch from the MVP-003 branch instead.
-- [ ] 1.2 Update the MVP-004 document with a dated correction note per §0.2: the
-  `bank-unbooked` exception, the statement row, unused documents counted in `validate`
-  and listed in the report, and the two severities for generated lines.
+- [x] 1.1 The owner merges MVP-003's pull request. Create
+  `feature/mvp-004-create-vouchers` from `main`.
+  Result: PR #13 is merged; the branch is created from `origin/main` (`98eedd3`). The
+  MVP document, this plan and ADR-009 were already on `main` (`e96584d`).
+- [x] 1.2 Update the MVP-004 document with a dated correction note per §0.2.
   *Verify:* every change traces to §0.
-- [ ] 1.3 Set ADR-009 to Accepted, change ADR-008's status line to "Accepted — superseded
+  Result: a correction note at the top with six points, each tracing to §0.2.
+- [x] 1.3 Set ADR-009 to Accepted, change ADR-008's status line to "Accepted — superseded
   in part by ADR-009", and remove "(Proposed)" from the index row.
   *Verify:* ADR-008's body is unchanged (`git diff` shows the status line only).
-- [ ] 1.4 Glossary: generated lines, counter account (motkonto), guessed posting.
+  Result: done; `git diff` on ADR-008 shows one changed line.
+- [x] 1.4 Glossary: generated lines, counter account (motkonto), guessed posting.
+  Result: three rows added. The stale "pending PR" for MVP-003 in `roadmap.md` and
+  `current-state.md` was also corrected.
 
-Commit: `docs(mvp-004): define the MVP, the plan and ADR-009`
+Commit: `docs(mvp-004): approve the plan and accept ADR-009`
 
 ### Phase 2 — The reader: generated lines
 
-- [ ] 2.1 **Tests first** (`tests/test_front_matter.py`, new fixtures under
-  `tests/fixtures/books/`):
+- [x] 2.1 **Tests first** (`tests/test_front_matter_generated.py`; the variants are built
+  from the `valid` books by helpers, as in `test_front_matter.py`):
   - a voucher with generated lines reads to the same `Voucher` as one without them, and
     its note holds only the text after the generated lines;
   - a voucher without generated lines reads exactly as today;
@@ -205,14 +209,29 @@ Commit: `docs(mvp-004): define the MVP, the plan and ADR-009`
   - no finding quotes a name, a text or a file name.
 
   *Verify:* the tests fail for the right reason. **STOP for review.**
-- [ ] 2.2 Implement in `front_matter.py`. *Verify:* all tests pass; the existing 423
+  Result: `tests/test_front_matter_generated.py`, 25 tests. 22 fail for the right
+  reason: the generated lines end up in the note, and no `generated-*` finding exists.
+  3 pass already, as they should: they pin today's behaviour that must not change (a
+  line of the same shape further down, a document line without an account line, and
+  vouchers without generated lines). The shape locked by the tests:
+  - `Debet NNNN <name> · Kredit NNNN <name>` as the first non-blank line of the body;
+  - then one `Underlag: [<name>](<<path>/<name>>)` line per document, in the field's
+    order, where the path must end with the document's name;
+  - the note is whatever follows.
+
+  Also tested: a wrong number gives the error only, not the name warning as well.
+- [x] 2.2 Implement in `front_matter.py`. *Verify:* all tests pass; the existing 423
   still pass unchanged.
+  Result: 448 tests pass (423 unchanged + 25); coverage 98.85 %, and every new line in
+  `front_matter.py` is covered. The body is split after the voucher is read, so the
+  fields are read exactly as before; the checks compare the generated lines with the
+  voucher's two posting lines and its documents.
 
 Commit: `feat(formats): read and check a voucher's generated lines`
 
 ### Phase 3 — The domain: build a voucher
 
-- [ ] 3.1 **Tests first** (`tests/test_new_voucher.py`), for a pure function that takes
+- [x] 3.1 **Tests first** (`tests/test_posting.py`), for a pure function that takes
   the books, the bank transactions, the bank account and the caller's request:
   - money in → debit the bank account, credit the account; money out → the reverse;
   - the number is the highest number plus one;
@@ -225,13 +244,42 @@ Commit: `feat(formats): read and check a voucher's generated lines`
   - a refusal names the reason, never a text or a name.
 
   *Verify:* fail for the right reason. **STOP for review.**
-- [ ] 3.2 Implement `src/accounting_agent/books/posting.py`; export it from `books`.
+  Result: `tests/test_posting.py`, 34 tests. They fail for the right reason:
+  `ImportError: cannot import name 'VoucherRefusedError' from 'accounting_agent.books'`.
+  API locked by the tests:
+  - `VoucherRequest(date, amount, account, row=None, documents=(), note="", guess=False)`;
+  - `build_voucher(books, transactions, texts, bank_account, request, documents=None,
+    guessed_posting_marker=None) -> Voucher`, where `texts` maps a statement row to the
+    voucher text the format composed for it;
+  - `VoucherRefusedError` with a `rule`: `transaction-missing`,
+    `transaction-ambiguous`, `row-mismatch`, `already-booked`, `account-unknown`,
+    `account-is-bank`, `guess-without-reason`, `guess-marker-missing`,
+    `document-missing`, `documents-not-configured`, `document-name`, `document-twice`.
+
+  Differences from what was planned, all found while writing the tests:
+  - **The function also takes the rows' texts.** Among several rows with the same date
+    and amount, the only way to tell which ones already have a voucher is the text: a
+    row is booked when as many vouchers as rows have that date, amount and text.
+  - **The document refusals are decided here,** not in the CLI, from the set of files
+    the CLI lists — the same way `check_details` gets it. Two more were added: the same
+    document twice, and a name with the field's separator `;`.
+  - **A known limit:** when a voucher's text was edited by hand, its row looks unbooked
+    by text. If every row with that date and amount has a voucher, the request is still
+    refused on the count. If only some have, the caller could book the edited row twice
+    and leave another unbooked; the counts then match and `validate` does not see it.
+    The caller chooses the row from `validate`'s list, so this needs a wrong row from
+    the caller as well. Accepted; added to §5.
+- [x] 3.2 Implement `src/accounting_agent/books/posting.py`; export it from `books`.
+  Result: 483 tests pass; coverage 98.90 %, `posting.py` 100 %. One test was added
+  with the implementation, for a line the first 34 did not reach: a voucher that is not
+  on the bank account does not count as booking a transaction with the same date and
+  amount.
 
 Commit: `feat(books): build a voucher from a bank transaction`
 
 ### Phase 4 — The format: text, render, write
 
-- [ ] 4.1 **Tests first:**
+- [x] 4.1 **Tests first:**
   - `bank_statement`: the text of a row is `name(message)`, the name alone when the
     message is empty; personal identity numbers are masked;
   - `front_matter`: rendering gives the fields in the format's order, the text as a
@@ -244,13 +292,37 @@ Commit: `feat(books): build a voucher from a bank transaction`
     leaves the folder unchanged.
 
   *Verify:* fail for the right reason. **STOP for review.**
-- [ ] 4.2 Implement.
+  Result: `tests/test_voucher_writer.py`, 37 tests. They fail for the right reason:
+  `ImportError: cannot import name 'read_voucher_texts' from
+  'accounting_agent.formats.bank_statement'`. API locked by the tests:
+  - `bank_statement.read_voucher_texts(path) -> dict[int, str]`, statement row → text;
+    empty when the file is missing or cannot be read;
+  - `front_matter.render_voucher(voucher, account_names, bank_account, link_path) -> str`;
+  - `front_matter.voucher_file_name(voucher) -> str`;
+  - `front_matter.write_voucher(directory, voucher, content) -> Path`, raising
+    `VoucherExistsError`.
+
+  The file's conventions were counted on the pilot's 163 voucher files (counts only),
+  and the tests follow them:
+  - the `underlag` field is always written, empty when there is no document (163 of
+    163 have the line; 101 are empty);
+  - several documents are separated by `; ` (3 of 3);
+  - a whole amount has no decimals, others have two (no voucher has `.00`, although
+    153 statement rows do);
+  - a blank line follows the closing `---` (163 of 163).
+
+  Also locked: a voucher that is not one debit line and one credit line of the same
+  amount, or that uses an account outside the chart, cannot be rendered (`ValueError`);
+  the number must be 1–9999; a missing voucher folder is not created.
+- [x] 4.2 Implement.
+  Result: 520 tests pass; coverage 98.92 %. Every new line is covered; the uncovered
+  lines in the two modules are the same as before this phase.
 
 Commit: `feat(formats): render and write a front-matter voucher`
 
 ### Phase 5 — The command
 
-- [ ] 5.1 **Tests first** (`tests/test_cli_new_voucher.py`), on a copy of `example-full`
+- [x] 5.1 **Tests first** (`tests/test_cli_new_voucher.py`), on a copy of `example-full`
   in `tmp_path`:
   - a successful run creates one file; `validate` then gives no new error, and the
     transaction is no longer unbooked;
@@ -265,14 +337,40 @@ Commit: `feat(formats): render and write a front-matter voucher`
   - new warnings caused by the voucher are printed.
 
   *Verify:* fail for the right reason. **STOP for review.**
-- [ ] 5.2 Implement `new-voucher` in `cli.py`: check before, build, check the books with
+  Result: `tests/test_cli_new_voucher.py`, 29 tests. 25 fail for the right reason:
+  argparse does not know the command (`SystemExit: 2`, "invalid choice"). The 4 that
+  pass are the malformed-argument tests, which expect exit code 2; they pass for the
+  wrong reason until the command exists, and are re-checked in 5.2. Locked by the tests:
+  - the arguments: `--date`, `--amount`, `--account` (four digits) are required and
+    checked by the parser; `--row`, `--document` (repeatable), `--note`, `--guess`;
+  - the output: `Created voucher N (<file name>)`, then the date, the amount, the two
+    accounts and the number of documents, then the warnings the voucher added;
+  - a refusal is logged as `[rule] message` with exit code 1, and every file under the
+    organisation is byte-identical afterwards;
+  - the link path is the relative path from the voucher folder to the documents folder.
+
+  The "would add an error" safety net cannot be reached by any request today — every
+  known cause is refused earlier — so its test lets a check object to the new voucher.
+- [x] 5.2 Implement `new-voucher` in `cli.py`: check before, build, check the books with
   the new voucher added, write, print.
+  Result: 552 tests pass; coverage 98.97 %, and every new line in `cli.py` is covered.
+  - The four malformed-argument tests now pass for the right reason: the parser rejects
+    the value, and nothing is read.
+  - Three tests were added with the implementation, for lines the first 29 did not
+    reach: a profile without a `checks` section, a file that appears between the read
+    and the write (never replaced), and folders on different drives (the link is the
+    name alone).
+  - Only warnings that name the new voucher are printed. Summaries such as the number
+    of unbooked transactions change with every voucher and would otherwise be repeated.
+  - Run for real on a copy of the synthetic organisation: the voucher was created, a
+    second run was refused as `already-booked`, and `validate` gave `RESULT: OK` with
+    no warning left.
 
 Commit: `feat(cli): add the new-voucher command`
 
 ### Phase 6 — The document checks
 
-- [ ] 6.1 **Tests first:**
+- [x] 6.1 **Tests first:**
   - `details`: one warning `documents-expected` naming the cost vouchers without a
     document, leaving out the exempt accounts; none when there are none;
   - `details`: one info `documents-unused` with the count of files no voucher refers to;
@@ -280,35 +378,146 @@ Commit: `feat(cli): add the new-voucher command`
   - the existing `documents-summary` is unchanged.
 
   *Verify:* fail for the right reason. **STOP for review.**
-- [ ] 6.2 Implement; pass the exempt accounts from the profile to the check.
+  Result: 24 new tests — `tests/test_document_checks.py` (13), four in
+  `tests/test_reports_summary.py`, `tests/test_cli_documents.py` (7). 22 fail for the
+  right reason: `check_details()` has no `no_document_accounts`, and `ReportContext`
+  has no `unused_documents`. 2 pass already and pin what must not change: the example
+  books give neither finding, and a profile without a documents folder gets no list.
 
-Commit: `feat(books): name vouchers without documents and count unused documents`
+  Differences from what was planned:
+  - **`documents-expected` follows the to-do report's rule, not "cost vouchers".** The
+    report already lists *money out of the bank* without a document, except the
+    accounts configured as needing none. Two definitions of the same thing would
+    disagree — a purchase for stock is money out but not a cost account — so the check
+    uses the report's rule. The pilot's expected number (22, counted on cost accounts)
+    is therefore counted again in TODO 7.2.
+  - **One warning per voucher, not one for all.** It matches the other voucher rules,
+    and it lets `new-voucher` say exactly when the voucher it just created lacks a
+    document.
+  - **The fixture `example-full` now configures 6570 as needing no document,** so that
+    its books stay without warnings. No existing test changed its expectation.
+  - The list in the to-do report is shown when a documents folder is configured, also
+    when it is empty ("Inga."), like the report's other sections.
+- [x] 6.2 Implement; pass the exempt accounts from the profile to the check.
+  Result: 576 tests pass; coverage 98.99 %, every new line covered.
+  - One existing test changed its expectation:
+    `test_vouchers_without_documents_are_summarised` compared the whole list of
+    findings with the summary alone, and its payment without a document now also gets
+    `documents-expected`. The summary itself is unchanged. (6.1 said that no existing
+    test changed; that was true for the fixture, not for this check.)
+  - The report's list is filled in by `report` itself, sorted by name.
+
+Commit: `feat(books): name payments without documents and count unused documents`
 
 ### Phase 7 — Pilot
 
-- [ ] 7.1 On the reference copy of the real books, with a scratchpad script that prints
+- [x] 7.1 On the reference copy of the real books, with a scratchpad script that prints
   counts only: for each of the 163 vouchers, build the voucher from its statement row
   and its own account, and compare the fields with the existing ones. Report equal and
   unequal, and the number per kind of difference. *Expected:* 147 equal on the text;
   date, amount, debit and credit equal on all 163.
-- [ ] 7.2 `validate` on the reference copy: the same result as before this MVP, plus the
+  Result (2026-10-05), each voucher built from the vouchers before it:
+
+  | Compared | Equal | Of |
+  |---|---|---|
+  | Could be built | 163 | 163 |
+  | Number | 163 | 163 |
+  | Date | 163 | 163 |
+  | Debit and credit account, amount | 163 | 163 |
+  | Could be rendered as a file | 163 | 163 |
+  | Text | 147 | 163 |
+
+  The 16 texts that differ:
+  - 4 hold a personal identity number in the existing voucher; the core masks it;
+  - 1 is the name without the message;
+  - 11 were edited by hand: 6 contain the note the treasurer wrote in the internet
+    bank, and 5 start with the name but end differently.
+
+  No second systematic rule was found, so the text rule stays. The outlay convention
+  still works: 15 statement rows have a name that starts with the outlay prefix, and 13
+  existing vouchers do. The scripts were deleted.
+- [x] 7.2 `validate` on the reference copy: the same result as before this MVP, plus the
   new findings (expected: 22 vouchers in `documents-expected`, 24 unused documents).
-- [ ] 7.3 The owner, as treasurer, creates a real batch of vouchers with the command in
+  Result (2026-10-05): `RESULT: OK (errors: 0, warnings: 32, info: 13)`.
+  - Unchanged from MVP-003: 0 errors; 3 duplicates, 4 personal numbers and 1 duplicate
+    account; the same info findings.
+  - New: 24 `documents-expected` — not 22, because the rule is now "money out of the
+    bank" (TODO 6.1), which also counts two payments that are not on cost accounts;
+    and 1 `documents-unused`, "24 of 87 files".
+  - No `generated-*` finding: no existing voucher has generated lines.
+- [x] 7.3 The owner, as treasurer, creates a real batch of vouchers with the command in
   the organisation's own folder, and reports the counts. *Verify:* `RESULT: OK`, and no
   unbooked transaction before the last voucher.
+  Changed 2026-10-05 (owner): the books have no unbooked transaction, and the owner
+  wants the AI agent in the organisation project to do the test. A rehearsal comes
+  first: [`docs/claude-prompts/test-new-voucher.md`](../claude-prompts/test-new-voucher.md)
+  lets Claude Code remove the five last vouchers in a copy, create them again with the
+  command and compare them with the originals. The real batch follows the next bank
+  import.
+  Result of the rehearsal (2026-10-05, run by Claude Code in the organisation's project;
+  the owner passed on the report's result and deviation sections):
+  - `validate` gave the same result in the real folder before, in the copy after the
+    test and in the real folder afterwards: `RESULT: OK`, 0 errors, 163 vouchers. The
+    real folder was untouched.
+  - The five removed vouchers were listed as unbooked (statement rows 160–164) with the
+    right dates and amounts, and were created again. The command refused no account
+    and no document that the originals used.
+  - No unbooked transaction and no `generated-*` finding in the copy afterwards.
+  - One difference in the files: an empty `underlag:` is written without a trailing
+    space, and the originals have one. The value is empty in both, and the reader gives
+    the same voucher. Accepted: trailing whitespace is not kept.
+  - Still open: the real batch, after the next bank import.
+
+  Changed again 2026-10-05 (owner): instead of waiting for a real batch, every voucher
+  is rebuilt from nothing in a copy —
+  [`docs/claude-prompts/rebuild-all-vouchers-test.md`](../claude-prompts/rebuild-all-vouchers-test.md).
+  The AI tool first ran the same rebuild on a scratch copy of the reference books, with
+  the real command and counts only; the copy and the scripts were deleted afterwards:
+  - 163 of 163 vouchers were created, in the originals' order, none refused;
+  - equal to the originals: number, date, accounts and amount, documents and file name
+    on all 163; the text on 147 (the same 16 as in 7.1); the note on 162 — the one that
+    differs holds a personal identity number, which the command masks;
+  - the balance is the same on all 25 accounts; two are printed with a different number
+    of decimals (`.5` and `.50`), since the originals write some amounts with one;
+  - `validate` on the rebuilt books: `RESULT: OK`, 0 errors; the only rule that differs
+    is `personal-number`, 4 → 0;
+  - the command printed 24 `documents-expected` and 3 `voucher-duplicate` warnings, the
+    same as `validate` counts on the originals.
+
+  One obstacle, now in the prompt: books without vouchers have errors when the closing
+  comments refer to vouchers (`comment-unknown-voucher`), and the command refuses when
+  the books have errors. For a rebuild from nothing the comments file is detached in
+  the copy while the vouchers are created. It does not affect ordinary use, where the
+  vouchers a comment refers to exist.
+
+  Final result (2026-10-07): the owner went further than the rebuild in a copy. Every
+  voucher and all reports were removed in the organisation's own project, its
+  instructions were brought up to date with
+  [`docs/claude-prompts/update-organisation-project.md`](../claude-prompts/update-organisation-project.md),
+  and the AI agent there built the year from nothing with the command, choosing the
+  accounts from the organisation's rules. The measures in the reports afterwards, as
+  the owner passed them on: 0 errors; 0 unbooked transactions; the bank's balance
+  agrees with the books; 2 postings on the parking account; 20 guessed postings; 21
+  payments without a supporting document, 9 of them outlays. The last three are the
+  treasurer's to resolve and do not concern the command.
 
 Commit: `docs(mvp-004): record the pilot result`
 
 ### Phase 8 — Documentation and close
 
-- [ ] 8.1 `organisation-projects.md`: the command in "Daily use", the table of what each
+- [x] 8.1 `organisation-projects.md`: the command in "Daily use", the table of what each
   organisation can use, and the `CLAUDE.md` snippet ("create vouchers with the command,
   never by hand").
-- [ ] 8.2 `README.md`, `AGENTS.md` (local commands), `overview.md`, `current-state.md`,
+- [x] 8.2 `README.md`, `AGENTS.md` (local commands), `overview.md`, `current-state.md`,
   `roadmap.md` (status; member management is next).
-- [ ] 8.3 The MVP's "Outcome at close", checked against each acceptance criterion.
-- [ ] 8.4 Methodology compliance: the note under `GAP-F2-CONFIDENTIAL` (§0.3).
-- [ ] 8.5 `git grep` for organisation-specific values in `src/`: none.
+- [x] 8.3 The MVP's "Outcome at close", checked against each acceptance criterion.
+  Result: written 2026-10-07; one criterion was exceeded (the real batch became a
+  rebuild of the whole year), and three limits are listed as not proven.
+- [x] 8.4 Methodology compliance: the note under `GAP-F2-CONFIDENTIAL` (§0.3).
+  Result: a changelog entry, the row's note and the plan table in `gap-register.md`.
+- [x] 8.5 `git grep` for organisation-specific values in `src/`: none.
+  Result: no organisation name, id, account number or marker in `src/`. The only hits
+  are the Swedish word for outlay in two report sentences from MVP-003.
 
 Commit: `docs(mvp-004): document the command and close the MVP`
 
@@ -321,6 +530,11 @@ Commit: `docs(mvp-004): document the command and close the MVP`
   treasurer's decision. Accepted (ADR-009).
 - **The text rule fits 147 of 163.** If the pilot shows a second systematic rule, it is
   added to the format before close; one-off hand edits are accepted.
+- **Rows with the same date and amount, and a hand-edited text.** A voucher whose text
+  was edited no longer matches its statement row, so that row looks unbooked. The count
+  per date and amount still stops a voucher too many, but not the wrong row among
+  several (TODO 3.1). Accepted: the voucher holds no link to its statement row, and
+  adding one changes the file format.
 - **Booking out of date order.** Creating a voucher for a newer transaction first makes
   the older ones `bank-unbooked` errors. That does not block (§0.2 point 1), but the
   routine should stay oldest first.
@@ -329,7 +543,6 @@ Commit: `docs(mvp-004): document the command and close the MVP`
   this MVP exists to prevent.
 - **A file in the documents folder that is not a document** (for example a note) is
   counted as unused. The organisation moves it; the core does not guess.
-- **To confirm with the owner:** the `bank-unbooked` exception to "errors stop".
 
 ### Threat model (STRIDE)
 

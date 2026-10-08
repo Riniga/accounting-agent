@@ -16,12 +16,15 @@ behaviour and must be followed exactly.
 - **Scope discipline:** small, reviewable changes; no unrelated refactoring mixed in; no
   production-code changes in a docs-only task; preserve existing behaviour unless the plan
   says otherwise.
-- **Never** commit, push, merge, or delete branches without explicit approval. All changes
-  to `main` go through a reviewed pull request. Show the diff before proposing a commit.
+- **Never** commit, push, merge, or delete branches. The owner commits. Start on a branch
+  with nothing uncommitted, do the whole change — tests first, without stopping for a
+  test review — and finish with a report: what changed, what the owner should do or
+  test, and a short commit message. All changes to `main` go through a reviewed pull
+  request.
 - **Never** commit `.env`, secrets, tokens, or caches; never put secrets or sensitive data
   into the tool context.
-- **Run `pytest` before proposing a commit.** Add tests for new behaviour and a regression
-  test for every bug fix.
+- **Run `pytest` and `ruff` before handing over.** Add tests for new behaviour and a
+  regression test for every bug fix.
 - **New dependency:** only if the plan justifies it; update `pyproject.toml` /
   `environment.yml`; ADR for anything significant.
 - If a referenced document is missing, propose creating it — do not guess a missing rule.

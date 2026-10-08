@@ -131,6 +131,13 @@ desired behaviour must exist **before** the AI writes the implementation (D1 SKA
 - This does not apply to non-production code an AI tool writes on its own initiative — a
   throwaway debugging script, for example — only to changes that ship.
 
+**In this project (owner decision 2026-10-08, exception
+[EX-004](../methodology-compliance/exceptions.md)):** the AI tool writes the tests first
+and shows that they fail for the right reason, but does not stop to have them reviewed
+before the implementation. The owner reviews the tests together with the code, in the
+diff, before committing. The AI tool's report names every existing test whose
+expectation it changed, and why.
+
 ## Known Limitations
 
 Project-specific limitations (database engines, authentication providers, external services, etc.) belong in the project's architecture or testing documentation—not in this shared standard.

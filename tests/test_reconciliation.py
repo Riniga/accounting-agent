@@ -298,3 +298,14 @@ def test_summary_is_last_and_counts_every_transaction() -> None:
 
     assert findings[-1].rule == "bank-summary"
     assert findings[-1].message.startswith("3 transactions 2026-01-07 to 2026-03-01")
+
+
+def test_books_without_vouchers_say_unbooked_without_a_date() -> None:
+    # Regression (MVP-005): with no voucher the message said "after 0001-01-01".
+    findings = reconcile(books(), STATEMENT, BANK)
+
+    recent = [f for f in findings if f.rule == "bank-unbooked-recent"]
+    assert len(recent) == 1
+    assert "0001-01-01" not in recent[0].message
+    assert recent[0].message.startswith(f"{len(STATEMENT)} unbooked transactions (")
+    assert "no voucher yet" in recent[0].message

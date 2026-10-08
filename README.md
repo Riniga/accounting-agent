@@ -103,7 +103,7 @@ books:                      # needed by `validate`
   fiscal_year: 2026
   bank_account: "1930"
 bank:                       # needed by `import-bank` (ADR-008)
-  export_format: nordea-csv # the bank's export format
+  export_format: nordea-csv # the bank's export format: nordea-csv or sparbanken-syd-csv
   statement_file: Bokföring/kontoutdrag.csv
   fund_account: "1350"      # optional, together with fund_value_file
   fund_value_file: Bokföring/fondvärde.csv
@@ -159,6 +159,33 @@ general ledger, voucher list and closing comments.
   organisation's own project. Personal identity numbers in them are masked as
   `[personnummer]`; the terminal shows only file names and counts.
 - Existing reports are replaced; other files in the folder are left alone.
+
+`accounting-agent new-voucher <organisation> --config-dir <path> --date <YYYY-MM-DD> …`
+creates one voucher
+([ADR-009](docs/architecture/decisions/ADR-009-core-creates-vouchers.md)). It has three
+uses:
+- `--amount <amount> --account <account>` — a bank transaction against one account;
+- `--amount <amount> --debit <account>=<amount> --credit <account>=<amount> …` — a bank
+  transaction against several accounts, such as a salary. The bank line comes from the
+  bank statement, and the lines must add up to the bank's amount;
+- `--text <text> --debit <account>=<amount> --credit <account>=<amount> …`, without
+  `--amount` — a voucher without a bank transaction, such as an issued invoice or a
+  closing entry. The lines must balance, and the bank account cannot be among them.
+
+All three take `[--row <n>] [--document <name>]... [--note <text>] [--guess]`.
+- The caller gives the decisions only: the accounts and amounts, the supporting
+  documents, a note, and whether the posting is a guess. For a bank transaction the
+  date, the amount, the text and the number come from the bank statement and the books.
+- A voucher with one debit and one credit line is written with an account in `debet`,
+  one in `kredit`, and `belopp`. Any other lists its lines in the two fields, each
+  `<account> <amount>`, separated by semicolons: `kredit: 2710 9000; 1930 21000`. The
+  fields are valid YAML, so Markdown tools can show them.
+- It writes nothing when the request cannot give a right voucher, when the books have
+  errors, or when the voucher would add one. It never changes or removes a voucher.
+- Below the fields it writes the accounts with their names and a link to each document,
+  so that a voucher can be reviewed without knowing account numbers by heart.
+- The terminal shows the number, the date, the amount and the accounts — never the
+  text, the note or a document's file name.
 
 ## Required GitHub Actions secrets
 
