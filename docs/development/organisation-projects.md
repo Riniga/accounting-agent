@@ -11,7 +11,7 @@ work MVP by MVP (see the [roadmap](../roadmap.md)).
 |---|---|---|
 | Helsingborgs Judoklubb | `import-bank` (bank statement and fund value), `validate` (every check in `kontroll.py` except members, and the reconciliation against the bank), `new-voucher` (a voucher for a bank transaction), `report` (every report except the member fees) | Members: `medlemskontroll.py`, the member checks in `kontroll.py` and the member-fee report (backlog) |
 | Aktivitet Förebygger | `import-bank` (`sparbanken-syd-csv`), `validate`, `new-voucher` (also for salaries, invoices and tax-account events, which need several lines or have no bank transaction), `report` | reconciling the tax account; calculating salaries |
-| JudoSyd | `import-bank` (`swedbank-csv`), `validate`, `new-voucher`, `report` — being set up (MVP-006): new books for 2026 in the core's format, with a new chart of accounts | its assistant for mail, calendar and notices; issuing invoices; reports as PDF; its second bank account |
+| JudoSyd | `import-bank` (`swedbank-csv`), `validate`, `new-voucher`, `report` — new books from 2026 in the core's format, with a new chart of accounts (MVP-006) | its assistant for mail, calendar and notices; issuing invoices; reports as PDF; its second bank account |
 
 The core has one book format, and an organisation adopts it
 ([ADR-010](../architecture/decisions/ADR-010-one-book-format.md)); see

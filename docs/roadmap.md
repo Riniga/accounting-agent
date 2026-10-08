@@ -11,7 +11,13 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-**MVP-005 is merged** (PR #15). **MVP-006 is in progress.**
+**MVP-006 is implemented and pending its pull request.**
+[MVP-006 – JudoSyd's books in the core's format](mvp/MVP-006-judosyd-books.md) added
+Swedbank's bank export, and JudoSyd's 2026 was built in the core's format in its own
+project, with a new chart of accounts. All three organisations now keep their books
+through the core.
+
+*Earlier:* **MVP-005 is merged** (PR #15).
 [MVP-005 – Vouchers with several lines, and without a bank transaction](mvp/MVP-005-multi-line-vouchers.md)
 extended the one book format (ADR-010) and `new-voucher`, and added Sparbanken Syd's
 bank export. Aktivitet Förebygger's 2026 was built in the core's format from its bank
@@ -19,10 +25,7 @@ statement and supporting documents, salaries and invoices included.
 
 **Owner decision 2026-10-08:** Helsingborgs Judoklubb and Aktivitet Förebygger are
 considered migrated to the core. **Next: JudoSyd (R4)** —
-[MVP-006](mvp/MVP-006-judosyd-books.md), approved 2026-10-08: new books for JudoSyd's
-2026 in the core's format, as for the first two, with a Swedbank bank export and a new
-chart of accounts. The reader is built; the pilot in JudoSyd's project remains. Member
-management via core stays in the backlog.
+[MVP-006](mvp/MVP-006-judosyd-books.md). Member management via core stays in the backlog.
 
 *Earlier:* **MVP-004 is merged** (PR #14).
 [MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
@@ -126,7 +129,7 @@ books; what it lacks is books in the core's format. They are kept in a commercia
 bookkeeping system.
 
 * [MVP-006 – JudoSyd's books in the core's format](mvp/MVP-006-judosyd-books.md)
-  — **in progress.** A Swedbank bank export, and new books for JudoSyd's 2026 built with
+  — **implemented, pending its pull request.** A Swedbank bank export, and new books for JudoSyd's 2026 built with
   `new-voucher`, with a new chart of accounts — the same way as for the first two
   organisations.
 
@@ -168,6 +171,10 @@ instead — see `docs/development/methodology.md` "Found during an MVP".
   - Consider adding it as a principle in the vision, and as an automated check (a CI grep
     for known consumer names).
 
+* (2026-10-08, MVP-006) Run the local hooks on untracked files too before a hand-over:
+  `pre-commit run --all-files` covers tracked files only, and a new file's finding
+  then reaches the owner's commit. A habit today; a script or a documented command
+  would make it a rule.
 * (2026-10-08, MVP-006) Reports as PDF, for a board that wants them. Made by hand for
   now (owner decision); perhaps an MVP later.
 * (2026-10-08, MVP-006) Say in `organisation.yaml` which account at the bank is the

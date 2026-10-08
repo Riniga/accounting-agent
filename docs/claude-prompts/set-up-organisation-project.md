@@ -85,6 +85,10 @@ godkänt det.
        pekar ut. Andra utdrag importeras inte: de är underlag. Finns det flera
        bankkonton, säg vilket som har flest transaktioner och föreslå det som
        bankkonto. Importera aldrig ett annat kontos exportfil.
+       Ett underlag går bara att koppla till en verifikation om det ligger i
+       underlagsmappen. Ligger ett sådant utdrag bredvid bankens exportfil,
+       föreslå att jag flyttar eller kopierar det till underlagsmappen. Flytta
+       det inte själv.
     3. **Underlagen:** hur många och av vilka slag (fakturor,
        lönespecifikationer, kvitton, skattekontoutdrag). Räkna, citera inte.
     4. **Kontoplan:** vilka konton behövs för de slag av händelser som finns?

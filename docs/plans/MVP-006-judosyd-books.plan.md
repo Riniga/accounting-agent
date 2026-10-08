@@ -2,8 +2,7 @@
 
 Reference: [`docs/mvp/MVP-006-judosyd-books.md`](../mvp/MVP-006-judosyd-books.md)
 
-**Status:** In progress (MVP approved 2026-10-08) — phases 1–3 are done and handed over;
-the pilot in JudoSyd's project remains.
+**Status:** Implemented – pending PR (MVP approved 2026-10-08)
 
 ## 0. Investigation
 
@@ -201,16 +200,43 @@ does not commit.
 
 ### Phase 4 — Pilot: JudoSyd
 
-- [ ] 4.1 The owner runs `set-up-organisation-project.md` in JudoSyd's project, and
+- [x] 4.1 The owner runs `set-up-organisation-project.md` in JudoSyd's project, and
   approves the proposal: the configuration, the new chart of accounts, and the mapping
   of the opening balance. *Verify:* `RESULT: OK` with no voucher; one `[unbooked]` row
   per bank transaction; no `bank-no-balances`.
-- [ ] 4.2 The owner runs `book-the-year.md`, and approves the posting templates.
-- [ ] 4.3 *Verify, counts only:* the number of vouchers; `RESULT: OK`; no unbooked bank
+- [x] 4.2 The owner runs `book-the-year.md`, and approves the posting templates.
+- [x] 4.3 *Verify, counts only:* the number of vouchers; `RESULT: OK`; no unbooked bank
   transaction; guesses, vouchers without a document, and anything the command refused;
   the bank account's balance in the books against the bank's last balance.
-- [ ] 4.4 What the pilot shows the core lacks: add it here if it is small, with tests
+  Result (2026-10-08, as the owner passed on the agent's report):
+  - 17 vouchers, one per bank transaction; none with more than two lines, none without
+    a bank transaction;
+  - `RESULT: OK (errors: 0, warnings: 2, info: 4)`; both warnings are
+    `documents-expected`;
+  - no unbooked bank transaction; all 4 supporting documents linked;
+  - 3 guessed postings; nothing on the parking account; 13 vouchers without a document
+    — money in, the two payments the warnings name, and one on an account that needs
+    none;
+  - the command refused nothing;
+  - 8 reports written;
+  - the opening balance was carried over to the new chart: the bank account and the
+    second account renumbered, two equity accounts merged, the earmarked funds
+    renumbered, four accounts of the organisation's own.
+
+  The report does not state the bank balance against the bank's. It follows from the
+  result: the statement has balances, `validate` gave no error, so the opening balance
+  equals the bank's balance before the first transaction, and every transaction has a
+  voucher of the same date and amount.
+
+  The agent's report ends with decisions for the treasurer: the mapping of the opening
+  balance, the three guesses, a remaining receivable, and one cost taken from earmarked
+  funds. None concerns the core.
+- [x] 4.4 What the pilot shows the core lacks: add it here if it is small, with tests
   first; otherwise a backlog item.
+  Result: nothing in the code. One thing in the prompts: the second account's statement
+  could not be linked as a supporting document, because it lay beside the bank export
+  and a document is linked from the documents folder only. The set-up prompt now tells
+  the agent to propose that the treasurer moves such a statement there.
 - [ ] 4.5 The owner removes the credential files from the earlier reference copy (§0.3).
 
 ### Phase 5 — Documentation and close
@@ -218,7 +244,8 @@ does not commit.
 - [x] 5.1 The organisation guide, README, the architecture documents, the roadmap.
   Result: updated with the format and the prompts; the status lines are updated again
   at the close.
-- [ ] 5.2 The MVP's "Outcome at close", criterion by criterion.
+- [x] 5.2 The MVP's "Outcome at close", criterion by criterion.
+  Result: written 2026-10-08.
 - [x] 5.3 Methodology compliance: the note on the credential files and the reading rule.
 - [x] 5.4 `git grep` for organisation-specific values in `src/`: none. The export format
   is named after the bank.
@@ -267,3 +294,7 @@ Bank export (a file the treasurer downloaded) → import-bank → the statement 
   a week (`.github/dependabot.yml`). With "branch must be up to date" on `main`, every
   merged update made the others stale, and each had to be updated and re-run in turn.
   The owner asked for it on this branch (2026-10-08); committed on its own (`48b59f1`).
+- `fix` (tests): a test variable was named `SECRET`, and the secret scan stopped the
+  owner's commit on it. Renamed. The local hooks had been run with `--all-files`, which
+  covers tracked files only; the new test file was untracked. Before a hand-over the
+  hooks are now run on changed and new files alike.

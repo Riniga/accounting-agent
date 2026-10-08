@@ -112,4 +112,69 @@ supporting documents.
    guessed and what is missing; the treasurer completes it then.
 8. **The chart of accounts changes** in the move.
 
-## Outcome at close (YYYY-MM-DD)
+## Outcome at close (2026-10-08)
+
+**Delivered.** Implemented on `feature/mvp-006-judosyd-migration`, pending the pull
+request. Each criterion was checked against the real system
+([plan](../plans/MVP-006-judosyd-books.plan.md)):
+
+- **The format:** a synthetic Swedbank export covers the format with a passing case and
+  a broken case per rule; 838 tests pass (798 before).
+- **The real exports:** both are read (17 and 1 rows), written as the core's statement
+  file and read back with no finding; every row has a balance, and the balances follow
+  from the amounts. Counts only.
+- **Nothing changes for the first two organisations:** every earlier test passes. The
+  first two readers changed in one way — a file in another encoding is refused instead
+  of raising a decoding error — and their tests cover it.
+- **In JudoSyd's own project** (as the owner passed on the agent's report, counts only):
+  the year folder was set up with a new chart of accounts and the opening balance
+  carried over, and the year was booked from the bank statement and the supporting
+  documents. 17 vouchers, one per bank transaction, none with more than two lines and
+  none without a bank transaction. `RESULT: OK`, 0 errors, 2 warnings — both
+  `documents-expected`. No unbooked bank transaction. All four supporting documents are
+  linked. 3 guessed postings, nothing on the parking account, 13 vouchers without a
+  document. The reports were written. The command refused nothing.
+- **The bank account's balance agrees with the bank's:** it follows from the result
+  above. The statement has balances, so `validate` checks the opening balance against
+  the bank's balance before the first transaction, and every transaction has a voucher
+  of the same date and amount; no error was reported.
+- **No organisation-specific value in `src/`:** `git grep` finds none.
+- **Tests first:** written before the implementation and shown to fail for the right
+  reason; reviewed with the code (EX-004).
+- **MVP-001 gates:** Ruff, the pre-commit hooks, detect-secrets, the instruction-file
+  scan and the tests run green locally; coverage 99.15 %, floor 97 %. Semgrep and the
+  dependency checks run in the pull request (no dependency changed).
+
+**What the pilot showed:**
+
+- **This organisation needed nothing of MVP-005.** Every voucher was a bank transaction
+  against one account.
+- **The change of chart of accounts worked through the prompt.** The agent mapped the
+  earlier chart to the new one: the bank account and the second account got new numbers,
+  two equity accounts became one, the earmarked funds were renumbered, and four accounts
+  are the organisation's own, outside the reference chart. Three postings are guesses
+  because two earlier accounts have no counterpart in the reference chart.
+- **A statement of another account could not be linked to its voucher,** because it lay
+  beside the bank export and not in the documents folder. The set-up prompt now says so.
+- **The local check missed a new file.** The hooks were run over "all files", which
+  means the files git tracks; a new test file was not among them, and the secret scan
+  stopped the owner's commit on a test variable's name. The hooks are now run on changed
+  and new files alike before a hand-over.
+
+**Left for the treasurer in JudoSyd's project,** as the agent's report lists it: to
+approve the mapping of the opening balance and the three guesses; whether a remaining
+receivable is written off, which has no bank transaction and no document yet; whether
+one cost is taken from earmarked funds or shown in the result; and the missing
+supporting documents.
+
+**Not proven, or not possible yet:**
+
+- **The new books were not compared with the earlier system's.** The owner chose new
+  books without a parallel run. The old year folder is the way to check.
+- **The second bank account is not reconciled.** Its one transaction this year is a
+  transfer, booked from the main account's statement.
+- **Nothing tells `import-bank` which account's export it is given.** Backlog.
+- **Reports as PDF, issuing invoices, and the assistant's mail and notices** are outside
+  the core, as decided.
+- The credential files in the earlier reference copy are the owner's to remove; whether
+  that is done is not known here.
