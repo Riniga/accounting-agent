@@ -349,3 +349,47 @@ def test_render_reports_gives_all_nine_reports_in_order(books: Books) -> None:
         "verifikationslista.md",
         "bokslutskommentarer.md",
     ]
+
+
+# --- Documents no voucher refers to (MVP-004) -------------------------------------------
+
+
+def test_todo_report_lists_documents_no_voucher_refers_to(books: Books) -> None:
+    context = replace(
+        CONTEXT, unused_documents=("20260105-kvitto (Exempel).jpg", "47.pdf")
+    )
+
+    text = render_todo(books, context)
+
+    assert (
+        "### Underlag som ingen verifikation hänvisar till (2)\n"
+        "\n"
+        "Koppla dem till en verifikation, eller ta bort dem om de inte behövs.\n"
+        "\n"
+        "- 20260105-kvitto (Exempel).jpg\n"
+        "- 47.pdf\n"
+    ) in text
+
+
+def test_todo_report_says_when_every_document_is_referred_to(books: Books) -> None:
+    text = render_todo(books, replace(CONTEXT, unused_documents=()))
+
+    assert "### Underlag som ingen verifikation hänvisar till (0)\n\nInga.\n" in text
+
+
+def test_todo_report_has_no_document_list_without_a_documents_folder(
+    books: Books,
+) -> None:
+    # None: no documents folder is configured, so there is nothing to list.
+    assert CONTEXT.unused_documents is None
+
+    assert "ingen verifikation hänvisar till" not in render_todo(books, CONTEXT)
+
+
+def test_unused_document_names_are_masked(books: Books) -> None:
+    context = replace(CONTEXT, unused_documents=("191212121212-kvitto.pdf",))
+
+    text = render_todo(books, context)
+
+    assert "- [personnummer]-kvitto.pdf" in lines(text)
+    assert "191212121212" not in text

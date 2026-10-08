@@ -1,6 +1,6 @@
 # ADR-006: The core models books as double-entry vouchers with posting lines; each file format has its own reader
 
-**Status:** Accepted
+**Status:** Accepted — superseded in part by [ADR-010](ADR-010-one-book-format.md) ("each file format has its own reader")
 **Date:** 2026-09-25
 
 ## Context

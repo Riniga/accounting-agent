@@ -10,44 +10,27 @@ the organisation's statement file. The export itself is only read.
 
 import csv
 import io
-from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from accounting_agent.books.masking import FILE_MASK, mask_personal_numbers
+from accounting_agent.formats.bank_export import (
+    ExportFormatError,
+    FundExport,
+    StatementExport,
+    StatementRow,
+)
+
+__all__ = [
+    "ExportFormatError",
+    "FundExport",
+    "StatementExport",
+    "StatementRow",
+    "read_export",
+]
 
 STATEMENT_COLUMNS = frozenset({"Datum", "Belopp", "Saldo"})
 FUND_COLUMNS = ["Datum", "Belopp"]
-
-
-class ExportFormatError(Exception):
-    """The file is not a bank export the core can read."""
-
-
-@dataclass(frozen=True)
-class StatementRow:
-    """One statement transaction, as text ready for the statement file."""
-
-    date: str
-    amount: str
-    name: str
-    message: str
-    note: str
-    balance: str
-
-
-@dataclass(frozen=True)
-class StatementExport:
-    """An account statement export, oldest transaction first."""
-
-    rows: tuple[StatementRow, ...]
-
-
-@dataclass(frozen=True)
-class FundExport:
-    """A fund-value export: market value per date."""
-
-    values: dict[str, str]
 
 
 def read_export(path: Path) -> StatementExport | FundExport:
