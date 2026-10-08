@@ -9,10 +9,15 @@ point it here instead of duplicating — this file is the one source of truth.
 A living document (methodology D3 BÖR 2): rows are added when a gap is found, updated as
 follow-up plans progress, and struck through (`~~GAP-ID~~`) when closed.
 
-**Last updated:** 2026-10-07
+**Last updated:** 2026-10-08
 
 **Changelog**
 
+- 2026-10-08 — The owner changed how AI-assisted work is handed over: the AI tool no
+  longer stops to have tests reviewed before the implementation, and no longer commits.
+  It leaves the whole change in the working tree and reports; the owner reviews the diff
+  and commits. `GAP-D1-AITDD` becomes a standing exception (EX-004). `AGENTS.md`,
+  `CLAUDE.md`, `testing.md` and `git.md` say the same.
 - 2026-10-07 — MVP-005 closes no row. A new input (posting lines and a caller-supplied
   text) and a new external file format (a second bank export) got a STRIDE pass in the
   plan. `GAP-F2-CONFIDENTIAL`: new reference material with supporting documents and bank
@@ -96,7 +101,7 @@ follow-up plans progress, and struck through (`~~GAP-ID~~`) when closed.
 | GAP-C2-REACHABILITY | C2 SKA 2 | SCA without reachability analysis | platform | Revisit when the dependency count grows | open |
 | GAP-C2-SHAPIN | C2 (supply chain) | GitHub Actions pinned to version tags, not commit SHAs | platform | — | open |
 | GAP-C2-DEPENDABOT-LOCK | C2 SKA 3, 5 | Dependabot may not recompile `requirements-lock.txt` (compiled with `--no-header`), so its PRs could fail the drift check | platform | Verify on the first Dependabot pip PR | open |
-| GAP-D1-AITDD | D1 SKA 5 | AI-written tests were not reviewed before implementation in MVP-001 phase 2 | owner | Tests reviewed in PR #5 (EX-002) | open — closes at PR #5 review |
+| GAP-D1-AITDD | D1 SKA 5 | AI-written tests are reviewed with the code, in the diff before the owner's commit, not before the implementation. First in MVP-001 phase 2 (EX-002, one-off); standing from 2026-10-08 by the owner's decision (EX-004) | owner | Tests are still written first and shown to fail; the AI tool does not commit, and reports every changed expectation. Re-confirmed at every MVP close | open — standing exception EX-004 |
 | GAP-E1-WORKITEM | E1 SKA 6, D3 SKA 3 | PR ↔ work-item link is by convention only | platform | No built-in GitHub enforcement; revisit with a second reviewer | open |
 | GAP-F3-FLAG | F3 SKA 8 | Changes to instruction files not specially flagged in review | platform | `CODEOWNERS` rule once a second reviewer exists | open |
 

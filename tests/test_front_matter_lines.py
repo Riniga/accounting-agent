@@ -2,13 +2,17 @@
 
 A voucher file is in one of two forms, never mixed:
 
-- the *simple* form: one `debet` and one `kredit` with an account only, and `belopp`;
-- the *lines* form: any number of `debet` and `kredit` fields, each `<account> <amount>`.
+- the *simple* form: one account in `debet`, one in `kredit`, and the amount in `belopp`;
+- the *lines* form: `debet` and `kredit` each list their posting lines as
+  `<account> <amount>`, separated by semicolons, like the documents in `underlag`.
 
-The synthetic `lines` books hold both: a salary paid from the bank (three lines), the
-employer's contribution (two lines, in the lines form), an invoice and its payment (the
-simple form), and a salary run for two employees without the bank account (four lines,
-two of them on the same account).
+Every field appears once in a file. The fields are then valid YAML, which is what
+Markdown tools read them as; a repeated key makes them fail.
+
+The synthetic `lines` books hold both forms: a salary paid from the bank (three lines),
+the employer's contribution (two lines, in the lines form), an invoice and its payment
+(the simple form), and a salary run for two employees without the bank account (four
+lines, two of them on the same account).
 """
 
 import shutil
@@ -17,6 +21,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
+import yaml
 
 from accounting_agent.books import (
     Finding,
@@ -33,9 +38,10 @@ VALID = FIXTURES / "valid"
 BANK = "1930"
 VOUCHERS = "verifikationer"
 YEAR = 2026
-SALARY = "0001_2026-01-25.md"  # debet 7010 30000; kredit 2710 9000; kredit 1930 21000
+SALARY = "0001_2026-01-25.md"  # debet: 7010 30000 / kredit: 2710 9000; 1930 21000
 SALARY_RUN = "0005_2026-02-25.md"  # four lines, no bank account
 INVOICE = "0003_2026-01-31.md"  # the simple form
+SALARY_LINES = "debet: 7010 30000\nkredit: 2710 9000; 1930 21000\n"
 
 
 @pytest.fixture
@@ -55,6 +61,12 @@ def replace_in(books_dir: Path, name: str, old: str, new: str) -> None:
 
 def rules(findings: list[Finding]) -> list[tuple[Severity, str]]:
     return sorted((f.severity, f.rule) for f in findings)
+
+
+def front_matter_lines(path: Path) -> list[str]:
+    """The lines between the two `---` of a voucher file."""
+    lines = path.read_bytes().decode("utf-8").split("\n")
+    return lines[1 : lines.index("---", 1)]
 
 
 # --- The lines form is read ------------------------------------------------------
@@ -88,17 +100,33 @@ def test_voucher_with_three_lines_is_read() -> None:
     assert salary.is_balanced
 
 
-def test_lines_keep_the_order_they_are_written_in() -> None:
-    # The file lists a credit first, then two debits, then a credit.
+def test_debit_lines_come_first_and_each_side_keeps_its_order() -> None:
     books, _ = read_books(LINES, BANK)
     assert books is not None
 
     assert books.vouchers[4].lines == (
-        PostingLine("2710", credit=Decimal("16500")),
         PostingLine("7010", debit=Decimal("30000.50")),
         PostingLine("7010", debit=Decimal("25000")),
+        PostingLine("2710", credit=Decimal("16500")),
         PostingLine("2821", credit=Decimal("38500.50")),
     )
+
+
+def test_debit_lines_come_first_also_when_kredit_is_written_first(
+    books_dir: Path,
+) -> None:
+    replace_in(
+        books_dir,
+        SALARY,
+        SALARY_LINES,
+        "kredit: 2710 9000; 1930 21000\ndebet: 7010 30000\n",
+    )
+
+    books, findings = read_books(books_dir, BANK)
+
+    assert findings == []
+    assert books is not None
+    assert [line.account for line in books.vouchers[0].lines] == ["7010", "2710", BANK]
 
 
 def test_two_lines_on_the_same_account_are_two_lines() -> None:
@@ -111,6 +139,7 @@ def test_two_lines_on_the_same_account_are_two_lines() -> None:
 
 
 def test_two_lines_can_be_written_in_the_lines_form() -> None:
+    # `debet: 7510 9426` and `kredit: 2731 9426`: one line on each side, with amounts.
     books, _ = read_books(LINES, BANK)
     assert books is not None
 
@@ -118,6 +147,26 @@ def test_two_lines_can_be_written_in_the_lines_form() -> None:
         PostingLine("7510", debit=Decimal("9426")),
         PostingLine("2731", credit=Decimal("9426")),
     )
+
+
+@pytest.mark.parametrize(
+    "written",
+    [
+        "debet: 7010 30000\nkredit: 2710 9000;1930 21000\n",
+        "debet:   7010   30000\nkredit: 2710 9000 ;  1930 21000\n",
+    ],
+    ids=["no-space-after-the-semicolon", "extra-spaces"],
+)
+def test_spaces_around_the_separator_do_not_matter(
+    books_dir: Path, written: str
+) -> None:
+    replace_in(books_dir, SALARY, SALARY_LINES, written)
+
+    books, findings = read_books(books_dir, BANK)
+
+    assert findings == []
+    assert books is not None
+    assert len(books.vouchers[0].lines) == 3
 
 
 def test_balances_follow_every_line() -> None:
@@ -130,6 +179,49 @@ def test_balances_follow_every_line() -> None:
     assert balances["7010"] == Decimal("85000.50")
     assert balances["2710"] == Decimal("-25500")
     assert balances["1510"] == Decimal("0")
+
+
+# --- The fields are valid YAML ---------------------------------------------------
+
+
+@pytest.mark.parametrize("books_path", [LINES, VALID], ids=["lines", "valid"])
+def test_no_field_is_repeated_and_the_fields_are_valid_yaml(books_path: Path) -> None:
+    # Markdown tools read the fields as YAML, where a key may appear only once.
+    for path in sorted((books_path / VOUCHERS).glob("*.md")):
+        lines = front_matter_lines(path)
+        keys = [line.split(":")[0] for line in lines if line.strip()]
+
+        assert len(keys) == len(set(keys)), path.name
+        assert set(yaml.safe_load("\n".join(lines))) == set(keys), path.name
+
+
+def test_yaml_gives_the_lines_as_one_text_per_side() -> None:
+    fields = yaml.safe_load("\n".join(front_matter_lines(LINES / VOUCHERS / SALARY)))
+
+    assert fields["debet"] == "7010 30000"
+    assert fields["kredit"] == "2710 9000; 1930 21000"
+
+
+def test_repeated_debet_or_kredit_is_an_error(books_dir: Path) -> None:
+    # The form MVP-005 first had; it is not valid YAML.
+    replace_in(
+        books_dir,
+        SALARY,
+        "kredit: 2710 9000; 1930 21000\n",
+        "kredit: 2710 9000\nkredit: 1930 21000\n",
+    )
+
+    _, findings = read_books(books_dir, BANK)
+
+    assert (Severity.ERROR, "duplicate-field") in rules(findings)
+
+
+def test_other_fields_may_not_be_repeated_either(books_dir: Path) -> None:
+    replace_in(books_dir, SALARY, "belopp: -21000\n", "belopp: -21000\nbelopp: -1\n")
+
+    _, findings = read_books(books_dir, BANK)
+
+    assert rules(findings) == [(Severity.ERROR, "duplicate-field")]
 
 
 # --- The simple form is read as before -------------------------------------------
@@ -186,8 +278,8 @@ def test_money_into_the_bank_with_several_lines_has_a_positive_amount(
     replace_in(
         books_dir,
         SALARY,
-        "belopp: -21000\ndebet: 7010 30000\nkredit: 2710 9000\nkredit: 1930 21000\n",
-        "belopp: 500\ndebet: 1930 500\nkredit: 3010 300\nkredit: 1510 200\n",
+        "belopp: -21000\n" + SALARY_LINES,
+        "belopp: 500\ndebet: 1930 500\nkredit: 3010 300; 1510 200\n",
     )
 
     books, findings = read_books(books_dir, BANK)
@@ -211,7 +303,7 @@ def test_simple_form_keeps_the_bank_sign_rule(books_dir: Path) -> None:
 def test_unbalanced_voucher_is_read_and_reported_by_the_general_check(
     books_dir: Path,
 ) -> None:
-    replace_in(books_dir, SALARY, "kredit: 2710 9000\n", "kredit: 2710 8000\n")
+    replace_in(books_dir, SALARY, "2710 9000;", "2710 8000;")
 
     books, findings = read_books(books_dir, BANK)
 
@@ -222,7 +314,7 @@ def test_unbalanced_voucher_is_read_and_reported_by_the_general_check(
 
 
 def test_account_both_debited_and_credited_is_still_an_error(books_dir: Path) -> None:
-    replace_in(books_dir, SALARY_RUN, "kredit: 2710 16500\n", "kredit: 7010 16500\n")
+    replace_in(books_dir, SALARY_RUN, "kredit: 2710 16500;", "kredit: 7010 16500;")
 
     books, _ = read_books(books_dir, BANK)
 
@@ -276,17 +368,19 @@ def test_unknown_account_on_a_line_is_the_general_checks_rule(books_dir: Path) -
 @pytest.mark.parametrize(
     ("old", "new"),
     [
-        ("kredit: 2710 9000\n", "kredit: 2710\n"),  # one line without an amount
-        (
-            "debet: 7010 30000\nkredit: 2710 9000\nkredit: 1930 21000\n",
-            "debet: 7010\nkredit: 2710\nkredit: 1930\n",  # several lines, no amounts
-        ),
-        (
-            "debet: 7010 30000\nkredit: 2710 9000\nkredit: 1930 21000\n",
-            "debet: 7010 21000\nkredit: 1930\n",  # one of two has an amount
-        ),
+        ("kredit: 2710 9000; 1930 21000\n", "kredit: 2710; 1930 21000\n"),
+        (SALARY_LINES, "debet: 7010\nkredit: 2710; 1930\n"),
+        (SALARY_LINES, "debet: 7010 21000\nkredit: 1930\n"),
+        ("kredit: 2710 9000; 1930 21000\n", "kredit: 2710 9000; 1930 21000;\n"),
+        ("kredit: 2710 9000; 1930 21000\n", "kredit: 2710 9000;; 1930 21000\n"),
     ],
-    ids=["one-without", "repeated-without", "one-of-two"],
+    ids=[
+        "one-without-an-amount",
+        "several-without-amounts",
+        "one-side-with-an-amount",
+        "trailing-separator",
+        "empty-entry",
+    ],
 )
 def test_mixed_forms_skip_the_voucher(books_dir: Path, old: str, new: str) -> None:
     replace_in(books_dir, SALARY, old, new)
@@ -300,17 +394,14 @@ def test_mixed_forms_skip_the_voucher(books_dir: Path, old: str, new: str) -> No
 
 
 @pytest.mark.parametrize(
-    ("old", "new", "missing"),
-    [
-        ("kredit: 2710 9000\nkredit: 1930 21000\n", "", "kredit"),
-        ("debet: 7010 30000\n", "", "debet"),
-    ],
+    ("old", "missing"),
+    [("kredit: 2710 9000; 1930 21000\n", "kredit"), ("debet: 7010 30000\n", "debet")],
     ids=["only-debit", "only-credit"],
 )
-def test_voucher_needs_a_debit_and_a_credit_line(
-    books_dir: Path, old: str, new: str, missing: str
+def test_voucher_needs_a_debit_and_a_credit_field(
+    books_dir: Path, old: str, missing: str
 ) -> None:
-    replace_in(books_dir, SALARY, old, new)
+    replace_in(books_dir, SALARY, old, "")
 
     books, findings = read_books(books_dir, BANK)
 
@@ -318,14 +409,6 @@ def test_voucher_needs_a_debit_and_a_credit_line(
     assert [v.number for v in books.vouchers] == [2, 3, 4, 5]
     assert rules(findings) == [(Severity.ERROR, "missing-field")]
     assert missing in findings[0].message
-
-
-def test_other_fields_may_still_not_be_repeated(books_dir: Path) -> None:
-    replace_in(books_dir, SALARY, "belopp: -21000\n", "belopp: -21000\nbelopp: -1\n")
-
-    _, findings = read_books(books_dir, BANK)
-
-    assert rules(findings) == [(Severity.ERROR, "duplicate-field")]
 
 
 # --- Findings never quote the text -----------------------------------------------
@@ -336,7 +419,7 @@ def test_other_fields_may_still_not_be_repeated(books_dir: Path) -> None:
     [
         ("belopp: -21000\n", "belopp: 21000\n"),
         ("debet: 7010 30000\n", "debet: 7010 abc\n"),
-        ("kredit: 2710 9000\n", "kredit: 2710\n"),
+        ("kredit: 2710 9000;", "kredit: 2710;"),
     ],
     ids=["amount-mismatch", "invalid-line", "lines-mixed"],
 )

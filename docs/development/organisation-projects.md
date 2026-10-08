@@ -152,10 +152,12 @@ conda run -n accounting-agent accounting-agent report hbg-judo --config-dir 2026
     hand, change the line too, or `validate` reports the difference.
   - A wrong voucher is not undone by the core. Removing or changing it is the
     treasurer's decision, by the organisation's routine.
-- **Two forms of voucher file.** One debit and one credit line is written with one
-  `debet`, one `kredit` and `belopp`, as before. Any other voucher has one `debet:` or
-  `kredit:` field per line, each an account and an amount, and `belopp` is then the
-  net on the bank account, or the total without it. The forms never mix in a file.
+- **Two forms of voucher file.** One debit and one credit line is written with an
+  account in `debet`, one in `kredit`, and `belopp`, as before. Any other voucher lists
+  its lines in the two fields, each `<account> <amount>`, separated by semicolons —
+  `debet: 7010 30000` and `kredit: 2710 9000; 1930 21000` — and `belopp` is then the
+  net on the bank account, or the total without it. The debit lines come first. The
+  forms never mix in a file, and no field is repeated: the fields are valid YAML.
 - **A statement without balances** (`bank-no-balances`): some banks export no balance.
   The core then cannot check the opening balance of the bank account, or the bank's own
   arithmetic; check the opening balance against a statement yourself.

@@ -251,7 +251,7 @@ def test_voucher_without_a_bank_transaction_is_the_callers() -> None:
     assert voucher.note == "Sent."
 
 
-def test_many_lines_are_kept_in_the_callers_order() -> None:
+def test_debit_lines_come_first_and_each_side_keeps_the_callers_order() -> None:
     lines = (
         credit("2710", "16500"),
         debit("7010", "30000.50"),
@@ -261,7 +261,15 @@ def test_many_lines_are_kept_in_the_callers_order() -> None:
         credit("2821", "38500.50"),
     )
 
-    assert build(journal(*lines, text="Salaries January")).lines == lines
+    # A voucher file holds the debit side first, and the voucher is as it is read back.
+    assert build(journal(*lines, text="Salaries January")).lines == (
+        debit("7010", "30000.50"),
+        debit("7010", "25000"),
+        debit("7510", "17281.66"),
+        credit("2710", "16500"),
+        credit("2731", "17281.66"),
+        credit("2821", "38500.50"),
+    )
 
 
 def test_text_and_note_are_masked() -> None:

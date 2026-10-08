@@ -271,9 +271,13 @@ semicolons. Vouchers are numbered 1..N across the year, without series.
 
 **When the format lacks something an organisation needs, the format is extended** for
 everyone, in a way that keeps existing books valid. A voucher has one debit and one
-credit account in the *simple form*; MVP-005 added the *lines form*, with one `debet:`
-or `kredit:` field per posting line, each an account and an amount. The simple form is
-still what one debit and one credit line is written in, so no existing voucher changed.
+credit account in the *simple form*; MVP-005 added the *lines form*, where `debet` and
+`kredit` each list their posting lines as `<account> <amount>`, separated by semicolons
+like the documents in `underlag`. The simple form is still what one debit and one credit
+line is written in, so no existing voucher changed.
+
+**The fields of a voucher file are valid YAML**, with every field once: Markdown tools
+read the top of the file as YAML and fail on a repeated key.
 
 **Formats that belong to someone else are not book formats.** The core reads one export
 format per bank (`bank.export_format`), and the BAS reference chart as it is published.

@@ -176,9 +176,10 @@ All three take `[--row <n>] [--document <name>]... [--note <text>] [--guess]`.
 - The caller gives the decisions only: the accounts and amounts, the supporting
   documents, a note, and whether the posting is a guess. For a bank transaction the
   date, the amount, the text and the number come from the bank statement and the books.
-- A voucher with one debit and one credit line is written with one `debet`, one
-  `kredit` and `belopp`; any other with one `debet:` or `kredit:` field per line, each
-  an account and an amount.
+- A voucher with one debit and one credit line is written with an account in `debet`,
+  one in `kredit`, and `belopp`. Any other lists its lines in the two fields, each
+  `<account> <amount>`, separated by semicolons: `kredit: 2710 9000; 1930 21000`. The
+  fields are valid YAML, so Markdown tools can show them.
 - It writes nothing when the request cannot give a right voucher, when the books have
   errors, or when the voucher would add one. It never changes or removes a voucher.
 - Below the fields it writes the accounts with their names and a link to each document,

@@ -92,8 +92,7 @@ def test_salary_is_created_with_the_bank_line_from_the_statement(
         'text: "Exempel Anställd(Lön mars)"\n'
         "belopp: -21000\n"
         "debet: 7010 30000\n"
-        "kredit: 2710 9000\n"
-        "kredit: 1930 21000\n"
+        "kredit: 2710 9000; 1930 21000\n"
         f"underlag: {PAYSLIP}\n"
         "---\n"
         "\n"
@@ -188,12 +187,8 @@ def test_salary_run_without_the_bank_account_keeps_every_line(
     text = content(fixtures, "0006_2026-03-25.md")
     assert (
         "belopp: 72282.16\n"
-        "debet: 7010 30000.50\n"
-        "debet: 7010 25000\n"
-        "debet: 7510 17281.66\n"
-        "kredit: 2710 16500\n"
-        "kredit: 2731 17281.66\n"
-        "kredit: 2821 38500.50\n"
+        "debet: 7010 30000.50; 7010 25000; 7510 17281.66\n"
+        "kredit: 2710 16500; 2731 17281.66; 2821 38500.50\n"
     ) in text
     assert text.endswith("Kredit 2821 Löneskulder 38500.50\n")
 

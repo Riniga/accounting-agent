@@ -17,7 +17,7 @@ Methodology chapter: [`testning`](../methodology/d-kvalitetssakring/testning.md)
 | 2 | Coverage floor enforced as a ratchet | met | `fail_under = 90`, measured baseline 96.47 % — see interpretations §1. |
 | 3 | Flaky tests quarantined, with owner and deadline | met | `quarantine` marker, run non-blocking in CI. |
 | 4 | Automatic CI retries capped (≤ 2) | met | CI does not retry at all. |
-| 5 | AI-TDD: human-defined/reviewed test before AI implementation | partial | Tests were written first and failed for the right reason. The owner waived reviewing them before implementation for MVP-001 phase 2 — exception EX-002. |
+| 5 | AI-TDD: human-defined/reviewed test before AI implementation | partial | Tests are written first and fail for the right reason. The owner waived reviewing them before implementation for MVP-001 phase 2 (EX-002), reviewed them first through MVP-004 and most of MVP-005, and from 2026-10-08 reviews them with the code before committing — standing exception EX-004. |
 
 **Project interpretation:** coverage floor — [`interpretations.md#1-coverage-floor-d1`](interpretations.md#1-coverage-floor-d1);
 test strategy — [`interpretations.md#4-test-strategy-d1`](interpretations.md#4-test-strategy-d1).

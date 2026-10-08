@@ -8,8 +8,10 @@ stay comparable. Every problem is reported as a finding; no finding ever quotes 
 voucher's text.
 
 A voucher is in one of two forms, never mixed (MVP-005): the simple form, with one
-``debet`` and one ``kredit`` account and the amount in ``belopp``; or the lines form, with
-any number of ``debet`` and ``kredit`` fields, each an account and a positive amount.
+account in ``debet``, one in ``kredit`` and the amount in ``belopp``; or the lines form,
+where ``debet`` and ``kredit`` each list their posting lines as ``<account> <amount>``,
+separated by semicolons like the documents in ``underlag``. Every field appears once, so
+the fields are valid YAML and Markdown tools can show them.
 
 Below the fields a voucher may start with generated lines (ADR-009): the accounts with
 their names, then a link to each supporting document. They repeat the fields for the
@@ -18,8 +20,8 @@ reader's sake, so they are kept out of the note and checked against the fields.
 
 import json
 import re
-from collections.abc import Mapping
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, replace
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -53,8 +55,12 @@ CHART_HEADER = [
 ]
 OPENING_HEADER = ["konto", "lokal_benämning", "ingående_balans"]
 REQUIRED_FIELDS = ("verifikation", "datum", "text", "belopp", "debet", "kredit")
-# The posting fields; in the lines form they are repeated, each with an amount.
+# The posting fields; in the lines form each lists its lines, separated by semicolons.
 LINE_FIELDS = ("debet", "kredit")
+LINE_SEPARATOR = ";"
+# A YAML value can be written without quotes when it starts with a letter or a digit
+# and holds nothing YAML reads as structure; file names almost always qualify.
+YAML_PLAIN_START = re.compile(r"[0-9A-Za-zÅÄÖåäö]")
 OPTIONAL_FIELDS = ("underlag",)
 VOUCHER_FILE_NAME = re.compile(r"(\d{4})_(\d{4}-\d{2}-\d{2})\.md")
 ACCOUNT_NUMBER = re.compile(r"\d{4}")
@@ -192,11 +198,9 @@ def _read_vouchers(
         parsed = _read_front_matter(path, findings)
         if parsed is None:
             continue
-        fields, postings, body = parsed
+        fields, body = parsed
         generated, note = _split_generated(body)
-        voucher = _to_voucher(
-            path.name, match, fields, postings, note, bank_account, findings
-        )
+        voucher = _to_voucher(path.name, match, fields, note, bank_account, findings)
         if voucher is not None:
             if generated is not None:
                 _check_generated(voucher, generated, account_names, findings)
@@ -302,13 +306,10 @@ def _check_generated(
         )
 
 
-Postings = list[tuple[str, str]]
-
-
 def _read_front_matter(
     path: Path, findings: Findings
-) -> tuple[dict[str, str], Postings, str] | None:
-    """The fields, the posting fields in the order written, and the body below."""
+) -> tuple[dict[str, str], str] | None:
+    """The fields, and the body below them."""
     text = read_text(path, findings)
     if text is None:
         return None
@@ -323,10 +324,9 @@ def _read_front_matter(
         )
         return None
     end = stripped.index("---", 1)
-    fields, postings = _parse_fields(lines[1:end], path.name, findings)
+    fields = _parse_fields(lines[1:end], path.name, findings)
 
-    present = set(fields) | {side for side, _ in postings}
-    missing = [key for key in REQUIRED_FIELDS if key not in present]
+    missing = [key for key in REQUIRED_FIELDS if key not in fields]
     if missing:
         findings.add(
             Severity.ERROR,
@@ -337,14 +337,11 @@ def _read_front_matter(
         return None
     fields.setdefault("underlag", "")
     note = "\n".join(lines[end + 1 :]).strip()
-    return fields, postings, note
+    return fields, note
 
 
-def _parse_fields(
-    lines: list[str], name: str, findings: Findings
-) -> tuple[dict[str, str], Postings]:
+def _parse_fields(lines: list[str], name: str, findings: Findings) -> dict[str, str]:
     fields: dict[str, str] = {}
-    postings: Postings = []
     for line_number, line in enumerate(lines, start=2):
         if not line.strip():
             continue
@@ -359,10 +356,7 @@ def _parse_fields(
                 f"line {line_number} is not a known field",
             )
             continue
-        if key in LINE_FIELDS:
-            # May be repeated: the lines form has one field per posting line.
-            postings.append((key, value))
-            continue
+        # Every field appears once; a repeated key is not valid YAML either.
         if key in fields:
             findings.add(
                 Severity.ERROR,
@@ -383,14 +377,13 @@ def _parse_fields(
                 )
                 continue
         fields[key] = value
-    return fields, postings
+    return fields
 
 
 def _to_voucher(
     name: str,
     match: re.Match[str],
     fields: dict[str, str],
-    postings: Postings,
     note: str,
     bank_account: str,
     findings: Findings,
@@ -434,7 +427,9 @@ def _to_voucher(
         )
         return None
 
-    lines = _posting_lines(name, postings, amount, bank_account, findings)
+    lines = _posting_lines(
+        name, fields["debet"], fields["kredit"], amount, bank_account, findings
+    )
     if lines is None:
         return None
     return Voucher(
@@ -451,12 +446,21 @@ def _to_voucher(
 
 def _posting_lines(
     name: str,
-    postings: Postings,
+    debit_field: str,
+    credit_field: str,
     amount: Decimal,
     bank_account: str,
     findings: Findings,
 ) -> tuple[PostingLine, ...] | None:
-    """The voucher's lines, from the simple form or the lines form (MVP-005)."""
+    """The voucher's lines, from the simple form or the lines form (MVP-005).
+
+    The debit lines come first, then the credit lines, each side in the order written.
+    """
+    postings = [
+        (side, entry.strip())
+        for side, field in (("debet", debit_field), ("kredit", credit_field))
+        for entry in field.split(LINE_SEPARATOR)
+    ]
     with_amount = [len(value.split()) > 1 for _, value in postings]
     if len(postings) == len(LINE_FIELDS) and not any(with_amount):
         # The simple form: one account on each side, and the amount in `belopp`.
@@ -474,8 +478,8 @@ def _posting_lines(
             Severity.ERROR,
             "lines-mixed",
             name,
-            "a voucher with several lines needs an amount on every 'debet' and "
-            "'kredit' line",
+            "a voucher with several lines needs an account and an amount for every "
+            "line in 'debet' and 'kredit', separated by semicolons",
         )
         return None
 
@@ -558,15 +562,17 @@ def render_voucher(
     ``link_path`` is the path from the voucher folder to the documents folder, with
     forward slashes; ``None`` when there is none, and the links then hold the name only.
 
-    One debit line followed by one credit line of the same amount is written in the
-    simple form; anything else in the lines form, one field and one generated line per
-    posting, in the voucher's order (MVP-005).
+    One debit line and one credit line are written in the simple form; anything else
+    in the lines form, where ``debet`` and ``kredit`` list their lines and there is one
+    generated line per posting (MVP-005). The debit lines are written first, then the
+    credit lines, each side in the voucher's order — see ``in_file_order()``.
 
     Raises:
         ValueError: if the voucher does not fit the format — it needs at least two
             lines with an amount each, debits that balance the credits, and accounts
             that are in the chart.
     """
+    voucher = replace(voucher, lines=in_file_order(voucher.lines))
     postings = voucher.lines
     if (
         len(postings) < len(LINE_FIELDS)
@@ -590,10 +596,15 @@ def render_voucher(
             f"Kredit {credit.account} {account_names[credit.account]}"
         ]
     else:
+        # One field per side, so that no key is repeated and the fields are valid YAML.
         fields = [
-            f"{'debet' if line.debit else 'kredit'}: {line.account} "
-            f"{format_amount(line.debit or line.credit)}"
-            for line in postings
+            f"{field}: "
+            + f"{LINE_SEPARATOR} ".join(
+                f"{line.account} {format_amount(line.debit or line.credit)}"
+                for line in postings
+                if (line.debit > 0) == (field == "debet")
+            )
+            for field in LINE_FIELDS
         ]
         generated = [
             f"{'Debet' if line.debit else 'Kredit'} {line.account} "
@@ -608,7 +619,7 @@ def render_voucher(
         f"text: {json.dumps(voucher.text, ensure_ascii=False)}",
         f"belopp: {format_amount(amount)}",
         *fields,
-        f"underlag: {'; '.join(voucher.documents)}".rstrip(),
+        f"underlag: {_yaml_scalar('; '.join(voucher.documents))}".rstrip(),
         "---",
         "",
         *generated,
@@ -631,11 +642,29 @@ def voucher_amount(voucher: Voucher, bank_account: str) -> Decimal:
     return voucher.total_debit
 
 
+def in_file_order(lines: Sequence[PostingLine]) -> tuple[PostingLine, ...]:
+    """The lines as a voucher file holds them: the debit lines, then the credit lines,
+    each side in the order given."""
+    return tuple(sorted(lines, key=lambda line: line.debit <= 0))
+
+
 def is_simple(voucher: Voucher) -> bool:
-    """True if the voucher is written in the simple form: one debit line followed by
-    one credit line."""
-    lines = voucher.lines
-    return len(lines) == len(LINE_FIELDS) and lines[0].debit > 0 and lines[1].credit > 0
+    """True if the voucher is written in the simple form: one debit line and one credit
+    line."""
+    sides = sorted(line.debit > 0 for line in voucher.lines)
+    return sides == [False, True]
+
+
+def _yaml_scalar(value: str) -> str:
+    """``value`` as it can stand after ``key: `` in YAML: plain when that is safe,
+    otherwise as a quoted string, which the reader decodes like the text."""
+    plain = (
+        YAML_PLAIN_START.match(value)
+        and ": " not in value
+        and " #" not in value
+        and not value.endswith(":")
+    )
+    return value if plain or not value else json.dumps(value, ensure_ascii=False)
 
 
 def format_amount(amount: Decimal) -> str:

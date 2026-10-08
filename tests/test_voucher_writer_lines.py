@@ -1,10 +1,12 @@
 """Tests for writing vouchers with several posting lines, and for their generated lines
 (MVP-005).
 
-The writer chooses the form: one debit and one credit line of the same amount is written
-in the simple form, exactly as before; anything else in the lines form. In the lines form
-there is one generated line per posting, with the amount. Whatever is rendered must be
-read back as the same voucher.
+The writer chooses the form: one debit and one credit line is written in the simple
+form, exactly as before; anything else in the lines form, where `debet` and `kredit` each
+list their lines, separated by semicolons. No field is repeated, so the fields are valid
+YAML. Below them there is one generated line per posting, with the amount. The debit
+lines are written first, then the credit lines. Whatever is rendered must be read back as
+the same voucher.
 """
 
 import shutil
@@ -14,6 +16,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
+import yaml
 
 from accounting_agent.books import Finding, PostingLine, Severity, Voucher
 from accounting_agent.formats.front_matter import (
@@ -112,8 +115,7 @@ def test_three_lines_are_rendered_in_the_lines_form() -> None:
         'text: "Lön mars"\n'
         "belopp: -21000\n"
         "debet: 7010 30000\n"
-        "kredit: 2710 9000\n"
-        "kredit: 1930 21000\n"
+        "kredit: 2710 9000; 1930 21000\n"
         "underlag: 20260325-lonespecifikation.md\n"
         "---\n"
         "\n"
@@ -127,7 +129,7 @@ def test_three_lines_are_rendered_in_the_lines_form() -> None:
     )
 
 
-def test_lines_keep_their_order() -> None:
+def test_debit_lines_are_written_first_and_each_side_keeps_its_order() -> None:
     v = voucher(
         credit("2710", "16500"),
         debit("7010", "30000.50"),
@@ -139,18 +141,54 @@ def test_lines_keep_their_order() -> None:
 
     assert (
         "belopp: 55000.50\n"
-        "kredit: 2710 16500\n"
-        "debet: 7010 30000.50\n"
-        "debet: 7010 25000\n"
-        "kredit: 2821 38500.50\n"
+        "debet: 7010 30000.50; 7010 25000\n"
+        "kredit: 2710 16500; 2821 38500.50\n"
     ) in text
     assert text.endswith(
         "\n"
-        "Kredit 2710 Personalskatt 16500\n"
         "Debet 7010 Löner 30000.50\n"
         "Debet 7010 Löner 25000\n"
+        "Kredit 2710 Personalskatt 16500\n"
         "Kredit 2821 Löneskulder 38500.50\n"
     )
+
+
+@pytest.mark.parametrize(
+    "lines",
+    [
+        SALARY,
+        (debit("7510", "9426"), credit("2731", "9426")),
+        (
+            credit("2710", "16500"),
+            debit("7010", "30000.50"),
+            debit("7010", "25000"),
+            credit("2821", "38500.50"),
+        ),
+    ],
+    ids=["three-lines", "simple-form", "four-lines"],
+)
+def test_rendered_fields_are_valid_yaml_without_a_repeated_key(
+    lines: tuple[PostingLine, ...],
+) -> None:
+    # Markdown tools read the fields as YAML, where a key may appear only once.
+    v = voucher(*lines, documents=("a.md", "b (kopia).md"), text='Lön: "mars"')
+
+    block = render(v).split("---\n")[1]
+
+    keys = [line.split(":")[0] for line in block.splitlines()]
+    assert keys == [
+        "verifikation",
+        "datum",
+        "text",
+        "belopp",
+        "debet",
+        "kredit",
+        "underlag",
+    ]
+    fields = yaml.safe_load(block)
+    assert list(fields) == keys
+    assert fields["text"] == 'Lön: "mars"'
+    assert fields["underlag"] == "a.md; b (kopia).md"
 
 
 @pytest.mark.parametrize(
@@ -181,7 +219,7 @@ def test_whole_amounts_have_no_decimals_and_others_have_two() -> None:
 
     text = render(v)
 
-    assert "debet: 7010 100\ndebet: 7510 31.40\nkredit: 2821 131.40\n" in text
+    assert "debet: 7010 100; 7510 31.40\nkredit: 2821 131.40\n" in text
     assert "Debet 7010 Löner 100\nDebet 7510 Arbetsgivaravgifter 31.40\n" in text
 
 
@@ -206,11 +244,17 @@ def test_one_debit_and_one_credit_line_are_rendered_in_the_simple_form() -> None
     )
 
 
-def test_credit_line_first_is_rendered_in_the_lines_form() -> None:
-    # The simple form always reads the debit line first; this order needs the lines form.
+def test_credit_line_first_is_rendered_in_the_simple_form_too() -> None:
+    # The file always holds the debit side first, so the order given does not matter.
     v = voucher(credit("2731", "9426"), debit("7510", "9426"))
 
-    assert "kredit: 2731 9426\ndebet: 7510 9426\n" in render(v)
+    assert "belopp: 9426\ndebet: 7510\nkredit: 2731\n" in render(v)
+
+
+def test_two_debit_lines_and_one_credit_line_need_the_lines_form() -> None:
+    v = voucher(debit("7010", "100"), debit("7510", "31.40"), credit("2821", "131.40"))
+
+    assert "debet: 7010 100; 7510 31.40\nkredit: 2821 131.40\n" in render(v)
 
 
 # --- What cannot be rendered -----------------------------------------------------
@@ -259,7 +303,6 @@ def test_account_that_is_not_in_the_chart_cannot_be_rendered() -> None:
             credit("2821", "38500.50"),
         ),
         voucher(debit(BANK, "500"), credit("3010", "300"), credit("1510", "200")),
-        voucher(credit("2731", "9426"), debit("7510", "9426")),
         voucher(debit("7510", "9426"), credit("2731", "9426")),
         voucher(*SALARY, note="Debet 7010 Löner 1\nKredit 1930 Bankkontot 1"),
     ],
@@ -268,7 +311,6 @@ def test_account_that_is_not_in_the_chart_cannot_be_rendered() -> None:
         "documents-and-note",
         "six-lines-two-on-one-account",
         "money-in",
-        "credit-first",
         "simple-form",
         "note-shaped-like-generated-lines",
     ],
@@ -283,6 +325,51 @@ def test_rendered_voucher_is_read_back_as_the_same_voucher(
     assert findings == []
     assert books is not None
     assert books.vouchers[-1] == replace(v, source=path.name)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "20260325-faktura #12.pdf",
+        "[kopia] faktura.pdf",
+        "faktura: mars.pdf",
+        "'kvitto'.jpg",
+        "-kvitto.jpg",
+    ],
+    ids=["hash", "bracket", "colon", "quote", "dash"],
+)
+def test_document_name_that_yaml_would_misread_is_quoted(
+    books_dir: Path, name: str
+) -> None:
+    # A plain YAML value cannot hold " #" or ": ", or start with a bracket or a quote.
+    v = voucher(*SALARY, documents=(name, "b.md"))
+    text = render(v)
+
+    fields = yaml.safe_load(text.split("---\n")[1])
+    assert fields["underlag"] == f"{name}; b.md"
+
+    path = write_voucher(books_dir / VOUCHERS, v, text)
+    books, findings = read_books(books_dir, BANK)
+    assert findings == []
+    assert books is not None
+    assert books.vouchers[-1] == replace(v, source=path.name)
+
+
+def test_ordinary_document_names_are_written_without_quotes() -> None:
+    v = voucher(*SALARY, documents=("20260325-kvitto (Exempel).jpg", "å.md"))
+
+    assert "\nunderlag: 20260325-kvitto (Exempel).jpg; å.md\n" in render(v)
+
+
+def test_voucher_given_credit_first_is_read_back_debit_first(books_dir: Path) -> None:
+    v = voucher(credit("2710", "9000"), credit(BANK, "21000"), debit("7010", "30000"))
+    write_voucher(books_dir / VOUCHERS, v, render(v))
+
+    books, findings = read_books(books_dir, BANK)
+
+    assert findings == []
+    assert books is not None
+    assert books.vouchers[-1].lines == SALARY
 
 
 # --- The reader: generated lines of the lines form -------------------------------
@@ -360,9 +447,9 @@ def test_wrong_name_on_two_lines_of_one_account_is_one_warning(
     books_dir: Path,
 ) -> None:
     generated = (
-        "Kredit 2710 Personalskatt 16500\n"
         "Debet 7010 Lön 30000.50\n"
         "Debet 7010 Lön 25000\n"
+        "Kredit 2710 Personalskatt 16500\n"
         "Kredit 2821 Löneskulder 38500.50\n"
     )
     links = (

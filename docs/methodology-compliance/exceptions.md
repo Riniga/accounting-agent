@@ -95,3 +95,38 @@ AI tool — including from `docs/reference/`.
 exception but open gaps: an individual plan instead of an organisation agreement
 (`GAP-A2-AGREEMENT`), and no DPA (`GAP-F2-DPA`). The rule in interpretations §9 —
 no Confidential material in AI context — still applies regardless.
+
+---
+
+## EX-004 — AI-written tests reviewed with the code, not before it
+
+| | |
+|---|---|
+| **Methodology basis** | Kind 2, forced by the owner's decision. [D1](../methodology/d-kvalitetssakring/testning.md) SKA 5 (AI-TDD). D1's Undantag does not cover it. |
+| **Status** | Active |
+| **Granted** | 2026-10-08 |
+| **Responsible** | Rickard Nisses-Gagnér (owner, sole maintainer) |
+| **Review** | At every MVP close; and when a second person can review, since tests could then be reviewed first without stopping the work. |
+| **Gap-register link** | `GAP-D1-AITDD` |
+
+Through MVP-004 and most of MVP-005 the AI tool stopped after writing each phase's tests,
+and the owner reviewed them before the implementation. Twenty-odd such stops gave no
+change to a test; the owner approved each one. On 2026-10-08 the owner decided to drop the
+stop: with one person in every role it costs waiting time and gives a review that the
+same person does again on the finished diff.
+
+What still holds from D1 SKA 5: the tests are written **first**, and are shown to fail for
+the right reason before the implementation exists.
+
+What does not: a human has not seen the tests when the implementation is written.
+
+**Compensating controls:**
+- The AI tool does not commit. The whole change stays in the working tree until the owner
+  has reviewed the diff, tests included, and commits it.
+- The AI tool's report names every existing test whose expectation it changed, and every
+  place where the result differs from the plan.
+- The plan still lists what each phase's tests must cover, and the owner approves the
+  plan.
+- Every change passes the CI gates, and coverage has a floor.
+
+This is a standing exception, unlike EX-002, and stays open in the gap register.

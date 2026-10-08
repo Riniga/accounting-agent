@@ -46,8 +46,10 @@ Aktivitet Förebygger's reference material for 2026, by shape only:
    an account and an amount. **The plan:** a voucher is in one of two forms, never mixed:
    - *simple* — one `debet` and one `kredit` with an account only; the amount is
      `belopp`. Exactly today's form;
-   - *lines* — any number of `debet` and `kredit` fields, each `<account> <amount>`,
-     with a positive amount. The lines are kept in the order they are written.
+   - *lines* — `debet` and `kredit` each list their lines as `<account> <amount>`, with
+     a positive amount, separated by semicolons; the debit lines come first.
+     (Changed 2026-10-08, phase 10: the form first had one `debet:` or `kredit:` field
+     per line, which is not valid YAML.)
 2. **`belopp` in the lines form** (owner decision 3): the net on the bank account, signed
    as the bank shows it, or the voucher's total when the bank account is not among the
    lines. A `belopp` that disagrees with the lines is an error. This replaces the
@@ -131,8 +133,7 @@ When this plan is done:
   text: "Lön april"
   belopp: -21000
   debet: 7010 30000
-  kredit: 2710 9000
-  kredit: 1930 21000
+  kredit: 2710 9000; 1930 21000
   underlag: 20260425-lonespecifikation.md
   ---
 
@@ -193,6 +194,8 @@ When this plan is done:
 No gap-register row is expected to close.
 
 ## 4. TODOs
+
+*(From 2026-10-08 the stop below no longer applies — see phase 10 and `AGENTS.md`.)*
 
 Every phase that adds production code follows the MVP-002 pattern: tests first, **STOP
 for the owner's review of the tests**, then the implementation. Each test must fail for
@@ -527,8 +530,70 @@ Commit: `feat(books): expect documents for vouchers without a bank transaction`
   2026 from the bank statement and the supporting documents. *Verify, counts only:* at
   least one salary payment and one issued invoice created by the command;
   `RESULT: OK`; no unbooked bank transaction.
+  First run (2026-10-08, as the owner passed it on): the year folder was set up with
+  `set-up-organisation-project.md` — `RESULT: OK`, no voucher, 16 unbooked bank
+  transactions, 14 supporting documents, and the info finding that the statement has no
+  balances — and the year was then booked with `book-the-year.md`; `report` went
+  through. The run showed that the lines form was not valid YAML (phase 10). The
+  vouchers are built again after phase 10; the counts for the close come from that run.
 
 Commit: `docs(mvp-005): record the pilot result`
+
+### Phase 10 — The lines form as valid YAML (added 2026-10-08)
+
+Found in the pilot (TODO 8.2): a Markdown viewer failed on the vouchers with several
+lines — "Map keys must be unique". The fields at the top of a voucher file are read as
+YAML by such tools, and the lines form repeated the keys `debet` and `kredit`. The
+core's own reader did not mind; every viewer does. The owner chose the fix on
+2026-10-08: one `debet` and one `kredit` field, each listing its lines separated by
+semicolons, as `underlag` lists its documents.
+
+From this phase on the work follows the hand-over rule in `AGENTS.md` (owner decision
+2026-10-08): the tests are written first but not reviewed before the implementation,
+and the AI tool does not commit.
+
+- [x] 10.1 The reader: `debet` and `kredit` appear once; each value is split on `;`
+  into entries of `<account>` (the simple form) or `<account> <amount>` (the lines
+  form). A repeated `debet` or `kredit` is `duplicate-field` again. The debit lines are
+  read first, then the credit lines, each side in the order written.
+- [x] 10.2 The writer: one field per side. The debit lines are written first; a voucher
+  given in another order is written, and read back, debit side first. One debit and one
+  credit line is the simple form whatever order they were given in.
+- [x] 10.3 `build_voucher()` returns the lines debit side first, so that the voucher it
+  returns equals the voucher that is read back.
+- [x] 10.4 A document name that YAML would misread — holding ` #` or `: `, or starting
+  with a bracket, a quote or a dash — is written as a quoted string. The reader already
+  decodes a quoted value.
+- [x] 10.5 Tests: the fixtures `books/lines` rewritten; `test_front_matter_lines.py`
+  rewritten for the new form; the writer, domain and command tests updated; new tests
+  that every fixture voucher and every rendered voucher has no repeated key and loads
+  as YAML.
+- [x] 10.6 Documentation: the MVP's correction note, the overview, README, the
+  organisation guide and the glossary.
+
+  Result (2026-10-08): 779 tests pass; coverage 99.13 %; Ruff clean.
+  - **Tests whose expectation changed**, all because the form changed:
+    - `test_front_matter_lines.py` — rewritten. "Lines keep the order they are written
+      in" became "debit lines come first, each side keeps its order"; "other fields may
+      still not be repeated" became "no field may be repeated", with a test that a
+      repeated `kredit` is an error; the mixed-form cases are written with semicolons,
+      and a trailing separator and an empty entry were added.
+    - `test_voucher_writer_lines.py` — the expected file content; "credit line first is
+      rendered in the lines form" became "…in the simple form too"; the round-trip case
+      "credit-first" was replaced by a test that such a voucher is read back debit
+      first.
+    - `test_posting_lines.py` — "many lines are kept in the caller's order" became
+      "debit lines come first and each side keeps the caller's order".
+    - `test_cli_new_voucher_lines.py` — the expected file content, twice.
+  - Tried for real on a copy of the synthetic organisation: a salary given with
+    `--credit` before `--debit` is written debit side first, the file's fields load as
+    YAML with seven distinct keys, and `validate` gives `RESULT: OK`.
+  - Helsingborgs Judoklubb's reference books again give a byte-identical `validate`
+    output and nine identical reports, `main` against this branch: the simple form is
+    untouched.
+  - **Not handled:** vouchers written in the first lines form, with repeated keys, are
+    now errors (`duplicate-field`). Only the pilot organisation has such files, one day
+    old; it builds its vouchers again (TODO 8.2).
 
 ### Phase 9 — Documentation and close
 

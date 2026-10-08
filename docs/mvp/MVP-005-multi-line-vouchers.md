@@ -3,6 +3,12 @@
 Roadmap: [R3 – Agent tools & human-in-the-loop](../roadmap.md#r3--agent-tools--human-in-the-loop-planned) ·
 Plan: [MVP-005 plan](../plans/MVP-005-multi-line-vouchers.plan.md)
 
+> **Corrected 2026-10-08 (owner decision, plan phase 10):** the lines form does not
+> repeat `debet:` and `kredit:`. The pilot showed that Markdown tools read the fields as
+> YAML and fail on a repeated key. Each of the two fields lists its lines instead,
+> separated by semicolons — `kredit: 2710 9000; 1930 21000` — and the debit lines come
+> before the credit lines. The example under "Scope" is updated to this form.
+>
 > **Corrected 2026-10-07 (plan §0.2, approved by the owner with the plan):**
 >
 > - A voucher is in one of two forms, never mixed: the *simple* form of today, or the
@@ -78,7 +84,7 @@ Förebygger can keep its books in the core's format from its supporting document
 
 - **The format holds several lines.** A voucher file can state each posting line with
   its account and amount. The form with one `debet`, one `kredit` and one `belopp` stays
-  valid and means what it means today. A proposal, to be settled in the plan:
+  valid and means what it means today:
 
   ```text
   ---
@@ -87,8 +93,7 @@ Förebygger can keep its books in the core's format from its supporting document
   text: "Lön april"
   belopp: -21000
   debet: 7010 30000
-  kredit: 2710 9000
-  kredit: 1930 21000
+  kredit: 2710 9000; 1930 21000
   underlag: 20260425-lonespecifikation.md
   ---
   ```

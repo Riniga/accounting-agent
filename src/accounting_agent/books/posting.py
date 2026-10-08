@@ -92,7 +92,9 @@ def build_voucher(
         number=max((v.number for v in books.vouchers), default=0) + 1,
         date=day,
         text=text,
-        lines=lines,
+        # The debit lines first, then the credit lines, as the voucher is written and
+        # read back; each side keeps the caller's order.
+        lines=tuple(sorted(lines, key=lambda line: line.debit <= ZERO)),
         documents=request.documents,
         note=note,
     )
