@@ -20,7 +20,7 @@ pyyaml>=6.0.3,<7
 # --- Development tools -----------------------------------------------------------------
 # Ruff is pinned exactly — its formatter/lint output changes between minor versions. Keep
 # it on the same version as `rev` in .pre-commit-config.yaml and in the CI Ruff job.
-ruff==0.16.9
+ruff==0.16.10
 pre-commit>=4.6.2,<5
 pytest>=9.1.1,<10
 pytest-cov>=7.1.0,<8
