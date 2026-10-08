@@ -13,6 +13,11 @@ follow-up plans progress, and struck through (`~~GAP-ID~~`) when closed.
 
 **Changelog**
 
+- 2026-10-08 — MVP-006 closes no row. A third bank export format got a STRIDE pass in
+  the plan. `GAP-F2-CONFIDENTIAL`: the new reference copy for the third organisation was
+  read by shape only — counts, the header row, and lines with letters and digits masked.
+  The earlier reference copy of its project holds credential files for its assistant's
+  servers; they were listed by name and not opened, and the owner removes them (C4).
 - 2026-10-08 — The owner changed how AI-assisted work is handed over: the AI tool no
   longer stops to have tests reviewed before the implementation, and no longer commits.
   It leaves the whole change in the working tree and reports; the owner reviews the diff
@@ -122,3 +127,4 @@ follow-up plans progress, and struck through (`~~GAP-ID~~`) when closed.
 | [MVP-003](../plans/MVP-003-bank-reconciliation-and-reports.plan.md) | — (note on GAP-F2-CONFIDENTIAL; coverage floor 97 %) |
 | [MVP-004](../plans/MVP-004-create-vouchers.plan.md) | — (note on GAP-F2-CONFIDENTIAL) |
 | [MVP-005](../plans/MVP-005-multi-line-vouchers.plan.md) | — (note on GAP-F2-CONFIDENTIAL) |
+| [MVP-006](../plans/MVP-006-judosyd-books.plan.md) | — (note on GAP-F2-CONFIDENTIAL; credential files in a reference copy) |

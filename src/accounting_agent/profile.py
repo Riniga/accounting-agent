@@ -27,7 +27,7 @@ REPORTS_KEYS = ("output", "organisation_name", "organisation_number")
 # File formats the core can read (ADR-006). Named after the format, never an organisation.
 BOOK_FORMATS = frozenset({"front-matter"})
 # Bank export formats the core can import (ADR-008). Named after the bank's format.
-BANK_EXPORT_FORMATS = frozenset({"nordea-csv", "sparbanken-syd-csv"})
+BANK_EXPORT_FORMATS = frozenset({"nordea-csv", "sparbanken-syd-csv", "swedbank-csv"})
 # Lowercase slug, as used on the command line and in file and resource names.
 ORGANISATION_ID = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 ACCOUNT_NUMBER = re.compile(r"\d{4}")

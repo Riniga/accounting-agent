@@ -5,11 +5,32 @@ give the same thing: statement rows as text, oldest first, ready to be written t
 organisation's statement file — or, where a bank has one, a fund's market values.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
 
 
 class ExportFormatError(Exception):
     """The file is not a bank export the core can read."""
+
+
+def decode_export(path: Path, encodings: Sequence[str] = ("utf-8-sig",)) -> str:
+    """The export's text, in the first of ``encodings`` that fits.
+
+    Raises:
+        ExportFormatError: if none fits. Another bank's export, in another encoding, is
+            then refused like any other file that is not this bank's.
+    """
+    raw = path.read_bytes()
+    for encoding in encodings:
+        try:
+            return raw.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    raise ExportFormatError(
+        f"{path.name} is not in the encoding this bank's export has "
+        f"({' or '.join(encodings)})."
+    )
 
 
 @dataclass(frozen=True)

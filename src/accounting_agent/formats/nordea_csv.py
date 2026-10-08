@@ -19,6 +19,7 @@ from accounting_agent.formats.bank_export import (
     FundExport,
     StatementExport,
     StatementRow,
+    decode_export,
 )
 
 __all__ = [
@@ -40,7 +41,7 @@ def read_export(path: Path) -> StatementExport | FundExport:
         ExportFormatError: if the header is not recognised, or a statement export has no
             transactions.
     """
-    text = path.read_bytes().decode("utf-8-sig")
+    text = decode_export(path)
     rows = [
         row
         for row in csv.reader(io.StringIO(text, newline=""), delimiter=";")

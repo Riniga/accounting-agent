@@ -8,6 +8,13 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # One pull request a week for all of them. `main` requires a branch to be up to date,
+    # so with a pull request per package every merge made the others stale, and each had
+    # to be updated and re-run in turn. Security updates still come one by one.
+    groups:
+      python:
+        patterns:
+          - "*"
 
   # The workflow files under .github/workflows/ pin third-party Actions (actions/checkout,
   # azure/login, ...) — also a dependency supply chain, in scope for C2 (SKA 5).
@@ -15,3 +22,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "*"

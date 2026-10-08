@@ -22,6 +22,7 @@ from accounting_agent.formats.bank_export import (
     ExportFormatError,
     StatementExport,
     StatementRow,
+    decode_export,
 )
 
 FIELDS = "date;text;amount;currency"
@@ -37,7 +38,7 @@ def read_export(path: Path) -> StatementExport:
     Raises:
         ExportFormatError: if the file is empty, or a row does not fit the format.
     """
-    text = path.read_bytes().decode("utf-8-sig")
+    text = decode_export(path)
     rows = [
         (number, row)
         for number, row in enumerate(

@@ -11,15 +11,21 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-**MVP-005 is implemented and pending its pull request.**
+**MVP-006 is implemented and pending its pull request.**
+[MVP-006 – JudoSyd's books in the core's format](mvp/MVP-006-judosyd-books.md) added
+Swedbank's bank export, and JudoSyd's 2026 was built in the core's format in its own
+project, with a new chart of accounts. All three organisations now keep their books
+through the core.
+
+*Earlier:* **MVP-005 is merged** (PR #15).
 [MVP-005 – Vouchers with several lines, and without a bank transaction](mvp/MVP-005-multi-line-vouchers.md)
 extended the one book format (ADR-010) and `new-voucher`, and added Sparbanken Syd's
 bank export. Aktivitet Förebygger's 2026 was built in the core's format from its bank
 statement and supporting documents, salaries and invoices included.
 
 **Owner decision 2026-10-08:** Helsingborgs Judoklubb and Aktivitet Förebygger are
-considered migrated to the core. **Next: JudoSyd (R4).** Member management via core
-stays in the backlog.
+considered migrated to the core. **Next: JudoSyd (R4)** —
+[MVP-006](mvp/MVP-006-judosyd-books.md). Member management via core stays in the backlog.
 
 *Earlier:* **MVP-004 is merged** (PR #14).
 [MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
@@ -110,14 +116,22 @@ trail — and decides how the core is exposed to the agent in each organisation 
   ADR.
 
 * [MVP-005 – Vouchers with several lines, and without a bank transaction](mvp/MVP-005-multi-line-vouchers.md)
-  — **implemented, pending its pull request.** The one book format is extended so that a salary
+  — **merged (PR #15).** The one book format is extended so that a salary
   payment and an issued invoice can be recorded, and Aktivitet Förebygger adopts the
   format. Records the one-format decision as an ADR.
 
-## R4 – JudoSyd migration (Planned)
+## R4 – JudoSyd migration (Ongoing)
 
-Moves JudoSyd onto the core, adding PDF import, Gmail, Discord and scheduled runs as general
-capabilities.
+Moves JudoSyd onto the core. *Corrected 2026-10-08 (MVP-006 plan §0.2):* this section
+said the migration adds PDF import, Gmail, Discord and scheduled runs as general
+capabilities. JudoSyd has those in its own project, for an assistant that does not keep
+books; what it lacks is books in the core's format. They are kept in a commercial
+bookkeeping system.
+
+* [MVP-006 – JudoSyd's books in the core's format](mvp/MVP-006-judosyd-books.md)
+  — **implemented, pending its pull request.** A Swedbank bank export, and new books for JudoSyd's 2026 built with
+  `new-voucher`, with a new chart of accounts — the same way as for the first two
+  organisations.
 
 ## R5 – Aktivitet Förebygger migration (Done)
 
@@ -157,6 +171,22 @@ instead — see `docs/development/methodology.md` "Found during an MVP".
   - Consider adding it as a principle in the vision, and as an automated check (a CI grep
     for known consumer names).
 
+* (2026-10-08, MVP-006) Run the local hooks on untracked files too before a hand-over:
+  `pre-commit run --all-files` covers tracked files only, and a new file's finding
+  then reaches the owner's commit. A habit today; a script or a documented command
+  would make it a rule.
+* (2026-10-08, MVP-006) Reports as PDF, for a board that wants them. Made by hand for
+  now (owner decision); perhaps an MVP later.
+* (2026-10-08, MVP-006) Say in `organisation.yaml` which account at the bank is the
+  bank account, so that `import-bank` can refuse another account's export. Today
+  only the date rule stops it. Two of three organisations have a second account or
+  statement; see also "Reconcile a second statement" below.
+* (2026-10-08, MVP-006) Mail, calendar, notices and scheduled runs as general
+  capabilities. JudoSyd's assistant has them in its own project; they move to the
+  core when a second organisation needs them (ADR-002). This was R4's original text.
+* (2026-10-08, MVP-006) What an organisation loses by leaving a commercial
+  bookkeeping system for the core: issuing invoices and reminders, an
+  accounts-receivable report, reports as PDF. Each is added only if a switch needs it.
 * (2026-10-08, MVP-005) Class 8 in the budget check and in the reports' totals: the
   budget check takes every account outside class 3 as a cost, and the reports' cost
   total includes all of class 8. Interest income (83) is neither. The account-side
