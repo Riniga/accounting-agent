@@ -16,13 +16,12 @@ public repository holds the general functionality they share. See
 Swedish bookkeeping terms and their English names in the code are in the
 [glossary](glossary.md).
 
-**Current state (MVP-004 merged; MVP-005 implemented, pending its pull request):** one
-installable
+**Current state (MVP-005 merged; MVP-006 in progress):** one installable
 package, behind the CI quality gates from MVP-001, containing:
 - an organisation-profile loader;
 - a general double-entry book model (ADR-006), with supplementary-file models (ADR-007);
-- readers for the `front-matter` book format, the `nordea-csv` and
-  `sparbanken-syd-csv` bank exports, the bank
+- readers for the `front-matter` book format, the `nordea-csv`,
+  `sparbanken-syd-csv` and `swedbank-csv` bank exports, the bank
   statement, the BAS reference chart and the supplementary files;
 - the general checks, the detail checks, the reference-chart check and reconciliation
   against the bank;
@@ -60,9 +59,10 @@ src/accounting_agent/   The core package (ADR-002)
         front_matter.py read_books() for the `front-matter` format; render_voucher(), write_voucher()
         reference_chart.py  read_reference_chart() — the four-file BAS reference
         supplements.py  read_budget(), read_comments(), read_todo()
-        bank_export.py  What every bank export reader gives: statement rows, fund values
+        bank_export.py  What every bank export reader gives: statement rows, fund values; shared decoding
         nordea_csv.py   read_export() for the `nordea-csv` bank export
         sparbanken_syd_csv.py  read_export() for the `sparbanken-syd-csv` bank export
+        swedbank_csv.py  read_export() for the `swedbank-csv` bank export
         bank_statement.py  read_statement(), read_fund_values(), read_voucher_texts(); write_statement(), write_fund_values() — atomic writes
     reports/            Swedish Markdown reports, rendered from the model — no file I/O (ADR-008)
         format.py       ReportContext, amounts, tables (masked cells), the report header

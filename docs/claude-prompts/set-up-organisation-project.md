@@ -77,10 +77,14 @@ godkänt det.
     Gå igenom årsmappen 2026 och ta reda på:
 
     1. **Bankens exportfil:** var den ligger och vilken bank den kommer från.
-       Kärnan läser `nordea-csv` och `sparbanken-syd-csv`. Säg vilken som
-       passar, eller att ingen gör det. Säg också första och sista datum.
-    2. **Andra utdrag**, till exempel från skattekontot. Kärnan importerar dem
-       inte. De är underlag.
+       Kärnan läser `nordea-csv`, `sparbanken-syd-csv` och `swedbank-csv`. Säg
+       vilken som passar, eller att ingen gör det. Säg också första och sista
+       datum.
+    2. **Andra utdrag**, till exempel från skattekontot eller från ett andra
+       bankkonto. Kärnan stämmer av ett bankkonto, det som `books.bank_account`
+       pekar ut. Andra utdrag importeras inte: de är underlag. Finns det flera
+       bankkonton, säg vilket som har flest transaktioner och föreslå det som
+       bankkonto. Importera aldrig ett annat kontos exportfil.
     3. **Underlagen:** hur många och av vilka slag (fakturor,
        lönespecifikationer, kvitton, skattekontoutdrag). Räkna, citera inte.
     4. **Kontoplan:** vilka konton behövs för de slag av händelser som finns?
@@ -88,8 +92,13 @@ godkänt det.
        slag. Slå upp varje konto i BAS-referensen (`kontobas`).
     5. **Ingående balans:** vad var balansen vid årets början? Källan är
        föregående års bokslut eller balansrapport. Finns ingen källa, säg det.
-    6. **Räkenskapsår:** kalenderår eller brutet.
-    7. **Projektets instruktioner:** finns `CLAUDE.md` eller `AGENTS.md` i
+    6. **Byter organisationen kontoplan?** Om den ingående balansen är uppställd
+       på en äldre kontoplan än den som ska gälla nu, behövs en översättning:
+       vilket nytt konto varje gammalt konto motsvarar. Flera gamla konton kan
+       gå till samma nya konto. Föreslå översättningen, men gissa inte: där du
+       inte kan avgöra vad ett gammalt konto var, fråga.
+    7. **Räkenskapsår:** kalenderår eller brutet.
+    8. **Projektets instruktioner:** finns `CLAUDE.md` eller `AGENTS.md` i
        projektets rot, och finns det en fil med bokföringsregler? Säg vad som
        finns och vad som saknas.
 
@@ -106,7 +115,11 @@ godkänt det.
     - kontoplanen som tabell: konto, BAS-benämning, eget kort namn. Håll den så
       liten som möjligt: bara konton som behövs nu. Fler läggs till när de
       behövs;
-    - ingående balans per konto, med källan, och summan (ska vara 0);
+    - ingående balans per konto, med källan, och summan (ska vara 0). Vid byte
+      av kontoplan: en tabell med gammalt konto, nytt konto och belopp, där
+      summan per sida och totalt är densamma före och efter. Den tabellen är
+      mitt beslut som kassör, och den sparas i regelfilen under "Rättelser och
+      beslut";
     - konventionerna: bankkonto, parkeringskonto för osäkra poster, konton som
       inte behöver underlag (till exempel bankavgifter), och markeringen för
       gissad kontering;
@@ -166,6 +179,10 @@ godkänt det.
       kärnan inte kontrollera ingående balans på bankkontot mot banken.
       Kontrollera den själv mot ett kontoutdrag eller årsbesked, och säg vad
       du jämförde med.
+    - `[bank-opening-balance]` är ett fel: ingående balans på bankkontot
+      stämmer inte med bankens saldo före årets första transaktion. Rätta inte
+      siffran för att få bort felet. Ta reda på vilken som är rätt, och fråga
+      mig om du inte kan avgöra det.
 
     Avsluta med en kort rapport: vad som skapades, RESULT-raden, antal
     obokförda banktransaktioner, antal underlag per slag, och vad som återstår

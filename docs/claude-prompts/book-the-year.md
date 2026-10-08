@@ -97,6 +97,9 @@ Claude över stoppet.
       nettolön), och löneutbetalningen från banken;
     - en inbetalning till eller dragning från skattekontot, och händelserna på
       skattekontot enligt dess utdrag;
+    - en händelse på ett annat bankkonto än det som stäms av: en verifikation
+      utan banktransaktion, med det kontots utdrag som underlag. En överföring
+      mellan kontona syns på bankkontots utdrag och bokförs därifrån, en gång;
     - en leverantörsfaktura eller ett kvitto;
     - bankens avgifter.
 

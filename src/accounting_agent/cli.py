@@ -46,6 +46,7 @@ from accounting_agent.formats import (
     reference_chart,
     sparbanken_syd_csv,
     supplements,
+    swedbank_csv,
 )
 from accounting_agent.formats.common import parse_amount, write_text_atomically
 from accounting_agent.profile import (
@@ -72,6 +73,7 @@ ExportReader = Callable[[Path], bank_export.StatementExport | bank_export.FundEx
 EXPORT_READERS: dict[str, ExportReader] = {
     "nordea-csv": nordea_csv.read_export,
     "sparbanken-syd-csv": sparbanken_syd_csv.read_export,
+    "swedbank-csv": swedbank_csv.read_export,
 }
 
 

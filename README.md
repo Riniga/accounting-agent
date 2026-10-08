@@ -103,7 +103,7 @@ books:                      # needed by `validate`
   fiscal_year: 2026
   bank_account: "1930"
 bank:                       # needed by `import-bank` (ADR-008)
-  export_format: nordea-csv # the bank's export format: nordea-csv or sparbanken-syd-csv
+  export_format: nordea-csv # the bank's export format: nordea-csv, sparbanken-syd-csv or swedbank-csv
   statement_file: Bokföring/kontoutdrag.csv
   fund_account: "1350"      # optional, together with fund_value_file
   fund_value_file: Bokföring/fondvärde.csv
