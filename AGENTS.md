@@ -21,7 +21,7 @@ once a working concrete function exists to generalise
 
 | Area | Location |
 |------|----------|
-| Core package | `src/accounting_agent/`. This repository *is* the shared code; there is no `apps/`/`packages/` split (ADR-002). `books/` is the domain (no file I/O, enforced by Ruff `TID251`), `formats/` holds one reader per book file format (ADR-006) |
+| Core package | `src/accounting_agent/`. This repository *is* the shared code; there is no `apps/`/`packages/` split (ADR-002). `books/` is the domain (no file I/O, enforced by Ruff `TID251`), `formats/` holds the reader and writer of the one book format, and a reader per external format such as a bank's export (ADR-010) |
 | Organisation projects | How they use the core, and a `CLAUDE.md` snippet for them: `docs/development/organisation-projects.md` |
 | Reference material | `docs/reference/` — local, git-ignored copies of the private organisation projects. Contains real data: read only code, instructions, configuration and rules; never commit or copy data from it ([ADR-003](docs/architecture/decisions/ADR-003-no-real-data-in-core-repo.md)) |
 | Roadmap / MVPs / plans | `docs/roadmap.md`, `docs/mvp/`, `docs/plans/` |
@@ -74,6 +74,14 @@ Roadmap → MVP → Plan → Implementation → Test → Pull Request
   numbered TODOs with acceptance criteria, grouped into phases with a commit message each.
 - Implement **one TODO / one phase at a time**. Update the plan as you go; mark items done
   when verified.
+- **How an AI tool hands work over** (owner decision 2026-10-08):
+  - Start on a branch with nothing uncommitted. If there is something, stop and say so.
+  - Do the whole change in one go: per phase, the tests first — shown to fail for the
+    right reason — then the implementation. Do not stop to have the tests reviewed.
+  - **Do not commit.** Leave the change in the working tree.
+  - Finish with a report: what changed and why, anything that differs from the plan,
+    what the owner needs to do or test, and a short commit message to use.
+  - The owner reviews the diff, tests what the report asks for, and commits.
 - Keep changes small and reviewable. Do not change production code in a
   documentation-only task.
 - **Found during an MVP:**
@@ -119,9 +127,9 @@ Follow the standards docs — do not restate them here:
 <!-- Adjust chapter references to your own methodology, or state these as plain project
      rules if you have no formal methodology to cite. -->
 
-- **Never commit, merge, push, or delete branches to a protected branch (`main`) without
-  explicit human approval.** All changes to `main` go through a pull request, reviewed by
-  a human. (If required-approval count is temporarily 0 while the project has a single
+- **An AI tool never commits, merges, pushes, or deletes branches.** The owner commits,
+  after reviewing the diff (see "How an AI tool hands work over"). All changes to `main`
+  go through a pull request, reviewed by a human. (If required-approval count is temporarily 0 while the project has a single
   maintainer, document that as an exception with a plan to raise it once a second reviewer
   exists — see `docs/methodology-compliance/exceptions.md`. This never permits an AI tool
   to merge to `main`.)
@@ -133,10 +141,11 @@ Follow the standards docs — do not restate them here:
   the check for hardcoded secrets.
 - **A named human is accountable** for anything merged or released.
 - **AI-TDD (D1 SKA 5):** when an AI tool writes production code — not a prototype, spike, or
-  throwaway experiment — a human-defined or human-reviewed test expressing the desired
-  behaviour must exist **before** the implementation. See
-  [`docs/standards/testing.md`](docs/standards/testing.md#ai-assisted-test-driven-development)
-  for the detail.
+  throwaway experiment — a test expressing the desired behaviour must exist and fail for
+  the right reason **before** the implementation. In this project the owner reviews the
+  tests together with the code, in the diff, before committing — not before the
+  implementation (exception EX-004). See
+  [`docs/standards/testing.md`](docs/standards/testing.md#ai-assisted-test-driven-development).
 - **Calibrate autonomy to risk and reversibility** — low-risk reversible edits can proceed;
   irreversible or high-risk actions go through human approval.
 - Mark a pull request that used AI assistance with the PR-template checkbox (not a commit
@@ -184,4 +193,9 @@ accounting-agent validate <org> --config-dir <path-to-organisation-config> [--ba
 accounting-agent import-bank <org> --config-dir <path-to-organisation-config> <export>
 # write the reports (Swedish Markdown) to the configured folder (ADR-008)
 accounting-agent report <org> --config-dir <path-to-organisation-config> [--force]
+# create one voucher; never changes a voucher (ADR-009). A bank transaction against
+# one account, or against several lines; or, without --amount, no bank transaction
+accounting-agent new-voucher <org> --config-dir <path-to-organisation-config> --date <YYYY-MM-DD> --amount <amount> --account <account>
+accounting-agent new-voucher <org> --config-dir <path-to-organisation-config> --date <YYYY-MM-DD> --amount <amount> --debit <account>=<amount> --credit <account>=<amount>
+accounting-agent new-voucher <org> --config-dir <path-to-organisation-config> --date <YYYY-MM-DD> --text <text> --debit <account>=<amount> --credit <account>=<amount>
 ```

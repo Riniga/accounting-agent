@@ -19,13 +19,14 @@ from datetime import date
 from pathlib import Path
 
 from accounting_agent.books import BankTransaction, Finding, FundValue, Severity
+from accounting_agent.books.masking import FILE_MASK, mask_personal_numbers
+from accounting_agent.formats.bank_export import StatementRow
 from accounting_agent.formats.common import (
     Findings,
     parse_amount,
     read_csv,
     write_text_atomically,
 )
-from accounting_agent.formats.nordea_csv import StatementRow
 
 STATEMENT_HEADER = ["datum", "belopp", "namn", "meddelande", "anteckning", "saldo"]
 FUND_HEADER = ["datum", "värde"]
@@ -165,6 +166,25 @@ def read_fund_values(
             continue
         values.append(FundValue(date=day, value=value))
     return tuple(values), findings.items
+
+
+def read_voucher_texts(path: Path) -> dict[int, str]:
+    """The voucher text for each row of the statement file, keyed by the row (ADR-009).
+
+    The text is the name with the message in parentheses, or the name alone when there is
+    no message; personal identity numbers are masked. The names and messages stay out of
+    the core model (ADR-007), so the text goes straight to the voucher being built. A
+    missing or unreadable file gives no texts; ``read_statement`` reports why.
+    """
+    if not path.is_file():
+        return {}
+    rows = read_csv(path, STATEMENT_HEADER, Findings())
+    texts: dict[int, str] = {}
+    for row in rows or []:
+        name, message = row["namn"], row["meddelande"]
+        text = f"{name}({message})" if message else name
+        texts[int(row["_line"])] = mask_personal_numbers(text, mask=FILE_MASK)
+    return texts
 
 
 def _transaction(

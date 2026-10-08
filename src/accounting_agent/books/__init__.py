@@ -1,5 +1,5 @@
-"""The book domain (ADR-006, ADR-007): model, balances, checks, reconciliation, findings
-and masking — no file I/O."""
+"""The book domain (ADR-006, ADR-007, ADR-009): model, balances, checks, reconciliation,
+building new vouchers, findings and masking — no file I/O."""
 
 from accounting_agent.books.balances import compute_balances
 from accounting_agent.books.checks import check_books
@@ -17,6 +17,11 @@ from accounting_agent.books.model import (
     PostingLine,
     ReferenceChart,
     Voucher,
+)
+from accounting_agent.books.posting import (
+    VoucherRefusedError,
+    VoucherRequest,
+    build_voucher,
 )
 from accounting_agent.books.reconciliation import reconcile
 from accounting_agent.books.reference import check_reference
@@ -45,6 +50,9 @@ __all__ = [
     "Severity",
     "TodoItem",
     "Voucher",
+    "VoucherRefusedError",
+    "VoucherRequest",
+    "build_voucher",
     "check_books",
     "check_budget",
     "check_comments",

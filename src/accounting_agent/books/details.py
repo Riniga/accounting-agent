@@ -1,6 +1,8 @@
 """Detail checks from the first organisation's `kontroll.py` that go beyond the general
 checks (MVP-003): duplicates, date order, revenue and cost accounts on the unexpected
 side, supporting documents, parking accounts, unused accounts and the chart's own rules.
+MVP-004 adds two document checks: payments without a supporting document, and files in
+the documents folder that no voucher refers to.
 
 No message quotes a voucher's text, an account's name or a document's file name — any of
 them can hold a person's name.
@@ -15,9 +17,11 @@ from accounting_agent.books.findings import Finding, Severity
 from accounting_agent.books.model import Account, Books, Voucher
 
 ZERO = Decimal(0)
-# BAS: class 3 is revenue; classes 4–8 are costs and financial items.
-REVENUE_CLASSES = ("3",)
-COST_CLASSES = ("4", "5", "6", "7", "8")
+# BAS: class 3 is revenue and classes 4–7 are costs. Class 8 is mixed: 83 is interest
+# income and 84 interest costs, while the others — results from shares, and the closing
+# entries in 88 and 89 — are right on either side and belong to neither.
+REVENUE_CLASSES = ("3", "83")
+COST_CLASSES = ("4", "5", "6", "7", "84")
 # kontroll.py counts a voucher without documents as a cost when it debits classes 4–7.
 DOCUMENT_COST_CLASSES = ("4", "5", "6", "7")
 
@@ -27,11 +31,13 @@ def check_details(
     bank_account: str,
     parking_accounts: Sequence[str] = (),
     documents: frozenset[str] | None = None,
+    no_document_accounts: Sequence[str] = (),
 ) -> list[Finding]:
     """Run the detail checks.
 
     ``documents`` is the set of file paths, relative to the documents folder, that exist;
     ``None`` means no documents folder is configured, and existence is not checked.
+    ``no_document_accounts`` are the accounts whose payments need no supporting document.
     """
     findings = _check_chart(books.accounts)
     findings += _check_date_order(books.vouchers)
@@ -39,8 +45,13 @@ def check_details(
         findings += _check_account_sides(voucher)
         if documents is not None:
             findings += _check_documents(voucher, documents)
+        findings += _check_document_expected(
+            voucher, bank_account, no_document_accounts
+        )
     findings += _check_duplicates(books.vouchers, bank_account)
     findings += _summarise_documents(books.vouchers)
+    if documents is not None:
+        findings += _summarise_unused_documents(books.vouchers, documents)
     for account in parking_accounts:
         findings += _summarise_parking(books.vouchers, account)
     findings += _summarise_unused(books)
@@ -125,6 +136,50 @@ def _check_documents(voucher: Voucher, documents: frozenset[str]) -> list[Findin
         )
         for position, name in enumerate(voucher.documents, start=1)
         if name not in documents
+    ]
+
+
+def _check_document_expected(
+    voucher: Voucher, bank_account: str, no_document_accounts: Sequence[str]
+) -> list[Finding]:
+    """Money out of the bank should have a document — the to-do report's rule — and so
+    should a voucher without a bank transaction, which nothing else backs (MVP-005)."""
+    exempt = any(
+        line.debit > ZERO and line.account in no_document_accounts
+        for line in voucher.lines
+    )
+    if voucher.documents or exempt:
+        return []
+    bank = [line for line in voucher.lines if line.account == bank_account]
+    if not bank:
+        message = "no bank transaction and no supporting document"
+    elif sum((line.credit - line.debit for line in bank), ZERO) > ZERO:
+        message = "money out of the bank without a supporting document"
+    else:
+        # Money in: the bank transaction itself is the evidence.
+        return []
+    return [
+        Finding(
+            Severity.WARNING, "documents-expected", f"voucher {voucher.id}", message
+        )
+    ]
+
+
+def _summarise_unused_documents(
+    vouchers: Iterable[Voucher], documents: frozenset[str]
+) -> list[Finding]:
+    # The count only: a file name can hold a person's name. The report lists the names.
+    unused = documents - {name for voucher in vouchers for name in voucher.documents}
+    if not unused:
+        return []
+    return [
+        Finding(
+            Severity.INFO,
+            "documents-unused",
+            "documents folder",
+            f"{len(unused)} of {len(documents)} files are not referred to by any "
+            f"voucher",
+        )
     ]
 
 

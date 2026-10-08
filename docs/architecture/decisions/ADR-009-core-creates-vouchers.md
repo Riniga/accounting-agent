@@ -1,6 +1,6 @@
 # ADR-009: The core creates new vouchers from bank transactions — it never changes one
 
-**Status:** Proposed — accepted together with the MVP-004 plan
+**Status:** Accepted
 **Date:** 2026-10-05
 
 Supersedes [ADR-008](ADR-008-core-writes-derived-files.md) on one point: "never vouchers".
