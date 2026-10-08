@@ -1,0 +1,5 @@
+datum;belopp;namn;meddelande;anteckning;saldo
+2026-01-25;-21000.00;Exempel Anställd;Lön januari;;29000.00
+2026-02-10;12500.00;Exempelkunden AB;Faktura 1;;41500.00
+2026-03-25;-21000.00;Exempel Anställd;Lön mars;;20500.00
+2026-03-28;12500.00;Exempelkunden AB;Faktura 2;;33000.00

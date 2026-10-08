@@ -67,3 +67,58 @@ def test_mask_text_can_be_chosen() -> None:
     assert mask_personal_numbers(text, mask=FILE_MASK) == "Swish [personnummer]"
     # The default is unchanged: terminal output keeps the English mask.
     assert mask_personal_numbers(text) == f"Swish {MASK}"
+
+
+# --- Ten digits without a separator (MVP-005) -----------------------------------------
+#
+# A bank's text can hold a personal identity number as ten digits in a row. Ten digits
+# are also phone numbers, references and organisation numbers, so only a number with a
+# real date and a correct check digit counts.
+
+
+@pytest.mark.parametrize(
+    "number",
+    [
+        "1212121212",  # the test number, ten digits
+        "1212721219",  # the same as a coordination number: the day plus 60
+    ],
+)
+def test_ten_digits_with_a_date_and_a_check_digit_are_masked(number: str) -> None:
+    text = f"Betalning {number} avgift"
+
+    assert mask_personal_numbers(text) == f"Betalning {MASK} avgift"
+    assert contains_personal_number(text)
+
+
+@pytest.mark.parametrize(
+    "number",
+    [
+        "1212121213",  # a wrong check digit
+        "1213121211",  # month 13, with a correct check digit
+        "1212321218",  # day 32
+        "1212601213",  # day 60: neither a day nor a coordination number
+        "1212921215",  # day 92
+        "0701234567",  # a phone number
+        "5566778899",  # month 66, like an organisation number
+    ],
+)
+def test_other_ten_digit_numbers_are_left_alone(number: str) -> None:
+    text = f"Referens {number}"
+
+    assert mask_personal_numbers(text) == text
+    assert not contains_personal_number(text)
+
+
+@pytest.mark.parametrize("text", ["11212121212", "12121212129", "Ref 912121212120"])
+def test_ten_digits_inside_a_longer_number_are_left_alone(text: str) -> None:
+    assert mask_personal_numbers(text) == text
+
+
+def test_ten_digit_number_is_masked_with_the_file_mask_too() -> None:
+    assert mask_personal_numbers("Swish 1212121212", mask=FILE_MASK) == (
+        "Swish [personnummer]"
+    )
+
+
+def test_both_shapes_in_one_text_are_masked() -> None:
+    assert mask_personal_numbers("1212121212 och 121212-1212") == f"{MASK} och {MASK}"

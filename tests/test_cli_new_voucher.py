@@ -348,9 +348,12 @@ def test_document_without_a_documents_folder_is_refused(
         ("--date", "10/3 2026", "--amount", "-45.50", "--account", "6570"),
         ("--date", "2026-03-10", "--amount", "-45,50", "--account", "6570"),
         ("--date", "2026-03-10", "--amount", "-45.50", "--account", "657"),
-        ("--date", "2026-03-10", "--amount", "-45.50"),
+        ("--amount", "-45.50", "--account", "6570"),
     ],
-    ids=["date", "amount", "account", "no-account"],
+    # Until MVP-005 a missing --account was rejected here too. It is now a refusal,
+    # `account-missing`, since the lines can be given instead
+    # (test_cli_new_voucher_lines.py).
+    ids=["date", "amount", "account", "no-date"],
 )
 def test_malformed_arguments_are_rejected_before_anything_is_read(
     fixtures: Path, full: Path, arguments: tuple[str, ...]

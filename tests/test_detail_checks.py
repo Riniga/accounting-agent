@@ -319,3 +319,41 @@ def test_no_message_quotes_a_text_a_name_or_a_document() -> None:
     for finding in findings:
         assert SENSITIVE_TEXT not in finding.render()
         assert SENSITIVE_DOCUMENT not in finding.render()
+
+
+# --- Financial accounts, class 8 (MVP-005) -----------------------------------------------
+#
+# Regression: every class 8 account counted as a cost account, so interest income that
+# was credited — the right side — gave `cost-account-credited`. In BAS, 83 is interest
+# income and 84 interest costs; 88 and 89 are closing entries, on either side.
+
+
+def test_interest_income_credited_gives_no_warning() -> None:
+    interest = voucher(5, debit=BANK, credit="8310", amount="14.00", text="Interest")
+
+    assert check(books(*CLEAN, interest)) == []
+
+
+def test_interest_income_debited_is_a_warning() -> None:
+    reversal = voucher(5, debit="8310", credit=BANK, amount="14.00", text="Reversal")
+
+    assert rules(check(books(*CLEAN, reversal))) == ["revenue-account-debited"]
+
+
+def test_interest_cost_credited_is_a_warning() -> None:
+    refund = voucher(5, debit=BANK, credit="8410", amount="4.00", text="Refund")
+
+    assert rules(check(books(*CLEAN, refund))) == ["cost-account-credited"]
+
+
+def test_interest_cost_debited_gives_no_warning() -> None:
+    interest = voucher(5, debit="8410", credit=BANK, amount="4.00", text="Interest")
+
+    assert rules(check(books(*CLEAN, interest))) == []
+
+
+def test_closing_entries_give_no_warning_on_either_side() -> None:
+    profit = voucher(5, debit="8999", credit="2010", amount="100.00", text="Result")
+    loss = voucher(6, debit="2010", credit="8999", amount="40.00", text="Loss")
+
+    assert check(books(*CLEAN, profit, loss)) == []

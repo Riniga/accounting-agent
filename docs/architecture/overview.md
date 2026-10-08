@@ -16,12 +16,13 @@ public repository holds the general functionality they share. See
 Swedish bookkeeping terms and their English names in the code are in the
 [glossary](glossary.md).
 
-**Current state (MVP-003 merged; MVP-004 implemented, pending its pull request):** one
+**Current state (MVP-004 merged; MVP-005 implemented, pending its pull request):** one
 installable
 package, behind the CI quality gates from MVP-001, containing:
 - an organisation-profile loader;
 - a general double-entry book model (ADR-006), with supplementary-file models (ADR-007);
-- readers for the `front-matter` book format, the `nordea-csv` bank export, the bank
+- readers for the `front-matter` book format, the `nordea-csv` and
+  `sparbanken-syd-csv` bank exports, the bank
   statement, the BAS reference chart and the supplementary files;
 - the general checks, the detail checks, the reference-chart check and reconciliation
   against the bank;
@@ -54,12 +55,14 @@ src/accounting_agent/   The core package (ADR-002)
         reconciliation.py  reconcile() — the books against the bank statement
         findings.py     Finding, Severity
         masking.py      Personal identity number masking
-    formats/            One reader per file format (ADR-006, ADR-007); the only writers (ADR-008, ADR-009)
+    formats/            The book format's reader and writer, and one reader per external format (ADR-007, ADR-010); the only writers (ADR-008, ADR-009)
         common.py       Shared CSV rules (encoding, header, columns, amounts)
         front_matter.py read_books() for the `front-matter` format; render_voucher(), write_voucher()
         reference_chart.py  read_reference_chart() — the four-file BAS reference
         supplements.py  read_budget(), read_comments(), read_todo()
+        bank_export.py  What every bank export reader gives: statement rows, fund values
         nordea_csv.py   read_export() for the `nordea-csv` bank export
+        sparbanken_syd_csv.py  read_export() for the `sparbanken-syd-csv` bank export
         bank_statement.py  read_statement(), read_fund_values(), read_voucher_texts(); write_statement(), write_fund_values() — atomic writes
     reports/            Swedish Markdown reports, rendered from the model — no file I/O (ADR-008)
         format.py       ReportContext, amounts, tables (masked cells), the report header
@@ -148,9 +151,11 @@ LICENSE                 PolyForm Noncommercial 1.0.0 (ADR-005)
     fund-value file and prints only file names, dates and counts.
   - `report <organisation> --config-dir <path> [--force]` runs the checks, then writes
     the reports to the configured folder; it refuses on errors unless forced.
-  - `new-voucher <organisation> --config-dir <path> --date … --amount … --account …`
-    creates the voucher for one bank transaction and prints its number, date, amount
-    and accounts.
+  - `new-voucher <organisation> --config-dir <path> --date … ` creates one voucher and
+    prints its number, date, amount and lines. With `--amount` it is for a bank
+    transaction, against `--account` or against lines (`--debit`, `--credit`); without
+    `--amount` it has no bank transaction, and `--text` and every line are the caller's
+    (MVP-005).
 - **`reports/`** renders the reports as Swedish Markdown strings, with the texts and
   figures of Helsingborgs Judoklubb's `generera_redovisning.py`. It does no I/O — the
   `TID251` ban covers it — and the CLI writes the files atomically. Table cells are
@@ -248,44 +253,42 @@ projects will run it on a local schedule.
 
 ## Book formats
 
-The core reads each organisation's books through a reader for its file format, into one
-general model (ADR-006). The comparison below is based on the two projects' code and CSV
-header rows only (MVP-002 plan §0.1 and TODO 8.1), never on their books.
+**The core has one book format** ([ADR-010](decisions/ADR-010-one-book-format.md)). An
+organisation that uses the core keeps its books in it; the core has no reader or writer
+for another layout, and does not convert books.
 
-| | `front-matter` (Helsingborgs Judoklubb) — **reader exists** | Table format (Aktivitet Förebygger) — **no reader yet** |
-|---|---|---|
-| Chart of accounts | `kontoplan.csv`: `kontoklass;kontogrupp;konto;bas_beskrivning;lokal_benämning` | `kontoplan.csv`: `nummer;beskrivning;typ;användning` |
-| Opening balance | `ingående-balans.csv`: `konto;lokal_benämning;ingående_balans` — one signed column | `ingående-balans.csv`: `nummer;beskrivning;debet;kredit` — amount = debit − credit |
-| Encoding | UTF-8 **without** BOM (a BOM is an error), LF | UTF-8 **with** BOM, read tolerantly |
-| Voucher folder | `verifikationer/` | `Verifikationer/` |
-| Voucher file name | `NNNN_YYYY-MM-DD.md`, checked against the fields | `<series><number> <date> <description>.md` — free text, not checked |
-| Voucher fields | Front matter `key: value` between `---` lines; quoted values are JSON strings | Markdown key/value table rows `\| **Key** \| value \|` (Verifikation, Datum, Text, …) |
-| Posting lines | Implicit: one `debet`/`kredit` pair and one `belopp` | Explicit table rows `\| account \| name \| debit \| credit \|`, **several per voucher** |
-| Numbering | 1..N across the year | **Per series** (letters in the voucher id, e.g. B, K), 1..N in each |
-| Amounts | `-?\d+(\.\d{1,2})?` — decimal point only | Tolerant: spaces, non-breaking spaces, `−`, comma decimal, `*` marks |
-| Format rule | Amount signed as the bank shows it (the bank-sign rule) | None — debit and credit columns carry the sign |
+The format, called `front-matter` in `organisation.yaml`:
 
-**What already fits the model:**
-- voucher series and N posting lines;
-- the per-series numbering check;
-- the balanced-voucher check (which the `front-matter` format can never fail);
-- the unknown-account, zero-amount, text and fiscal-year checks;
-- balances.
+| File | Content |
+|---|---|
+| `kontoplan.csv` | The chart of accounts: `kontoklass;kontogrupp;konto;bas_beskrivning;lokal_benämning` |
+| `ingående-balans.csv` | The opening balance: `konto;lokal_benämning;ingående_balans`, one signed column |
+| `verifikationer/NNNN_YYYY-MM-DD.md` | One file per voucher: the fields between two `---` lines, then the generated lines (ADR-009) and the note |
+| the supplementary files | Bank statement, fund value, budget, closing comments and to-do list (ADR-007) |
 
-**What an Aktivitet Förebygger reader must do** (roadmap: "Aktivitet Förebygger reader"):
-- parse the key/value table and the posting-line table;
-- derive the series and number from the voucher id;
-- read the four-column chart of accounts and the debit/credit opening balance;
-- decide how strict to be about BOMs and the tolerant amount format — likely accept what
-  the organisation writes today, and report it as a warning rather than an error;
-- ignore free-text file names.
+All of them are UTF-8 without BOM, with LF line endings; the CSV files are separated by
+semicolons. Vouchers are numbered 1..N across the year, without series.
 
-Its own tool also checks that debits equal credits and that numbering is contiguous per
-series, and the core's general checks already cover both.
+**When the format lacks something an organisation needs, the format is extended** for
+everyone, in a way that keeps existing books valid. A voucher has one debit and one
+credit account in the *simple form*; MVP-005 added the *lines form*, where `debet` and
+`kredit` each list their posting lines as `<account> <amount>`, separated by semicolons
+like the documents in `underlag`. The simple form is still what one debit and one credit
+line is written in, so no existing voucher changed.
 
-**Open for that MVP:**
-- what the chart's `typ` and `användning` columns mean for the model;
-- whether Aktivitet Förebygger's balance sheet uses BAS classes 1–2 the same way.
+**The fields of a voucher file are valid YAML**, with every field once: Markdown tools
+read the top of the file as YAML and fail on a repeated key.
+
+**Formats that belong to someone else are not book formats.** The core reads one export
+format per bank (`bank.export_format`), and the BAS reference chart as it is published.
+
+**An organisation adopts the format** by building its books in it: the chart of accounts
+and the opening balance as the two CSV files, the bank statement through `import-bank`,
+and the vouchers through `new-voucher`, from the bank statement and the supporting
+documents.
+
+The comparison with Aktivitet Förebygger's earlier table format, and what a second
+reader would have had to do, are history: see the MVP-002 plan (§0.1 and TODO 8.1).
 
 ## Planned Evolution of the Workspace
 
@@ -293,8 +296,8 @@ series, and the core's general checks already cover both.
 
 - **Member management via core (backlog, high priority):** the member register, member
   payments and the member-fee report, with their own STRIDE pass.
-- **Aktivitet Förebygger reader:** a second reader for the table format (multi-line
-  vouchers, series) into the same model.
+- **Reconciling a second statement**, such as the tax account against its account in
+  the books (backlog).
 - **Later module areas** (from the initial idea, added only as extraction justifies them):
   member management (backlog), agent tools, confidence
   and approval policies, and the audit trail (R3), integrations (R4), payroll (R5).

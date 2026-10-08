@@ -105,8 +105,75 @@ def test_money_in_needs_no_document() -> None:
     assert expected(check(voucher(1, debit=BANK, credit="3002"))) == []
 
 
-def test_voucher_that_is_not_on_the_bank_account_needs_no_document() -> None:
-    assert expected(check(voucher(1, debit="5010", credit="2010"))) == []
+# --- documents-expected for vouchers without a bank transaction (MVP-005) --------
+#
+# Until MVP-005 a voucher that is not on the bank account needed no document. Such a
+# voucher has no bank transaction behind it, so its document is all that backs it.
+
+
+def test_voucher_without_a_bank_line_and_without_a_document_is_named() -> None:
+    findings = expected(check(voucher(1, debit="5010", credit="2010")))
+
+    assert findings == [
+        Finding(
+            Severity.WARNING,
+            "documents-expected",
+            "voucher 1",
+            "no bank transaction and no supporting document",
+        )
+    ]
+
+
+def test_voucher_without_a_bank_line_but_with_a_document_is_not_named() -> None:
+    journal = voucher(1, debit="5010", credit="2010", documents=("basis.md",))
+
+    assert expected(check(journal)) == []
+
+
+def test_exempt_accounts_are_left_out_without_a_bank_line_too() -> None:
+    findings = check(
+        voucher(1, debit="6570", credit="2010"),
+        voucher(2, debit="5010", credit="2010"),
+        no_document_accounts=("6570",),
+    )
+
+    assert [f.location for f in expected(findings)] == ["voucher 2"]
+
+
+def test_voucher_with_several_lines_and_no_bank_line_is_named_once() -> None:
+    value = Decimal("50.00")
+    journal = Voucher(
+        series=None,
+        number=1,
+        date=date(2026, 3, 1),
+        text="Salaries",
+        lines=(
+            PostingLine("5010", debit=value),
+            PostingLine("6570", debit=value),
+            PostingLine("2010", credit=value * 2),
+        ),
+    )
+
+    assert [f.location for f in expected(check(journal))] == ["voucher 1"]
+
+
+def test_money_out_with_several_lines_is_named_as_a_payment() -> None:
+    value = Decimal("50.00")
+    payment = Voucher(
+        series=None,
+        number=1,
+        date=date(2026, 3, 1),
+        text="Salary",
+        lines=(
+            PostingLine("5010", debit=value * 2),
+            PostingLine("2010", credit=value),
+            PostingLine(BANK, credit=value),
+        ),
+    )
+
+    assert [f.message for f in expected(check(payment))] == [
+        "money out of the bank without a supporting document"
+    ]
 
 
 def test_accounts_that_need_no_document_are_left_out() -> None:

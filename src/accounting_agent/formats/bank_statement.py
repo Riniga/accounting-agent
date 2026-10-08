@@ -20,13 +20,13 @@ from pathlib import Path
 
 from accounting_agent.books import BankTransaction, Finding, FundValue, Severity
 from accounting_agent.books.masking import FILE_MASK, mask_personal_numbers
+from accounting_agent.formats.bank_export import StatementRow
 from accounting_agent.formats.common import (
     Findings,
     parse_amount,
     read_csv,
     write_text_atomically,
 )
-from accounting_agent.formats.nordea_csv import StatementRow
 
 STATEMENT_HEADER = ["datum", "belopp", "namn", "meddelande", "anteckning", "saldo"]
 FUND_HEADER = ["datum", "värde"]

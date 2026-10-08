@@ -11,13 +11,21 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-**MVP-004 is implemented and pending its pull request.**
+**MVP-005 is implemented and pending its pull request.**
+[MVP-005 – Vouchers with several lines, and without a bank transaction](mvp/MVP-005-multi-line-vouchers.md)
+extended the one book format (ADR-010) and `new-voucher`, and added Sparbanken Syd's
+bank export. Aktivitet Förebygger's 2026 was built in the core's format from its bank
+statement and supporting documents, salaries and invoices included.
+
+**Owner decision 2026-10-08:** Helsingborgs Judoklubb and Aktivitet Förebygger are
+considered migrated to the core. **Next: JudoSyd (R4).** Member management via core
+stays in the backlog.
+
+*Earlier:* **MVP-004 is merged** (PR #14).
 [MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
 delivered `new-voucher`: one command creates the voucher for a bank transaction from the
 caller's decisions, and refuses rather than writes a wrong one (ADR-009). Helsingborgs
-Judoklubb's whole 2026 was built again from nothing with it. Next: vouchers with several
-lines and vouchers without a bank transaction, which payroll and invoices need (owner
-direction 2026-10-07, see R2); then member management via core.
+Judoklubb's whole 2026 was built again from nothing with it.
 
 *Earlier:* **MVP-003 is merged** (PR #13).
 [MVP-003 – Bank import, reconciliation, remaining checks and reports via core](mvp/MVP-003-bank-reconciliation-and-reports.md)
@@ -65,7 +73,10 @@ plus an analysis of the existing organisation projects that tells us what to ext
   installable package with a minimal `run` CLI, CI gates, first methodology assessment,
   and an analysis of the Helsingborgs Judoklubb project.
 
-## R2 – Helsingborgs Judoklubb pilot via core (Ongoing)
+## R2 – Helsingborgs Judoklubb pilot via core (Done)
+
+*Done by owner decision 2026-10-08: the organisation keeps its books through the
+core. Member management was left out and is in the backlog.*
 
 Establishes the common data model and the import → matching → posting → validation →
 report chain in the core, with Helsingborgs Judoklubb as the first organisation running on it.
@@ -79,32 +90,42 @@ report chain in the core, with Helsingborgs Judoklubb as the first organisation 
   it.** The platform is meant for many organisations, so a reader per organisation does
   not scale. Aktivitet Förebygger moves its books to the core's format. Where the
   format cannot hold what an organisation needs, the one format is extended: it must
-  get vouchers with several lines and vouchers without a bank transaction. To record
-  as an ADR that supersedes ADR-006's "each file format has its own reader", in the
-  next MVP.
+  get vouchers with several lines and vouchers without a bank transaction (MVP-005).
+  Recorded as [ADR-010](architecture/decisions/ADR-010-one-book-format.md).
 * [MVP-003 – Bank import, reconciliation, remaining checks and reports via core](mvp/MVP-003-bank-reconciliation-and-reports.md)
   — Helsingborgs Judoklubb's agent tooling (bank import, reconciliation, the rest of
   `kontroll.py`, the reports) through the core, except member management. It replaces
   the earlier headings "MVP-003 bank import" and "MVP-004 reports" (owner decision
   2026-09-26).
 
-## R3 – Agent tools & human-in-the-loop (Planned)
+## R3 – Agent tools & human-in-the-loop (Ongoing)
 
 Establishes the defined agent tools, confidence levels, approval policies and the audit
 trail — and decides how the core is exposed to the agent in each organisation project.
 
 * [MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
-  — **implemented, pending its pull request.** One command writes the voucher from the bank
+  — **merged (PR #14).** One command writes the voucher from the bank
   statement; the agent or the treasurer supplies only the account, the supporting
   document and whether it is a guess. Supersedes ADR-008's "never vouchers" with a new
   ADR.
+
+* [MVP-005 – Vouchers with several lines, and without a bank transaction](mvp/MVP-005-multi-line-vouchers.md)
+  — **implemented, pending its pull request.** The one book format is extended so that a salary
+  payment and an issued invoice can be recorded, and Aktivitet Förebygger adopts the
+  format. Records the one-format decision as an ADR.
 
 ## R4 – JudoSyd migration (Planned)
 
 Moves JudoSyd onto the core, adding PDF import, Gmail, Discord and scheduled runs as general
 capabilities.
 
-## R5 – Aktivitet Förebygger migration (Planned)
+## R5 – Aktivitet Förebygger migration (Done)
+
+*Done by owner decision 2026-10-08, ahead of R4: the organisation's 2026 is kept in
+the core's format, built with MVP-005. What this section planned beyond that —
+payroll calculation, payments and stricter approval rules as general capabilities —
+was not built; the supporting documents give the amounts, and the treasurer
+approves. Each becomes a backlog item if a need shows.*
 
 Moves Aktivitet Förebygger onto the core as a stress test, adding payroll, salary
 documentation, payments and stricter approval rules as general capabilities.
@@ -115,8 +136,9 @@ Ideas that come up while working on an MVP land here, not in the MVP. Format:
 `* (YYYY-MM-DD, MVP-NNN) the idea`. Fixes found during an MVP are made on its branch
 instead — see `docs/development/methodology.md` "Found during an MVP".
 
-* (2026-09-26, MVP-002) **Member management via core — high priority, next after
-  MVP-004** (owner decision 2026-10-05; before that, next after MVP-003). This covers Helsingborgs Judoklubb's `medlemskontroll.py`, the member checks
+* (2026-09-26, MVP-002) **Member management via core — high priority.** Not next:
+  JudoSyd (R4) comes first (owner decision 2026-10-08; before that it was next after
+  MVP-003, then after MVP-004). This covers Helsingborgs Judoklubb's `medlemskontroll.py`, the member checks
   in `kontroll.py` (the member register and the member payments linked to vouchers) and
   the member-fee report. It was left out of MVP-003 by owner decision. It handles
   personal data about members and children, so it needs its own STRIDE pass, and the
@@ -135,6 +157,18 @@ instead — see `docs/development/methodology.md` "Found during an MVP".
   - Consider adding it as a principle in the vision, and as an automated check (a CI grep
     for known consumer names).
 
+* (2026-10-08, MVP-005) Class 8 in the budget check and in the reports' totals: the
+  budget check takes every account outside class 3 as a cost, and the reports' cost
+  total includes all of class 8. Interest income (83) is neither. The account-side
+  warnings were corrected in MVP-005; these two were not met in a pilot.
+* (2026-10-08, MVP-005) An export with balances from Sparbanken Syd, or another way
+  to give the core the bank's balance, so that the opening balance can be checked.
+* (2026-10-07, MVP-005) Reconcile a second statement: the tax account against its
+  account in the books, from the tax authority's statement. Until then its events
+  are vouchers without a bank transaction.
+* (2026-10-07, MVP-005) A voucher that covers several bank transactions, for a salary
+  run the bank pays as separate payments. Today it is one voucher without the bank
+  account and one per payment. Needs reconciliation rebuilt; wait for a real need.
 * (2026-10-05, MVP-004) Machine-readable posting rules: the voucher command warns when
   the chosen account differs from the organisation's rule for that kind of transaction.
   Wait until the command from MVP-004 is in use.
@@ -146,8 +180,11 @@ instead — see `docs/development/methodology.md` "Found during an MVP".
   section in `docs/methodology-compliance/interpretations.md`. The owner does this together
   with MVP-002. `_LÄS-MIG-FÖRST.md` and the EXAMPLE MVP and plan were removed in `947b599`.
 * Front-matter reader: add tests for invalid UTF-8 in a *voucher* file and a blank line
-  inside front matter (both implemented, not yet tested). Consider splitting
-  `_read_front_matter`, which is at the advisory complexity value 10.
+  inside front matter (both implemented, not yet tested). `_read_front_matter` was
+  split in MVP-005.
+* (2026-10-08, MVP-005) `_new_voucher` in `cli.py` is at cyclomatic complexity 11,
+  one above the advisory value (the gate is 20). Consider moving the reading of the
+  bank statement and the check of the new books into helpers.
 * Helsingborgs Judoklubb project: move the decision log ("Rättelser och beslut") out of the
   bookkeeping rules file, so that the rules can be read without personal data
   (`GAP-F2-CONFIDENTIAL`).

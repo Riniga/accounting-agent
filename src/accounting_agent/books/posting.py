@@ -37,18 +37,24 @@ class VoucherRefusedError(Exception):
 class VoucherRequest:
     """The caller's decisions for one new voucher.
 
-    ``date`` and ``amount`` point out the bank transaction, with ``row`` (the row in the
-    statement file) when several transactions share them. ``account`` is the account to
-    post against; the other line is the bank account.
+    With an ``amount`` the voucher is for a bank transaction: ``date`` and ``amount``
+    point it out, with ``row`` (the row in the statement file) when several transactions
+    share them. The other side is either ``account`` alone, or ``lines`` that add up to
+    the bank amount; the bank line is never the caller's.
+
+    Without an ``amount`` the voucher has no bank transaction (MVP-005): ``date``,
+    ``text`` and every line in ``lines`` are the caller's.
     """
 
     date: date
-    amount: Decimal
-    account: str
+    amount: Decimal | None = None
+    account: str | None = None
     row: int | None = None
     documents: tuple[str, ...] = ()
     note: str = ""
     guess: bool = False
+    lines: tuple[PostingLine, ...] = ()
+    text: str = ""
 
 
 def build_voucher(
@@ -59,40 +65,178 @@ def build_voucher(
     request: VoucherRequest,
     documents: frozenset[str] | None = None,
     guessed_posting_marker: str | None = None,
+    fiscal_year: int | None = None,
 ) -> Voucher:
     """Build the voucher that ``request`` asks for; nothing is written.
 
     ``texts`` maps a statement row to the voucher text composed for it. ``documents`` is
     the set of files in the documents folder, or ``None`` when no folder is configured.
+    ``fiscal_year`` bounds the date of a voucher without a bank transaction.
 
     Raises:
         VoucherRefusedError: if the request cannot give a right voucher.
     """
     note = _note(request, guessed_posting_marker)
-    _check_account(books, bank_account, request.account)
-    _check_documents(request.documents, documents)
-    transaction = _select(books, transactions, texts, bank_account, request)
-
-    amount = abs(transaction.amount)
-    if transaction.amount > ZERO:
-        lines = (
-            PostingLine(bank_account, debit=amount),
-            PostingLine(request.account, credit=amount),
+    if request.amount is None:
+        day, text, lines = _without_transaction(
+            books, bank_account, request, documents, fiscal_year
         )
     else:
-        lines = (
-            PostingLine(request.account, debit=amount),
-            PostingLine(bank_account, credit=amount),
-        )
+        _check_counter_side(books, bank_account, request)
+        _check_documents(request.documents, documents)
+        transaction = _select(books, transactions, texts, bank_account, request)
+        day, text = transaction.date, _masked(texts[transaction.row])
+        lines = _with_bank_line(request, transaction, bank_account)
     return Voucher(
         series=None,
         number=max((v.number for v in books.vouchers), default=0) + 1,
-        date=transaction.date,
-        text=_masked(texts[transaction.row]),
-        lines=lines,
+        date=day,
+        text=text,
+        # The debit lines first, then the credit lines, as the voucher is written and
+        # read back; each side keeps the caller's order.
+        lines=tuple(sorted(lines, key=lambda line: line.debit <= ZERO)),
         documents=request.documents,
         note=note,
     )
+
+
+def _check_counter_side(
+    books: Books, bank_account: str, request: VoucherRequest
+) -> None:
+    """The other side of a bank transaction: one account, or lines — not both."""
+    if request.text.strip():
+        raise VoucherRefusedError(
+            "text-with-transaction",
+            "the text of a bank transaction comes from the bank statement; leave it out",
+        )
+    if request.account is not None and request.lines:
+        raise VoucherRefusedError(
+            "account-and-lines", "give either one account or lines, not both"
+        )
+    if request.account is not None:
+        _check_account(books, bank_account, request.account)
+    elif request.lines:
+        _check_lines(books, request.lines, bank_account, "account-is-bank")
+    else:
+        raise VoucherRefusedError(
+            "account-missing", "give the account, or the lines, to post against"
+        )
+
+
+def _with_bank_line(
+    request: VoucherRequest, transaction: BankTransaction, bank_account: str
+) -> tuple[PostingLine, ...]:
+    """The caller's side with the bank line from the transaction: first for money in,
+    last for money out."""
+    amount = abs(transaction.amount)
+    money_in = transaction.amount > ZERO
+    if request.account is not None:
+        counter: tuple[PostingLine, ...] = (
+            PostingLine(request.account, credit=amount)
+            if money_in
+            else PostingLine(request.account, debit=amount),
+        )
+    else:
+        counter = request.lines
+        net = sum((line.debit - line.credit for line in counter), ZERO)
+        if net != -transaction.amount:
+            raise VoucherRefusedError(
+                "lines-unbalanced",
+                f"the lines add up to {-net} on the bank account, but the bank "
+                f"transaction is {transaction.amount}",
+            )
+    if money_in:
+        return (PostingLine(bank_account, debit=amount), *counter)
+    return (*counter, PostingLine(bank_account, credit=amount))
+
+
+def _without_transaction(
+    books: Books,
+    bank_account: str,
+    request: VoucherRequest,
+    documents: frozenset[str] | None,
+    fiscal_year: int | None,
+) -> tuple[date, str, tuple[PostingLine, ...]]:
+    """The date, text and lines of a voucher that has no bank transaction."""
+    if request.account is not None or request.row is not None:
+        raise VoucherRefusedError(
+            "amount-missing",
+            "an account or a statement row belongs to a bank transaction; give its "
+            "amount too",
+        )
+    text = _masked(request.text.strip())
+    if not text:
+        raise VoucherRefusedError(
+            "text-missing", "a voucher without a bank transaction needs a text"
+        )
+    lines = request.lines
+    if len(lines) < 2:  # a debit and a credit
+        raise VoucherRefusedError(
+            "lines-missing", "a voucher needs at least one debit and one credit line"
+        )
+    # A voucher on the bank account always comes from a bank transaction; otherwise
+    # the bank's balance could change without the bank agreeing.
+    _check_lines(books, lines, bank_account, "bank-without-transaction")
+    debits = sum((line.debit for line in lines), ZERO)
+    credits = sum((line.credit for line in lines), ZERO)
+    if debits != credits:
+        raise VoucherRefusedError(
+            "lines-unbalanced", f"debit {debits} differs from credit {credits}"
+        )
+    if fiscal_year is not None and request.date.year != fiscal_year:
+        raise VoucherRefusedError(
+            "date-outside-year",
+            f"the date {request.date} is outside the fiscal year {fiscal_year}",
+        )
+    _check_documents(request.documents, documents)
+
+    # Nothing outside the books stops the same voucher from being created twice.
+    def key(posting: Sequence[PostingLine]) -> list[tuple[str, Decimal, Decimal]]:
+        return sorted((line.account, line.debit, line.credit) for line in posting)
+
+    for voucher in books.vouchers:
+        if (voucher.date, voucher.text) == (request.date, text) and key(
+            voucher.lines
+        ) == key(lines):
+            raise VoucherRefusedError(
+                "duplicate",
+                f"voucher {voucher.id} has the same date, text and lines",
+            )
+    return request.date, text, lines
+
+
+def _check_lines(
+    books: Books,
+    lines: Sequence[PostingLine],
+    bank_account: str,
+    bank_rule: str,
+) -> None:
+    """Every line is on a known account that is not the bank account, with an amount."""
+    known = {account.number for account in books.accounts}
+    for line in lines:
+        if line.account not in known:
+            raise VoucherRefusedError(
+                "account-unknown",
+                f"account {line.account} is not in the chart of accounts",
+            )
+        if line.account == bank_account:
+            raise VoucherRefusedError(
+                bank_rule,
+                f"account {line.account} is the bank account; its line comes from a "
+                f"bank transaction, never from the caller",
+            )
+        if line.debit == line.credit:
+            raise VoucherRefusedError(
+                "line-amount", f"the line on account {line.account} has no amount"
+            )
+    debited = {line.account for line in lines if line.debit > ZERO}
+    credited = {line.account for line in lines if line.credit > ZERO}
+    both = sorted(debited & credited)
+    if both:
+        raise VoucherRefusedError(
+            "account-on-both-sides",
+            f"account {both[0]} is both debited and credited",
+        )
 
 
 def _masked(text: str) -> str:

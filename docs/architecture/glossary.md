@@ -21,6 +21,8 @@ The English name in the right-hand column is the one used in the code.
 | underlag | supporting document | The receipt, invoice or bank page that backs a voucher |
 | anteckning | note | Free text on a voucher |
 | motkonto | counter account | The account a bank transaction is posted against; the other line is the bank account |
+| enkel form | simple form | A voucher file with one `debet`, one `kredit` and `belopp` — one debit and one credit line of the same amount |
+| radform | lines form | A voucher file where `debet` and `kredit` each list their posting lines as `<account> <amount>`, separated by semicolons (MVP-005) |
 | genererade rader | generated lines | The lines the core writes below a voucher's fields: the accounts with their names and a link to each supporting document (ADR-009) |
 | gissad kontering | guessed posting | A posting the treasurer has not confirmed, marked in the note with the organisation's marker |
 | räkenskapsår | fiscal year | The accounting year; a calendar year for the current organisations |

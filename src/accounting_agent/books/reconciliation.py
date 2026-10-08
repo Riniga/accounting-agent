@@ -31,6 +31,17 @@ def reconcile(
     if not transactions:
         return []
     findings, opening = _check_balances(transactions)
+    if all(transaction.balance is None for transaction in transactions):
+        # Some banks export no balance; "the bank agrees" then means less.
+        findings.append(
+            Finding(
+                Severity.INFO,
+                "bank-no-balances",
+                STATEMENT,
+                "the statement has no balances, so the bank's own arithmetic and the "
+                "opening balance are not checked",
+            )
+        )
     findings += _check_opening_balance(books, bank_account, opening, transactions)
     findings += _match(books.vouchers, transactions, bank_account, list_unbooked)
     findings.append(_summary(transactions))
@@ -152,8 +163,10 @@ def _match(
                 Severity.WARNING,
                 "bank-unbooked-recent",
                 STATEMENT,
-                f"{len(recent)} unbooked transactions after {last_voucher} "
-                f"({recent[0].date} to {recent[-1].date}, net {net})",
+                f"{len(recent)} unbooked transactions "
+                + (f"after {last_voucher} " if vouchers else "")
+                + f"({recent[0].date} to {recent[-1].date}, net {net}"
+                + (")" if vouchers else "; the books have no voucher yet)"),
             )
         )
         if list_unbooked:
