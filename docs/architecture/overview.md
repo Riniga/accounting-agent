@@ -16,8 +16,8 @@ public repository holds the general functionality they share. See
 Swedish bookkeeping terms and their English names in the code are in the
 [glossary](glossary.md).
 
-**Current state (MVP-004 merged; MVP-005 implemented, pending its pilot and pull
-request):** one installable
+**Current state (MVP-004 merged; MVP-005 implemented, pending its pull request):** one
+installable
 package, behind the CI quality gates from MVP-001, containing:
 - an organisation-profile loader;
 - a general double-entry book model (ADR-006), with supplementary-file models (ADR-007);

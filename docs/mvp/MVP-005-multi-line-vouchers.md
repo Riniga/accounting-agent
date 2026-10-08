@@ -179,4 +179,74 @@ Förebygger can keep its books in the core's format from its supporting document
 5. **The tax account.** Not reconciled in this MVP; its events are vouchers without a
    bank transaction.
 
-## Outcome at close (YYYY-MM-DD)
+## Outcome at close (2026-10-08)
+
+**Delivered.** Implemented on `feature/mvp-005-multi-line-vouchers`, pending the pull
+request. Each criterion was checked against the real system
+([plan](../plans/MVP-005-multi-line-vouchers.plan.md), phases 2–10):
+
+- **Fixtures per rule:** synthetic books with both forms of voucher, a synthetic
+  organisation on them and a synthetic bank export cover each new rule with a passing
+  and a broken case; 798 tests pass (576 before).
+- **Existing behaviour unchanged:** Helsingborgs Judoklubb's reference books give a
+  byte-identical `validate` output and nine identical reports, the code on `main`
+  against this branch. Four tests from MVP-004 changed their expectation on purpose;
+  the plan names each.
+- **A voucher with several lines** that the command creates is read back as the same
+  voucher, passes `validate`, and appears in the voucher list, the general ledger, the
+  income statement and the balance sheet with every line.
+- **A bank transaction against several accounts** is no longer unbooked afterwards, and
+  the bank's balance agrees with the books.
+- **A refusal writes nothing:** every refusal test compares every file byte for byte.
+- **Nothing is quoted:** the output and the refusals never hold a text, a name, a bank
+  message or a document's file name.
+- **The bank export:** Aktivitet Förebygger's real export is read, written as the core's
+  statement file and read back with no finding; a partial export is refused; personal
+  identity numbers are masked.
+- **In Aktivitet Förebygger's own project** (as the owner passed it on, counts only):
+  the year folder was set up in the core's format and the year booked from the bank
+  statement and the supporting documents by the AI agent there. 37 vouchers: 12 with
+  more than two lines, among them the salaries and the invoices, and 21 without a bank
+  transaction. All 16 bank transactions have a voucher, and all 14 supporting documents
+  are used. 1 guessed posting, nothing on the parking account, 1 voucher without a
+  document. The tax account's balance in the books agrees with its statement. The
+  reports were written.
+- **No organisation-specific value in `src/`:** `git grep` finds none.
+- **AI-TDD:** the tests were written first and shown to fail for the right reason in
+  every phase. Through phase 7 the owner reviewed them before the implementation; from
+  2026-10-08 with the code, before committing (exception EX-004).
+- **MVP-001 gates:** Ruff, the pre-commit hooks, detect-secrets, the instruction-file
+  scan and the tests run green locally; coverage 99.13 %, floor 97 %. Semgrep and the
+  dependency checks run in the pull request (no dependency changed).
+
+**What the pilot changed.** It was worth running before the merge:
+
+- **The lines form was not valid YAML.** It repeated the keys `debet` and `kredit`, and
+  a Markdown viewer failed on every voucher with several lines. Each field now lists
+  its lines, separated by semicolons, and the organisation built its vouchers again.
+- **A personal identity number as ten digits in a row was not masked.** A bank's text
+  held one, and it reached a voucher and two reports. Ten digits with a real date and a
+  correct check digit are now masked.
+- **Interest income gave a false warning.** Every class 8 account counted as a cost
+  account; 83 is now income and 84 cost, and the others neither.
+- **The real export was oldest first,** not newest first as the investigation said. The
+  reader built from the investigation refused it.
+
+**Not proven, or not possible yet:**
+
+- **The bank's balance cannot be checked for this organisation.** The export has no
+  balances, so the opening balance of the bank account and the bank's own arithmetic
+  rest on the treasurer. The agent in the pilot said so in its report.
+- **The tax account is not reconciled by the core.** 13 of the pilot's vouchers are
+  tax-account events booked from the statement by the agent; the agent compared the
+  balance itself. Backlog.
+- **Nothing is calculated.** The pilot's books have a difference of a fraction of a
+  krona on the tax-withheld account, from the supporting documents' own rounding. The
+  core cannot see it.
+- **A voucher whose text holds the ten-digit number already** is not changed by the
+  core. `validate` now warns for it, and the reports mask it; the voucher itself is the
+  treasurer's to rebuild or leave.
+- **The budget check and the reports' cost total still treat all of class 8 as costs.**
+  Not met in a pilot yet. Backlog.
+- The viewer that failed has not been tried again by the AI tool; the owner confirms
+  that in the organisation's project.

@@ -2,7 +2,7 @@
 
 Reference: [`docs/mvp/MVP-005-multi-line-vouchers.md`](../mvp/MVP-005-multi-line-vouchers.md)
 
-**Status:** In progress (plan approved 2026-10-07)
+**Status:** Implemented – pending PR (plan approved 2026-10-07)
 
 ## 0. Investigation
 
@@ -526,7 +526,7 @@ Commit: `feat(books): expect documents for vouchers without a bank transaction`
   on a posting template per kind of event). The flow they describe was run on an
   invented organisation with the synthetic Sparbanken Syd export: import, `RESULT: OK`
   with no voucher, then one voucher of each of the command's three uses.
-- [ ] 8.2 The owner runs it in Aktivitet Förebygger's project, then lets the agent book
+- [x] 8.2 The owner runs it in Aktivitet Förebygger's project, then lets the agent book
   2026 from the bank statement and the supporting documents. *Verify, counts only:* at
   least one salary payment and one issued invoice created by the command;
   `RESULT: OK`; no unbooked bank transaction.
@@ -536,6 +536,22 @@ Commit: `feat(books): expect documents for vouchers without a bank transaction`
   balances — and the year was then booked with `book-the-year.md`; `report` went
   through. The run showed that the lines form was not valid YAML (phase 10). The
   vouchers are built again after phase 10; the counts for the close come from that run.
+
+  Second run, after phase 10 (2026-10-08, as the owner passed on the agent's report):
+  - 37 vouchers; 12 with more than two lines (salaries, invoices and one payment); 21
+    without a bank transaction (the invoices and the tax-account events);
+  - all 16 bank transactions have a voucher; all 14 supporting documents are used;
+  - 1 guessed posting, nothing on the parking account, 1 voucher without a document, on
+    an account that needs none;
+  - the tax account's balance in the books agrees with its statement; the bank
+    account's cannot be checked, as the export has no balance;
+  - one warning, `cost-account-credited` on interest income — a false one, fixed below;
+  - the agent's own script built one argument list wrong; the command refused it and
+    wrote nothing, and the numbering stayed unbroken;
+  - a ten-digit personal identity number in the bank's text was not masked — fixed
+    below.
+
+  The report did not include the `RESULT` line itself; no error was reported.
 
 Commit: `docs(mvp-005): record the pilot result`
 
@@ -601,7 +617,8 @@ and the AI tool does not commit.
   and the `CLAUDE.md` snippet.
 - [x] 9.2 `README.md`, `AGENTS.md`, `overview.md`, `current-state.md`, `roadmap.md`
   (status; member management is next).
-- [ ] 9.3 The MVP's "Outcome at close", checked against each acceptance criterion.
+- [x] 9.3 The MVP's "Outcome at close", checked against each acceptance criterion.
+  Result: written 2026-10-08, with what the pilot changed and what is not proven.
 - [x] 9.4 Methodology compliance: the note under `GAP-F2-CONFIDENTIAL` (§0.3).
   Result: a changelog entry, the row's note and the plan table. It also notes a net
   amount that a pilot comparison printed in TODO 6.2.
@@ -670,3 +687,19 @@ Bank export (a file the treasurer downloaded) → import-bank → the statement 
   said "after 0001-01-01". It now says that the books have no voucher yet. Every
   organisation is in that state right after it is set up. Found when the set-up flow
   was tried (TODO 8.1); regression test in `test_reconciliation.py` (`ba9977d`).
+- `fix(books)`: a personal identity number written as ten digits in a row was not masked.
+  The pilot's bank export held one, and it reached a voucher's text and two reports.
+  Ten digits with a real month and day — or a coordination number's day — and a correct
+  check digit are now masked, in files and in terminal output. Phone numbers,
+  references and organisation numbers are left alone, except the one in ten that passes
+  the check digit by chance. Regression tests in `test_masking.py`.
+- `fix(books)`: crediting interest income gave `cost-account-credited`, because every
+  class 8 account counted as a cost account. In BAS 83 is interest income and 84
+  interest costs; the rest of class 8 — results from shares, and the closing entries —
+  is right on either side. The two warnings now follow that. Regression tests in
+  `test_detail_checks.py`.
+- `docs`: `book-the-year.md` says how to pass arguments from a script, after the agent's
+  first scripted call in the pilot was built wrong.
+
+Neither fix changes anything for Helsingborgs Judoklubb: its reference books give a
+byte-identical `validate` output and identical reports before and after (2026-10-08).

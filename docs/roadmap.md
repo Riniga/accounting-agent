@@ -11,15 +11,18 @@ a duplicate of MVP content. See `docs/development/methodology.md` "Roadmap".
 
 ## Current Status
 
-**MVP-004 is merged** (PR #14). **MVP-005 is implemented; its pilot in Aktivitet
-Förebygger's project and the pull request remain.**
+**MVP-005 is implemented and pending its pull request.**
+[MVP-005 – Vouchers with several lines, and without a bank transaction](mvp/MVP-005-multi-line-vouchers.md)
+extended the one book format (ADR-010) and `new-voucher`, and added Sparbanken Syd's
+bank export. Aktivitet Förebygger's 2026 was built in the core's format from its bank
+statement and supporting documents, salaries and invoices included. Next: member
+management via core.
+
+*Earlier:* **MVP-004 is merged** (PR #14).
 [MVP-004 – Create vouchers from bank transactions via core](mvp/MVP-004-create-vouchers.md)
 delivered `new-voucher`: one command creates the voucher for a bank transaction from the
 caller's decisions, and refuses rather than writes a wrong one (ADR-009). Helsingborgs
-Judoklubb's whole 2026 was built again from nothing with it. Next: vouchers with several
-lines and vouchers without a bank transaction, which payroll and invoices need —
-[MVP-005](mvp/MVP-005-multi-line-vouchers.md), plan approved 2026-10-07; then member
-management via core.
+Judoklubb's whole 2026 was built again from nothing with it.
 
 *Earlier:* **MVP-003 is merged** (PR #13).
 [MVP-003 – Bank import, reconciliation, remaining checks and reports via core](mvp/MVP-003-bank-reconciliation-and-reports.md)
@@ -101,7 +104,7 @@ trail — and decides how the core is exposed to the agent in each organisation 
   ADR.
 
 * [MVP-005 – Vouchers with several lines, and without a bank transaction](mvp/MVP-005-multi-line-vouchers.md)
-  — **implemented; the pilot and the pull request remain.** The one book format is extended so that a salary
+  — **implemented, pending its pull request.** The one book format is extended so that a salary
   payment and an issued invoice can be recorded, and Aktivitet Förebygger adopts the
   format. Records the one-format decision as an ADR.
 
@@ -141,6 +144,12 @@ instead — see `docs/development/methodology.md` "Found during an MVP".
   - Consider adding it as a principle in the vision, and as an automated check (a CI grep
     for known consumer names).
 
+* (2026-10-08, MVP-005) Class 8 in the budget check and in the reports' totals: the
+  budget check takes every account outside class 3 as a cost, and the reports' cost
+  total includes all of class 8. Interest income (83) is neither. The account-side
+  warnings were corrected in MVP-005; these two were not met in a pilot.
+* (2026-10-08, MVP-005) An export with balances from Sparbanken Syd, or another way
+  to give the core the bank's balance, so that the opening balance can be checked.
 * (2026-10-07, MVP-005) Reconcile a second statement: the tax account against its
   account in the books, from the tax authority's statement. Until then its events
   are vouchers without a bank transaction.

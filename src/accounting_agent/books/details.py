@@ -17,9 +17,11 @@ from accounting_agent.books.findings import Finding, Severity
 from accounting_agent.books.model import Account, Books, Voucher
 
 ZERO = Decimal(0)
-# BAS: class 3 is revenue; classes 4–8 are costs and financial items.
-REVENUE_CLASSES = ("3",)
-COST_CLASSES = ("4", "5", "6", "7", "8")
+# BAS: class 3 is revenue and classes 4–7 are costs. Class 8 is mixed: 83 is interest
+# income and 84 interest costs, while the others — results from shares, and the closing
+# entries in 88 and 89 — are right on either side and belong to neither.
+REVENUE_CLASSES = ("3", "83")
+COST_CLASSES = ("4", "5", "6", "7", "84")
 # kontroll.py counts a voucher without documents as a cost when it debits classes 4–7.
 DOCUMENT_COST_CLASSES = ("4", "5", "6", "7")
 

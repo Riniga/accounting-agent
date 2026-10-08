@@ -70,6 +70,14 @@ Claude över stoppet.
     datum och belopp. Belopp skrivs med decimalpunkt. En verifikation hör till
     högst en banktransaktion.
 
+    Bygger du anropen i ett skript: skicka varje flagga och varje värde som ett
+    eget argument i en lista, inte som en hopsatt kommandorad, och skriv
+    `--amount=<belopp>` och `--note=<text>` med likhetstecken. Kör det första
+    anropet och kontrollera resultatet innan du kör resten.
+
+    Texten på en banktransaktion hämtas av kommandot ur kontoutdraget, och
+    personnummer i den maskas där. Du kan inte ange den själv.
+
     ## Steg 1 – Utgångsläget
 
         accounting-agent validate <id> --config-dir 2026 --unbooked
