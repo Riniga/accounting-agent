@@ -10,7 +10,7 @@ work MVP by MVP (see the [roadmap](../roadmap.md)).
 | Organisation | Can use | Keeps using its own tooling for |
 |---|---|---|
 | Helsingborgs Judoklubb | `import-bank` (bank statement and fund value), `validate` (every check in `kontroll.py` except members, and the reconciliation against the bank), `new-voucher` (a voucher for a bank transaction), `report` (every report except the member fees) | Members: `medlemskontroll.py`, the member checks in `kontroll.py` and the member-fee report (backlog) |
-| Aktivitet Förebygger | everything the core has, once its year folder is set up in the core's format: `import-bank` (`sparbanken-syd-csv`), `validate`, `new-voucher` (salaries and invoices need its lines), `report` | reconciling the tax account; calculating salaries |
+| Aktivitet Förebygger | `import-bank` (`sparbanken-syd-csv`), `validate`, `new-voucher` (also for salaries, invoices and tax-account events, which need several lines or have no bank transaction), `report` | reconciling the tax account; calculating salaries |
 | JudoSyd | nothing yet — its books are not in files | everything |
 
 The core has one book format, and an organisation adopts it

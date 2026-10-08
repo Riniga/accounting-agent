@@ -190,7 +190,7 @@ request. Each criterion was checked against the real system
   and a broken case; 798 tests pass (576 before).
 - **Existing behaviour unchanged:** Helsingborgs Judoklubb's reference books give a
   byte-identical `validate` output and nine identical reports, the code on `main`
-  against this branch. Four tests from MVP-004 changed their expectation on purpose;
+  against this branch. Three tests from MVP-004 changed their expectation on purpose;
   the plan names each.
 - **A voucher with several lines** that the command creates is read back as the same
   voucher, passes `validate`, and appears in the voucher list, the general ledger, the
