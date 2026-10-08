@@ -42,6 +42,16 @@ dependencies.
   reason). If CI's drift check fails after a Windows-local edit, trust CI's diff over your
   own local output.
 
+## Version updates
+
+- **Dependabot** opens version-update pull requests weekly, for pip and for GitHub Actions
+  (`.github/dependabot.yml`, C2 SKA 5).
+- The updates of an ecosystem are **grouped into one pull request**. `main` requires a
+  branch to be up to date before merging, so a pull request per package made every other
+  one stale at each merge. If a grouped update fails CI, find the package that breaks it
+  and update the others by hand as described under "Lockfile".
+- Security updates are not grouped; they come one by one, as soon as they exist.
+
 ## SBOM
 
 - Generate from your CI/CD platform's native dependency-graph export if it has one (GitHub

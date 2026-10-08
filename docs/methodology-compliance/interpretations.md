@@ -161,7 +161,8 @@ integrations; those are mocked in tests (`docs/standards/testing.md`).
 - **Licences:** `pip-licenses` against the allowlist in `docs/standards/dependencies.md`.
   With no organisation legal function, **the owner approves any licence outside the
   allowlist**, recorded in the PR that adds it.
-- **Updates:** Dependabot version updates, weekly, for pip and GitHub Actions.
+- **Updates:** Dependabot version updates, weekly, for pip and GitHub Actions, grouped
+  into one pull request per ecosystem (2026-10-08; `docs/standards/dependencies.md`).
 - **SBOM:** not automated yet. GitHub's dependency graph export (SPDX) is available on
   demand. Automate when releases exist.
 
